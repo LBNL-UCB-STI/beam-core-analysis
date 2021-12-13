@@ -26,7 +26,7 @@ selected_beam_network_out <- NULL
 for (row in 1:nrow(beam_network_with_radar)) {
   list_of_links = beam_network_with_radar[row][[1]]
   selected_beam_network <- beam_network_with_cars[list_of_links,]
-  radar_id <- as.numeric(detector_location_sf[row, 'KITS_ID'])
+  radar_id <- as.numeric(detector_location[row, 'KITS_ID'])
   selected_beam_network$KITS_ID <- radar_id
   selected_beam_network_out <-  rbind(selected_beam_network_out, selected_beam_network)
   #print(list_of_links)
