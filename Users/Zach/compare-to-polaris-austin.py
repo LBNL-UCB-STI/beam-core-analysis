@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+loc = "https://beam-outputs.s3.amazonaws.com/pilates-outputs/austin-2010-2018-central/2018/"
+beam_folder = "beam_outputs/austin-pilates-base__2021-12-16_00-35-49_vre/"
+
 #%%
 events = pd.read_csv(loc + beam_folder + 'ITERS/it.0/0.events.csv.gz')
 PTs = events.loc[(events['type'] == 'PathTraversal') & (events['mode'] == 'car')].dropna(how='all', axis=1)  #
