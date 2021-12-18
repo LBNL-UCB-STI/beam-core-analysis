@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 
 #%%
-
 s3 = 'https://beam-outputs.s3.amazonaws.com/output/austin/austin-prod-200k-flowCap-0.1-speedScaling-1.0-new_vehicles__2020-08-30_19-22-52_lmi/'
 urbansim = "/Users/zaneedell/Desktop/git/smart-analysis/polaris-compare/data/austin-pilates/"
 # %%
@@ -27,6 +26,7 @@ hh['incomeBin'] = np.digitize(hh['income'],incomebins)
 income_counts = hh.incomeBin.value_counts()
 income_counts = income_counts/income_counts.sum()
 #%%
+
 Household = pd.Series()
 Household['Households'] = hh.shape[0]
 Household['<$20k'] = income_counts[1]
