@@ -32,9 +32,6 @@ hh['incomeBin'] = np.digitize(hh['income'],incomebins)
 
 income_counts = hh.incomeBin.value_counts()
 income_counts = income_counts/income_counts.sum()
-#%%
-loc = "https://beam-outputs.s3.amazonaws.com/pilates-outputs/austin-2010-2018-central/2018/"
-beam_folder = "beam_outputs/austin-pilates-base__2021-12-16_00-35-49_vre/"
 
 #%%
 
