@@ -13,7 +13,7 @@ incomebins = [-1, 20000, 35000, 50000, 75000, 100000, 150000, 1e10]
 hh = pd.read_csv(loc + 'final_households.csv')
 per = pd.read_csv(urbansim + 'final_persons.csv')
 
-outfolder = "/out/austin-pilates/"
+outfolder = "out/austin-pilates/"
 suffix = "-urbansim"
 scaleFactor = 0.2
 
@@ -58,7 +58,7 @@ Household['4-Person Household'] = size_counts[4]
 Household['5-Person Household'] = size_counts[5]
 Household['6-Person Household'] = size_counts[6]
 Household['7+ Person Household'] = sum([size_counts[key] for key in size_counts.keys() if key > 7])
-Household.to_csv(pwd + outfolder + "Household.csv")
+Household.to_csv(outfolder + "Household.csv")
 # %%
 Person = pd.Series()
 Person['Persons'] = per.shape[0]
@@ -110,7 +110,7 @@ inc_emp = per[['edu2', 'worker', 'person_id']].groupby(['edu2', 'worker']).agg('
 for row in inc_emp.iterrows():
     Person[row[0][0] + ' ' + emp[row[0][1]]] = row[1].person_id / inc_emp['person_id'].sum()
 
-Person.to_csv(pwd + outfolder + "Person" + suffix + ".csv")
+Person.to_csv(outfolder + "Person" + suffix + ".csv")
 
 # #%%
 acts = {'home': 'home', 'Home': 'home', 'work': 'Primary Work', 'othmaint': 'Other', 'social': 'Social',
@@ -168,7 +168,7 @@ workCounts, bins = np.histogram(legs.loc[legs.tourType == 'HBW', 'legRouteTravel
 nonWorkCounts, bins = np.histogram(legs.loc[legs.tourType != 'HBW', 'legRouteTravelTime'] / 60, np.arange(0, 62, 2),
                                    density=True)
 pd.DataFrame({"Time": bins[:-1], "Work": workCounts * 2, "Discretionary": nonWorkCounts * 2}).to_csv(
-    pwd + outfolder + "TripDurationHist" + suffix + ".csv", index=False)
+    outfolder + "TripDurationHist" + suffix + ".csv", index=False)
 
 # %%
 activities = plans.loc[
@@ -193,7 +193,7 @@ for act in activities['activityType'].unique():
 
     plt.ylabel('Portion of Activities')
     plt.xlabel('Hour of Day')
-    plt.savefig(pwd + outfolder + act + '_startTime-pilates.png')
+    plt.savefig(outfolder + act + '_startTime-pilates.png')
     plt.clf()
 
 ActivityDuration = activities.groupby('activityType').agg('mean')['duration']
@@ -201,12 +201,12 @@ ActivityDuration = activities.groupby('activityType').agg('mean')['duration']
 actBinCounts, bins = np.histogram(activities.activityEndTime / 3600, np.arange(0, 24.5, 0.5))
 actBinCounts = np.round(actBinCounts / scaleFactor)
 pd.DataFrame({"Time": bins[:-1], "Activities": actBinCounts}).to_csv(
-    pwd + outfolder + "ActivityEndTimeHist" + suffix + ".csv", index=False)
+    outfolder + "ActivityEndTimeHist" + suffix + ".csv", index=False)
 
 # %%
 actCounts = activities.value_counts('activityType').iloc[1:]
 actCounts = actCounts / (actCounts.sum())
-actCounts.to_csv(pwd + outfolder + "ActivityGeneration" + suffix + ".csv")
+actCounts.to_csv(outfolder + "ActivityGeneration" + suffix + ".csv")
 
 # %%
 ModeShare = dict()
@@ -234,7 +234,7 @@ for act in activities['activityType'].unique():
 
     plt.ylabel('Portion of Activities')
     plt.xlabel('Distance (mi)')
-    plt.savefig(pwd + outfolder + act + '_distance' + suffix + '.png')
+    plt.savefig(outfolder + act + '_distance' + suffix + '.png')
     plt.clf()
 
 # %%
@@ -269,12 +269,12 @@ sub = joined.loc[(joined.DestinationCounty != "Travis") & legs.validForPolaris, 
 ModeSharePolaris["Non-CBD"] = sub / sub.sum()
 
 # %%
-DistanceMean.to_csv(pwd + outfolder + "DistanceMean" + suffix + ".csv")
-CountyToCountyFlow.to_csv(pwd + outfolder + "CountyToCountyFlow" + suffix + ".csv")
+DistanceMean.to_csv(outfolder + "DistanceMean" + suffix + ".csv")
+CountyToCountyFlow.to_csv(outfolder + "CountyToCountyFlow" + suffix + ".csv")
 # ActivityDuration.to_csv(pwd + outfolder + "ActivityDuration" + suffix + ".csv")
-pd.DataFrame(ModeShare).to_csv(pwd + outfolder + "ModeShare" + suffix + ".csv")
-pd.DataFrame(ModeSharePolaris).to_csv(pwd + outfolder + "ModeSharePolaris" + suffix + ".csv")
-CountyToCountyFlow.unstack().sort_index().to_csv(pwd + outfolder + "CountyToCountyFlowUnstacked" + suffix + ".csv")
+pd.DataFrame(ModeShare).to_csv(outfolder + "ModeShare" + suffix + ".csv")
+pd.DataFrame(ModeSharePolaris).to_csv(outfolder + "ModeSharePolaris" + suffix + ".csv")
+CountyToCountyFlow.unstack().sort_index().to_csv(outfolder + "CountyToCountyFlowUnstacked" + suffix + ".csv")
 
 # %%
 
@@ -354,7 +354,7 @@ Energy['EperMile_Transit'] = (gb_mode.loc['bus', 'MWH'] + gb_mode.loc['tram', 'v
 Energy['MPGe_Auto'] = gb_mode['vehicleMiles']['car'] / gb_mode['gallons']['car']
 Energy['MPGe_TNC'] = gb_mode['vehicleMiles']['car_RH'] / gb_mode['gallons']['car_RH']
 Energy['MPGe_Transit'] = 33.410133412853945 / Energy['EperMile_Transit']
-Energy.to_csv(pwd + outfolder + "Energy" + suffix + ".csv")
+Energy.to_csv(outfolder + "Energy" + suffix + ".csv")
 
 # %%
 
@@ -381,7 +381,7 @@ Summary['PerCapitaVHT'] = (gb_mode_simple.loc['car_hov3', 'vehicleHours'] / scal
     'car_hov2', 'vehicleHours'] / scaleFactor + gb_mode_simple.loc['car', 'vehicleHours'] / scaleFactor +
                            gb_mode_simple.loc[
                                'bus', 'vehicleHours'] + gb_mode_simple.loc['tram', 'vehicleMiles']) / uniqueAgents
-Summary.to_csv(pwd + outfolder + "Summary" + suffix + ".csv")
+Summary.to_csv(outfolder + "Summary" + suffix + ".csv")
 print('DONE')
 """
 # %%
