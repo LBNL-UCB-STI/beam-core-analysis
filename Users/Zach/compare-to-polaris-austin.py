@@ -4,27 +4,35 @@ import numpy as np
 import pandas as pd
 
 #%%
-s3 = 'https://beam-outputs.s3.amazonaws.com/output/austin/austin-prod-200k-flowCap-0.1-speedScaling-1.0-new_vehicles__2020-08-30_19-22-52_lmi/'
-urbansim = "/Users/zaneedell/Desktop/git/smart-analysis/polaris-compare/data/austin-pilates/"
+events = pd.read_csv(loc + beam_folder + 'ITERS/it.0/0.events.csv.gz')
+PTs = events.loc[(events['type'] == 'PathTraversal') & (events['mode'] == 'car')].dropna(how='all', axis=1)  #
+PTs['startHour'] = np.floor(PTs.time / 3600.0).astype(int)
+PTs['vehicleMilesTraveled'] = PTs['length'] / 1609.34 # convert meters to miles
+PTs['vehicleHoursTraveled'] = (PTs['arrivalTime'] - PTs['departureTime']) / 3600.0 # convert seconds to miles
+totalsByHourEvents2 = PTs.groupby('startHour').agg({'vehicleMilesTraveled':sum, 'vehicleHoursTraveled':sum})
+totalsByHourEvents2['speed'] = totalsByHourEvents2['vehicleMilesTraveled'] / totalsByHourEvents2['vehicleHoursTraveled']
+
 # %%
 
 incomebins = [-1, 20000, 35000, 50000, 75000, 100000, 150000, 1e10]
 
-# urbansim = "../../../../test/input/texas/urbansim_v2/"
-# hh = pd.read_csv(urbansim + 'households.csv.gz')
-per = pd.read_csv(urbansim + 'persons.csv.gz')
+hh = pd.read_csv(loc + 'final_households.csv')
+per = pd.read_csv(urbansim + 'final_persons.csv')
 
-pwd = '/Users/zaneedell/Desktop/git/beam/src/main/python/events_analysis'
 
-outfolder = "/polaris-out/austin-pilates/"
-suffix = "-slower"
-scaleFactor = 0.1495
+outfolder = "/out/austin-pilates/"
+suffix = "-urbansim"
+scaleFactor = 0.2
 
 
 hh['incomeBin'] = np.digitize(hh['income'],incomebins)
 
 income_counts = hh.incomeBin.value_counts()
 income_counts = income_counts/income_counts.sum()
+#%%
+loc = "https://beam-outputs.s3.amazonaws.com/pilates-outputs/austin-2010-2018-central/2018/"
+beam_folder = "beam_outputs/austin-pilates-base__2021-12-16_00-35-49_vre/"
+
 #%%
 
 Household = pd.Series()
@@ -45,23 +53,23 @@ Household['Own'] = tenure_counts[1]
 Household['Rent'] = tenure_counts[2]
 
 #%%
-cars_counts = hh.auto_ownership.value_counts()
+cars_counts = hh.cars.value_counts()
 cars_counts = cars_counts / cars_counts.sum()
 Household['0-Vehicle Household'] = cars_counts[0]
 Household['1-Vehicle Household'] = cars_counts[1]
 Household['2-Vehicle Household'] = cars_counts[2]
 Household['3+ Vehicle Household'] = cars_counts[3] + cars_counts[4]
 #%%
-# size_counts = hh.hh_size.value_counts()
-# size_counts = size_counts / size_counts.sum()
-# Household['1-Person Household'] = size_counts[1]
-# Household['2-Person Household'] = size_counts[2]
-# Household['3-Person Household'] = size_counts[3]
-# Household['4-Person Household'] = size_counts[4]
-# Household['5-Person Household'] = size_counts[5]
-# Household['6-Person Household'] = size_counts[6]
-# Household['7+ Person Household'] = sum([size_counts[key] for key in size_counts.keys() if key > 7])
-# Household.to_csv(pwd + outfolder + "Household.csv")
+size_counts = hh.persons.value_counts()
+size_counts = size_counts / size_counts.sum()
+Household['1-Person Household'] = size_counts[1]
+Household['2-Person Household'] = size_counts[2]
+Household['3-Person Household'] = size_counts[3]
+Household['4-Person Household'] = size_counts[4]
+Household['5-Person Household'] = size_counts[5]
+Household['6-Person Household'] = size_counts[6]
+Household['7+ Person Household'] = sum([size_counts[key] for key in size_counts.keys() if key > 7])
+Household.to_csv(pwd + outfolder + "Household.csv")
 #%%
 Person = pd.Series()
 Person['Persons'] = per.shape[0]
@@ -116,15 +124,7 @@ for row in inc_emp.iterrows():
     
 Person.to_csv(pwd + outfolder + "Person" + suffix + ".csv")
 
-# %%
-# activities = pd.read_csv(urbansim+'plans.csv.gz')
-# activities = activities.loc[activities.ActivityElement == 'activity']
-# activities['arrival_time']=0
-# #%%
-# activities.iloc[1:,11]= activities.iloc[:-1,10].values
-# activities['departure_time'].fillna(24,inplace=True)
-# activities['arrival_time'].fillna(0,inplace=True)
-# activities['duration_min'] = (activities['departure_time'] - activities['arrival_time']) * 60
+
 # #%%
 acts = {'home': 'home', 'Home': 'home', 'work': 'Primary Work', 'othmaint': 'Other', 'social': 'Social',
         'univ': 'School', 'othdiscr': 'Other', 'escort': 'Pickup-Dropoff', 'eatout': 'Eat Out',
@@ -137,12 +137,12 @@ modes = {'car': 'SOV', 'car_hov3': 'HOV', 'hov3_teleportation': 'HOV',
 modes_polaris = {'car': 'car_driver', 'car_hov3': 'car_driver', 'hov3_teleportation': 'car_passenger',
          'hov2_teleportation': 'car_passenger', 'car_hov2': 'car_driver', 'ride_hail': 'ride_hail', 'walk': 'walk',
          'bike': 'bike', 'walk_transit': 'transit', 'drive_transit': 'transit'}
-# activities['act'] = activities['ActivityType'].apply(lambda x: acts[x])
-# act_dur = activities[['act','duration_min']].groupby('act').agg('mean')
+
 
 # %%
-plans = pd.read_csv(urbansim + "plans" + suffix + ".csv.gz")
-# plans = pd.read_csv(s3 + 'ITERS/it.10/10.plans.csv.gz')
+
+plans = pd.read_csv(loc + beam_folder + 'ITERS/it.0/0.plans.csv.gz')
+
 # %%
 plans = plans.loc[plans.planSelected, :]
 legindex = np.where(plans.planElementType.str.lower().str.contains("leg"))[0]
@@ -175,14 +175,14 @@ legs.loc[(legs.prevActivityType == "home") & (legs.nextActivityType == "Primary 
 legs.loc[(legs.prevActivityType == "Primary Work") & (legs.nextActivityType == "home"), "tourType"] = "HBW"
 
 # %%
-"""
+
 workCounts, bins = np.histogram(legs.loc[legs.tourType == 'HBW', 'legRouteTravelTime'] / 60, np.arange(0, 62, 2),
                                 density=True)
 nonWorkCounts, bins = np.histogram(legs.loc[legs.tourType != 'HBW', 'legRouteTravelTime'] / 60, np.arange(0, 62, 2),
                                    density=True)
 pd.DataFrame({"Time": bins[:-1], "Work": workCounts * 2, "Discretionary": nonWorkCounts * 2}).to_csv(
     pwd + outfolder + "TripDurationHist" + suffix + ".csv", index=False)
-"""
+
 # %%
 activities = plans.loc[
     plans.planElementType.str.lower().str.contains("activity"), ['personId', 'planElementIndex', 'activityType',
@@ -197,7 +197,7 @@ activities['duration'] = activities.activityEndTime - activities.activityStartTi
 activities.loc[activities['duration'] < 0, 'duration'] = 0
 activities['activityType'] = activities['activityType'].apply(lambda x: acts[x])
 activities.duration.replace(np.inf, np.nan, inplace=True)
-"""
+
 for act in activities['activityType'].unique():
     sub = activities.loc[activities.activityType == act, 'activityStartTime']
     n = sub.size
@@ -215,7 +215,7 @@ actBinCounts, bins = np.histogram(activities.activityEndTime / 3600, np.arange(0
 actBinCounts = np.round(actBinCounts / scaleFactor)
 pd.DataFrame({"Time": bins[:-1], "Activities": actBinCounts}).to_csv(
     pwd + outfolder + "ActivityEndTimeHist" + suffix + ".csv", index=False)
-"""
+
 # %%
 actCounts = activities.value_counts('activityType').iloc[1:]
 actCounts = actCounts / (actCounts.sum())
@@ -299,6 +299,8 @@ pathTraversal['isCAV'] = ((pathTraversal['vehicleType'].str.contains('CAV') == T
 pathTraversal.loc[pathTraversal['isRH'], 'mode_extended'] += '_RH'
 pathTraversal.loc[pathTraversal['isCAV'], 'mode_extended'] += '_CAV'
 
+
+
 pathTraversal['gallons'] = (pathTraversal['primaryFuel'] + pathTraversal['secondaryFuel']) * 8.3141841e-9
 pathTraversal['MWH'] = (pathTraversal['primaryFuel'] + pathTraversal['secondaryFuel']) * 2.77778e-10
 
@@ -315,15 +317,23 @@ pathTraversal.loc[(pathTraversal.mode_extended == 'walk') & (pathTraversal.passe
 pathTraversal.loc[(pathTraversal.mode_extended == 'walk') & (pathTraversal.passengerHours > 1), 'passengerMiles'] = 2
 pathTraversal.loc[(pathTraversal.mode_extended == 'walk') & (pathTraversal.passengerHours > 1), 'passengerHours'] = 1
 
-gb_mode_fuel = pathTraversal[
+#%%
+walkPathTraversals = pathTraversal.loc[pathTraversal.mode_extended == 'walk']
+LPE = events.loc[events.type == "LeavingParkingEvent",:].dropna(how='all', axis=1)
+
+accessPTs = pd.merge(walkPathTraversals, LPE, left_on=['driver','time'], right_on=['driver','time'])
+filteredPathTraversals = pathTraversal.loc[~pathTraversal.index.isin(accessPTs.index),:]
+#%%
+
+gb_mode_fuel = filteredPathTraversals[
     ['mode_extended', 'vehicleMiles', 'vehicleHours', 'gallons', 'primaryFuelType', 'MWH']].groupby(
     ['mode_extended', 'primaryFuelType']).agg('sum')
-gb_mode = pathTraversal[
+gb_mode = filteredPathTraversals[
     ['mode_extended', 'vehicleMiles', 'vehicleHours', 'gallons', 'primaryFuelType', 'passengerMiles', 'MWH']].groupby(
     ['mode_extended']).agg('sum')
 
-s = pathTraversal[['passengerMiles', 'passengerHours']].sum()
-gb_mode_simple = pathTraversal[
+s = filteredPathTraversals[['passengerMiles', 'passengerHours']].sum()
+gb_mode_simple = filteredPathTraversals[
     ['mode', 'vehicleMiles', 'vehicleHours', 'gallons', 'primaryFuelType', 'passengerMiles', 'MWH']].groupby(
     ['mode']).agg('sum')
 
@@ -353,10 +363,10 @@ Energy.to_csv(pwd + outfolder + "Energy" + suffix + ".csv")
 
 # %%
 
-uniqueAgents = len(activities.personId.unique())
+uniqueAgents = len(per)
 Summary = pd.Series()
-Summary['TotalTrips_Auto'] = np.sum(legs.legMode.isin(
-    ['car', 'drive_transit', 'ride_hail', 'ride_hail_pooled', 'ride_hail_transit', 'car_hov2', 'car_hov3'])) / scaleFactor
+# Summary['TotalTrips_Auto'] = np.sum(legs.legMode.isin(
+#     ['car', 'drive_transit', 'ride_hail', 'ride_hail_pooled', 'ride_hail_transit', 'car_hov2', 'car_hov3'])) / scaleFactor
 Summary['PMT'] = s['passengerMiles'] / scaleFactor / 1e6
 Summary['PHT'] = s['passengerHours'] / scaleFactor / 1e6
 Summary['VMT'] = gb_mode_simple.loc[['car', 'car_hov2', 'car_hov3'], 'vehicleMiles'].sum() / scaleFactor / 1e6
@@ -366,8 +376,8 @@ Summary['AverageVehicleSpeed'] = gb_mode_simple.loc[['car', 'car_hov2', 'car_hov
 Summary['AveragePersonSpeed'] = s['passengerMiles'] / s['passengerHours']
 Summary['TotalEnergy'] = Energy['Total_Auto'] + Energy['Total_TNC'] + Energy['Total_Transit']
 Summary['TravelEfficiency'] = s['passengerMiles'] / Summary['TotalEnergy'] / 1e6
-Summary['PerCapitaPMT'] = s['passengerMiles'] / uniqueAgents
-Summary['PerCapitaPHT'] = s['passengerHours'] / uniqueAgents
+Summary['PerCapitaPMT'] = s['passengerMiles'] / uniqueAgents / scaleFactor
+Summary['PerCapitaPHT'] = s['passengerHours'] / uniqueAgents / scaleFactor
 Summary['PerCapitaVMT'] = (gb_mode_simple.loc['car_hov2', 'vehicleMiles'] / scaleFactor + gb_mode_simple.loc[
     'car_hov3', 'vehicleMiles'] / scaleFactor + gb_mode_simple.loc['car', 'vehicleMiles'] / scaleFactor + gb_mode_simple.loc[
                                'bus', 'vehicleMiles'] + gb_mode_simple.loc['tram', 'vehicleMiles']) / uniqueAgents
