@@ -202,10 +202,10 @@ def collectAllData(inDirectory, outDirectory, prefix):
         PTs = addGeometryIdToDataFrame(PTs, BGs, 'endX', 'endY', 'endBlockGroup')
         PTs.index.set_names('PathTraversalID', inplace=True)
 
-    trips.to_csv(outDirectory + '/' + prefix + '.trips.csv', index=True)
-    vehiclePathPassenger.to_csv(outDirectory + '/' + prefix + '.passengerToPathTraversal.csv', index=False)
-    PTs.to_csv(outDirectory + '/' + prefix + '.pathTraversals.csv', index=True)
-    activities.to_csv(outDirectory + '/' + prefix + '.activities.csv', index=True)
+    trips.to_csv(outDirectory + '/trips.csv', index=True)
+    vehiclePathPassenger.to_csv(outDirectory + '/passengerToPathTraversal.csv', index=False)
+    PTs.to_csv(outDirectory + '/pathTraversals.csv', index=True)
+    activities.to_csv(outDirectory + '/activities.csv', index=True)
 
 
 if __name__ == '__main__':
