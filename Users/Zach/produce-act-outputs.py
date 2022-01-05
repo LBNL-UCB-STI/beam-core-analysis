@@ -1,4 +1,3 @@
-import geopandas as gpd
 import pandas as pd
 
 
@@ -16,6 +15,11 @@ def fixPathTraversals(PTs):
     PTs['vehicleMiles'] = PTs['length'] / 1609.34
     PTs['passengerMiles'] = (PTs['length'] * PTs['occupancy']) / 1609.34
     PTs['totalEnergyInJoules'] = PTs['primaryFuel'] + PTs['secondaryFuel']
+    PTs['gallonsGasoline'] = 0
+    PTs.loc[PTs['primaryFuelType'] == 'gasoline',
+            'gallonsGasoline'] += PTs.loc[PTs['primaryFuelType'] == 'gasoline', 'primaryFuel'] * 8.3141841e-9
+    PTs.loc[PTs['secondaryFuelType'] == 'gasoline',
+            'gallonsGasoline'] += PTs.loc[PTs['secondaryFuelType'] == 'gasoline', 'secondaryFuel'] * 8.3141841e-9
     PTs.drop(columns=['numPassengers', 'length'], inplace=True)
     return PTs
 
@@ -36,6 +40,7 @@ def processEvents(directory):
     PTs = []
     PEVs = []
     PLVs = []
+    print('Reading ', fullPath)
     for chunk in pd.read_csv(fullPath, chunksize=500000):
         if sum((chunk['type'] == 'PathTraversal')) > 0:
             chunk['vehicle'] = chunk['vehicle'].astype(str)
@@ -88,16 +93,19 @@ def processPlans(directory):
     trips = []
     activities = []
     personToTripDeparture = {}
+    print('Reading ', fullPath)
     for chunk in pd.read_csv(fullPath, chunksize=100000):
-        legs = chunk.loc[(chunk['planElementType'].str.lower().str.contains('leg')) & chunk['planSelected']].dropna(how='all', axis=1)
-        legsSub = legs[['personId', 'legMode', 'legDepartureTime', 'legTravelTime', 'legRouteStartLink',
-                        'legRouteEndLink', 'legRouteTravelTime', 'legRouteDistance', 'planIndex', 'planElementIndex']]
+        legs = chunk.loc[(chunk['planElementType'].str.lower().str.contains('leg')) & chunk['planSelected']].dropna(
+            how='all', axis=1)
+        legsSub = legs[['personId', 'legMode', 'legDepartureTime', 'legTravelTime', 'planIndex', 'planElementIndex']]
         for rowID, val in legsSub.iterrows():
             personToTripDeparture.setdefault(val.personId, []).append(
                 {"planID": (val.planIndex, val.planElementIndex), "departureTime": val.legDepartureTime,
                  "travelTime": val.legTravelTime})
         trips.append(legsSub)
-        acts = chunk.loc[(chunk['planElementType'].str.lower().str.contains('activity')) & chunk['planSelected']].dropna(how='all', axis=1)
+        acts = chunk.loc[
+            (chunk['planElementType'].str.lower().str.contains('activity')) & chunk['planSelected']].dropna(how='all',
+                                                                                                            axis=1)
 
         actsSub = acts[['personId', 'activityType', 'activityLocationX', 'activityLocationY', 'activityEndTime']]
         activities.append(actsSub)
@@ -122,7 +130,7 @@ def personToPathTraversal(PTs, PEVs, PLVs, personToTripDeparture):
                 if person in personToTripDeparture:
                     planTrips = personToTripDeparture[person]
                     tripsLeavingBeforeDeparture = [(-1, -1)] + [t['planID'] for t in planTrips if
-                                                          t['departureTime'] <= (departureTime + 1800)]
+                                                                t['departureTime'] <= (departureTime + 1800)]
                 else:
                     tripsLeavingBeforeDeparture = [(-1, -1)]
                 endTimes = PLVlookup[(person, vehicle)]
@@ -143,14 +151,14 @@ def personToPathTraversal(PTs, PEVs, PLVs, personToTripDeparture):
                 #         ptDepartureTime = PTs.at[leg, 'departureTime']
                 #         if ptDepartureTime >= departureTime:
                 #             legs[leg].append(person)
-                            # # personToPT[person].append(leg)
+                # # personToPT[person].append(leg)
             else:
                 for leg in legs.keys():
                     ptDepartureTime = PTs.at[leg, 'departureTime']
                     if person in personToTripDeparture:
                         planTrips = personToTripDeparture[person]
                         tripsLeavingBeforeDeparture = [(-1, -1)] + [t['planID'] for t in planTrips if
-                                                              t['departureTime'] <= (departureTime + 1800)]
+                                                                    t['departureTime'] <= (departureTime + 1800)]
                     else:
                         tripsLeavingBeforeDeparture = [(-1, -1)]
                     lastTripBeforeDeparture = tripsLeavingBeforeDeparture[-1]
@@ -201,11 +209,9 @@ def collectAllData(inDirectory, outDirectory, prefix):
 
 
 if __name__ == '__main__':
-    # directory = 'https://beam-outputs.s3.amazonaws.com/pilates-outputs/15thSep2019/c_ht/beam/sfbay-smart-c-ht' \
-    #             '-pilates__2019-09-13_18-00-40/ITERS/it.15/15.'
-    inDirectory = 'data'
-    prefixes = ['newyork-september', 'newyork-baseline', 'newyork-newnormal']
-    outDirectory = 'out'
+    inDirectory = 'https://beam-outputs.s3.amazonaws.com/pilates-outputs/austin-2010-2018-central/2018/beam_outputs'
+    prefixes = ['austin-pilates-base__2021-12-16_00-35-49_vre/ITERS/it.0/0']
+    outDirectory = 'out/austin-pilates'
     for prefix in prefixes:
         collectAllData(inDirectory, outDirectory, prefix)
 
