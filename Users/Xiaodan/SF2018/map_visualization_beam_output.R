@@ -3,7 +3,7 @@ library(dplyr)
 library(data.table)
 library(RColorBrewer)
 
-file_link <- '/Volumes/GoogleDrive/My Drive/BEAM-CORE/BEAM Validation/sample output/SFB2014/'
+file_link <- '/Volumes/GoogleDrive/My Drive/BEAM-CORE/BEAM Validation/sample output/SFB2021V4/'
 
 beam_network_out <- st_read(paste0(file_link, "beam_network_out.geojson"))
 link_stats <- read.csv(paste0(file_link, 'processed_linkstats.csv'))

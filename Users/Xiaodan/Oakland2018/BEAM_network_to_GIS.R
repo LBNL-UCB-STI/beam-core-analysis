@@ -50,3 +50,18 @@ plot(beam_network_splits[, 'NAME'], axes = TRUE, key.pos = 4, key.width = lcm(4.
 beam_network_splits_df <- beam_network_splits %>% st_drop_geometry()
 write.csv(beam_network_splits_df, paste0(file_link, "beam_network_by_county.csv"))
 st_write(beam_network_splits, paste0(file_link, "beam_network_by_county.geojson"))
+
+
+# select links within Oakland + Alameda Boundary
+processed_sf_network <- st_read(paste0(file_link, "beam_network_by_county.geojson"))
+oakland_boundary <- st_read(paste0(file_link, "/Oakland+Alameda+TAZ/Transportation_Analysis_Zones.shp"))
+oakland_boundary_combined <- st_union(oakland_boundary)
+
+oakland_network <- st_intersection(processed_sf_network, oakland_boundary_combined)
+plot(st_geometry(oakland_network), col = 'blue', add = TRUE)
+
+st_write(oakland_network, paste0(file_link, "beam_network_by_county_oak.geojson"))
+
+oakland_network_df <- oakland_network %>% st_drop_geometry()
+write.csv(oakland_network_df, paste0(file_link, "beam_network_by_county_oak.csv"))
+
