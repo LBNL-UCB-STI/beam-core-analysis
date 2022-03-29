@@ -74,18 +74,3 @@ st_write(selected_beam_network_filtered, 'beam_network_npmrds_screenline.geojson
 write.csv(selected_beam_network_filtered_df, 'beam_network_npmrds_screenline.csv')
 # SELECT AUSTIN SPEED DATA
 
-
-austin_npmrds_station <- austin_npmrds_station %>% 
-  select(Tmc, TmcType, RoadNumber, RoadName, IsPrimary, FirstName, Zip, StartLat, StartLong, EndLat, EndLong, FRC,
-  Urban_Code, FacilType, ThruLanes, Route_Numb,
-         Route_Sign, Route_Qual, AADT_Singl, AADT_Combi, Truck, shape_area, shape_leng)
-austin_npmrds_data <- merge(all, austin_npmrds_station, 
-                            by = 'Tmc', all.x=FALSE)
-
-plot_sample <- austin_npmrds_data[austin_npmrds_data$hour==18,]
-plot(plot_sample[,'mean.spd'])
-
-austin_npmrds_data_out <- austin_npmrds_data %>% select(Tmc, fips, f_sys, station, dir, month, day, hour, flow_per_lane,
-                                                        speed, state, ThruLanes.x, Miles, mean.spd, GEOID, County, AADT,
-                                                        density_per_lane, StartLat, StartLong, EndLat, EndLong, Truck)
-write.csv(austin_npmrds_data_out, '/Volumes/GoogleDrive/My Drive/BEAM-CORE/BEAM Validation/data for validation/Austin/NPMRDS/austin_NPMRDS.csv')
