@@ -1,7 +1,8 @@
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-
+import boto
+import boto.s3
 
 def fixPathTraversals(PTs):
     PTs['duration'] = PTs['arrivalTime'] - PTs['departureTime']
@@ -45,18 +46,18 @@ def ridersToList(val):
 
 
 def processEvents(directory):
-    fullPath = directory + 'events.csv.gz'
+    fullPath = directory + 'ITERS/it.0/0.events.csv.gz'
     PTs = []
     PEVs = []
     PLVs = []
     print('Reading ', fullPath)
-    for chunk in pd.read_csv(fullPath, chunksize=500000):
+    for chunk in pd.read_csv("s3://beam-outputs/" + fullPath, chunksize=1500000):
         if sum((chunk['type'] == 'PathTraversal')) > 0:
             chunk['vehicle'] = chunk['vehicle'].astype(str)
             PT = chunk.loc[(chunk['type'] == 'PathTraversal') & (chunk['length'] > 0)].dropna(how='all', axis=1)
             PT['departureTime'] = PT['departureTime'].astype(int)
             PT['arrivalTime'] = PT['arrivalTime'].astype(int)
-            if 'riders' in PT.colums:
+            if 'riders' in PT.columns:
                 PT['riders'] = PT.riders.apply(ridersToList)
             else:
                 PT['riders'] = [[]] * len(PT)
@@ -82,8 +83,9 @@ def processEvents(directory):
     return PTs, pd.concat(PEVs), pd.concat(PLVs)
 
 
-def createLabeledNetwork(networkPath, gdf):
-    network = pd.read_csv(networkPath)[['linkId', 'fromLocationX', 'fromLocationY']]
+def createLabeledNetwork(directory, gdf):
+    fullPath = 's3://beam-outputs/' + directory + 'network.csv.gz'
+    network = pd.read_csv(fullPath)[['linkId', 'fromLocationX', 'fromLocationY']]
     network = gpd.GeoDataFrame(network, geometry=gpd.points_from_xy(network.fromLocationX, network.fromLocationY))
     network.crs = {'init': 'epsg:26910'}
     joined = gpd.sjoin(network, gdf[['geometry', 'blkgrpid']].to_crs('epsg:26910'))
@@ -102,20 +104,28 @@ def labelTrips(trips, labeledNetwork):
 
 def addTimesToPlans(plans):
     legInds = np.where(plans['ActivityElement'].str.lower() == "leg")[0]
-    plans['legDepartureTime'] = np.nan
-    plans['legDepartureTime'].iloc[legInds] = plans['departure_time'].iloc[legInds - 1].copy()
+    plans.loc[:, 'legDepartureTime'] = np.nan
+    plans.loc[:, 'legDepartureTime'].iloc[legInds] = plans['departure_time'].iloc[legInds - 1].copy()
+    plans.loc[:, 'originX'] = np.nan
+    plans.loc[:, 'originX'].iloc[legInds] = plans['x'].iloc[legInds - 1].copy()
+    plans.loc[:, 'originY'] = np.nan
+    plans.loc[:, 'originY'].iloc[legInds] = plans['y'].iloc[legInds - 1].copy()
+    plans.loc[:, 'destinationX'] = np.nan
+    plans.loc[:, 'destinationX'].iloc[legInds] = plans['x'].iloc[legInds + 1].copy()
+    plans.loc[:, 'destinationY'] = np.nan
+    plans.loc[:, 'destinationY'].iloc[legInds] = plans['y'].iloc[legInds + 1].copy()
     return plans
 
 def processPlans(directory):
-    fullPath = directory + 'final_plans.csv'
+    fullPath = directory + 'plans.csv.gz'
     trips = []
     activities = []
     personToTripDeparture = {}
     print(fullPath)
-    for chunk in pd.read_csv(fullPath, chunksize=100000):
+    for chunk in pd.read_csv("s3://beam-outputs/" + fullPath, chunksize=100000):
         chunk = addTimesToPlans(chunk)
         legs = chunk.loc[(chunk['ActivityElement'].str.lower().str.contains('leg'))].dropna(how='all', axis=1)
-        legsSub = legs[['person_id', 'legDepartureTime',  'PlanElementIndex']]
+        legsSub = legs[['person_id', 'legDepartureTime',  'PlanElementIndex', 'originX', 'originY', 'destinationX', 'destinationY']]
         for rowID, val in legsSub.iterrows():
             personToTripDeparture.setdefault(val.person_id, []).append(
                 {"planID": val.PlanElementIndex, "departureTime": val.legDepartureTime * 3600.0})
@@ -195,43 +205,41 @@ def personToPathTraversal(PTs, PEVs, PLVs, personToTripDeparture):
     return vehiclePathPassenger
 
 
-def collectAllData(inDirectory, outDirectory, popDirectory, prefix):
-    filePath = inDirectory + '/' + prefix + '.'
-    inputFilePath = inDirectory + '/' + popDirectory + '/'
+def collectAllData(inDirectory, outDirectory, popDirectory):
+    trips, activities, personToTripDeparture = processPlans(popDirectory)
 
-    trips, activities, personToTripDeparture = processPlans(inputFilePath)
+    PTs, PEVs, PLVs = processEvents(inDirectory)
 
-    PTs, PEVs, PLVs = processEvents(filePath)
-    # personToPathTraversal(PTs, PEVs, PLVs, personToTripDeparture)
-    vehiclePathPassenger = personToPathTraversal(PTs, PEVs, PLVs, personToTripDeparture)
-    # BGs = gpd.read_file('scenario/sfbay-blockg  roups-2010.zip')
+    BGs = gpd.read_file('scenario/sfbay-blockgroups-2010/641aa0d4-ce5b-4a81-9c30-8790c4ab8cfb202047-1-wkkklf.j5ouj.shp')
 
-    if False:
-        BGs = gpd.read_file('scenario/block_groups_austin/block_groups_austin.shp')
+    trips = addGeometryIdToDataFrame(trips, BGs, 'originX', 'originY', 'startBlockGroup')
+    trips = addGeometryIdToDataFrame(trips, BGs, 'destinationX', 'destinationY', 'endBlockGroup')
 
-        network = createLabeledNetwork('data/austin.network.csv.gz', BGs)
-        trips = labelTrips(trips, network)
-        activities = addGeometryIdToDataFrame(activities, BGs, 'activityLocationX', 'activityLocationY',
+    activities = addGeometryIdToDataFrame(activities, BGs, 'activityLocationX', 'activityLocationY',
                                               'activityBlockGroup', df_geom='epsg:26910')
 
-        PTs = addGeometryIdToDataFrame(PTs, BGs, 'startX', 'startY', 'startBlockGroup')
-        PTs = addGeometryIdToDataFrame(PTs, BGs, 'endX', 'endY', 'endBlockGroup')
-        PTs.index.set_names('PathTraversalID', inplace=True)
+    PTs = addGeometryIdToDataFrame(PTs, BGs, 'startX', 'startY', 'startBlockGroup')
+    PTs = addGeometryIdToDataFrame(PTs, BGs, 'endX', 'endY', 'endBlockGroup')
+    PTs.index.set_names('PathTraversalID', inplace=True)
 
-    trips.to_csv(outDirectory + '/' + prefix + '.trips.csv', index=True)
-    vehiclePathPassenger.to_csv(outDirectory + '/' + prefix + '.passengerToPathTraversal.csv', index=False)
-    PTs.to_csv(outDirectory + '/' + prefix + '.pathTraversals.csv', index=True)
-    activities.to_csv(outDirectory + '/' + prefix + '.activities.csv', index=True)
+    trips.to_csv(outDirectory + '/trips.csv.gz', index=True)
+    PTs.to_csv(outDirectory + '/pathTraversals.csv.gz', index=True)
+    activities.to_csv(outDirectory + '/activities.csv.gz', index=True)
 
 
 if __name__ == '__main__':
     # directory = 'https://beam-outputs.s3.amazonaws.com/pilates-outputs/15thSep2019/c_ht/beam/sfbay-smart-c-ht' \
     #             '-pilates__2019-09-13_18-00-40/ITERS/it.15/15.'
-    inDirectory = 'https://beam-outputs.s3.amazonaws.com/pilates-outputs/sfbay-2010-central-20210114'
-    popDirectory = 'activitysim'
-    prefixes = ['beam/sfbay-pilates-base__2022-01-14_17-54-11_cda/ITERS/it.0/0']
-    outDirectory = 'out'
-    for prefix in prefixes:
-        collectAllData(inDirectory, outDirectory, popDirectory, prefix)
+
+    conn = boto.s3.connect_to_region('us-east-2')
+    bucket = conn.get_bucket('beam-outputs')
+    runName = 'sfbay-transit_frequencies_0.5-20220228'
+    folders = bucket.list("pilates-outputs/" + runName + "/beam/", "/")
+    allBeamOutputs = [folder.name for folder in folders]
+
+    inDirectory = allBeamOutputs[-1]
+    popDirectory = inDirectory.replace("/beam/", "/activitysim/")
+    outDirectory = 'out/' + runName
+    collectAllData(inDirectory, outDirectory, popDirectory)
 
     print('done')
