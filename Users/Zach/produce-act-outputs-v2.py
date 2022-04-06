@@ -28,7 +28,7 @@ def fixPathTraversals(PTs):
 
 def addGeometryIdToDataFrame(df, gdf, xcol, ycol, idColumn="geometry", df_geom='epsg:4326'):
     gdf_data = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df[xcol], df[ycol]))
-    gdf_data.crs = {'init': df_geom}
+    gdf_data.set_crs(df_geom)
     joined = gpd.sjoin(gdf_data.to_crs('epsg:26910'), gdf.to_crs('epsg:26910'))
     gdf_data = gdf_data.merge(joined['blkgrpid'], left_index=True, right_index=True, how="left")
     gdf_data.rename(columns={'blkgrpid': idColumn}, inplace=True)
@@ -86,7 +86,7 @@ def createLabeledNetwork(directory, gdf):
     fullPath = 's3://beam-outputs/' + directory + 'network.csv.gz'
     network = pd.read_csv(fullPath)[['linkId', 'fromLocationX', 'fromLocationY']]
     network = gpd.GeoDataFrame(network, geometry=gpd.points_from_xy(network.fromLocationX, network.fromLocationY))
-    network.crs = {'init': 'epsg:26910'}
+    network.crs = 'epsg:26910'
     joined = gpd.sjoin(network, gdf[['geometry', 'blkgrpid']].to_crs('epsg:26910'))
     network = pd.DataFrame(joined.drop(columns=['geometry', 'index_right'])).rename(columns={'blkgrpid': 'blockGroup'})
     return network
