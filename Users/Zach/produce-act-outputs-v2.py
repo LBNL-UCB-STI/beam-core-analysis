@@ -214,8 +214,7 @@ def collectAllData(inDirectory, outDirectory, popDirectory):
     trips = addGeometryIdToDataFrame(trips, BGs, 'originX', 'originY', 'startBlockGroup')
     trips = addGeometryIdToDataFrame(trips, BGs, 'destinationX', 'destinationY', 'endBlockGroup')
 
-    activities = addGeometryIdToDataFrame(activities, BGs, 'activityLocationX', 'activityLocationY',
-                                              'activityBlockGroup', df_geom='epsg:26910')
+    activities = addGeometryIdToDataFrame(activities, BGs, 'x', 'y', 'activityBlockGroup')
 
     PTs = addGeometryIdToDataFrame(PTs, BGs, 'startX', 'startY', 'startBlockGroup')
     PTs = addGeometryIdToDataFrame(PTs, BGs, 'endX', 'endY', 'endBlockGroup')
