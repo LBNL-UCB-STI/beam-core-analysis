@@ -61,7 +61,7 @@ def processEvents(directory):
                 PT['riders'] = [[]] * len(PT)
             PTs.append(PT[['driver', 'vehicle', 'mode', 'length', 'startX', 'startY', 'endX', 'endY', 'vehicleType',
                            'arrivalTime', 'departureTime', 'primaryFuel', 'primaryFuelType', 'secondaryFuel',
-                           'secondaryFuelType', 'numPassengers', 'riders']])
+                           'secondaryFuelType', 'numPassengers']])
             PEV = chunk.loc[(chunk.type == "PersonEntersVehicle") &
                             ~(chunk['person'].apply(str).str.contains('Agent').fillna(False)) &
                             ~(chunk['vehicle'].str.contains('body').fillna(False)), :].dropna(how='all', axis=1)
