@@ -104,15 +104,15 @@ def labelTrips(trips, labeledNetwork):
 def addTimesToPlans(plans):
     legInds = np.where(plans['ActivityElement'].str.lower() == "leg")[0]
     plans.loc[:, 'legDepartureTime'] = np.nan
-    plans.loc[:, 'legDepartureTime'].iloc[legInds] = plans['departure_time'].iloc[legInds - 1].copy()
+    plans.iloc[legInds, plans.columns.get_loc('legDepartureTime')] = plans['departure_time'].iloc[legInds - 1].copy()
     plans.loc[:, 'originX'] = np.nan
-    plans.loc[:, 'originX'].iloc[legInds] = plans['x'].iloc[legInds - 1].copy()
+    plans.iloc[legInds, plans.columns.get_loc('originX')] = plans['x'].iloc[legInds - 1].copy()
     plans.loc[:, 'originY'] = np.nan
-    plans.loc[:, 'originY'].iloc[legInds] = plans['y'].iloc[legInds - 1].copy()
+    plans.iloc[legInds, plans.columns.get_loc('originY')] = plans['y'].iloc[legInds - 1].copy()
     plans.loc[:, 'destinationX'] = np.nan
-    plans.loc[:, 'destinationX'].iloc[legInds] = plans['x'].iloc[legInds + 1].copy()
+    plans.iloc[legInds, plans.columns.get_loc('destinationX')] = plans['x'].iloc[legInds + 1].copy()
     plans.loc[:, 'destinationY'] = np.nan
-    plans.loc[:, 'destinationY'].iloc[legInds] = plans['y'].iloc[legInds + 1].copy()
+    plans.iloc[legInds, plans.columns.get_loc('destinationY')] = plans['y'].iloc[legInds + 1].copy()
     return plans
 
 def processPlans(directory):
