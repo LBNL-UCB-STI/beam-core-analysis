@@ -244,7 +244,7 @@ if __name__ == '__main__':
                "sfbay-transit_speed_1.5-20220228"]
     for runName in allRuns:
         folders = bucket.list("pilates-outputs/" + runName + "/beam/", "/")
-        allBeamOutputs = [folder.name for folder in folders if ('year' in folder.name)]
+        allBeamOutputs = [folder.name for folder in folders if ('year' in folder.name) & ('final' not in folder.name)]
         yearToMaxIter = dict()
         for dir in allBeamOutputs:
             yr = dir.split('-')[-3]
