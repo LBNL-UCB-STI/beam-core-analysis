@@ -50,7 +50,7 @@ def processEvents(directory):
     PEVs = []
     PLVs = []
     print('Reading ', fullPath)
-    for chunk in pd.read_csv("s3://beam-outputs/" + fullPath, chunksize=1500000):
+    for chunk in pd.read_csv("s3://beam-outputs/" + fullPath, chunksize=2500000):
         if sum((chunk['type'] == 'PathTraversal')) > 0:
             chunk['vehicle'] = chunk['vehicle'].astype(str)
             PT = chunk.loc[(chunk['type'] == 'PathTraversal') & (chunk['length'] > 0)].dropna(how='all', axis=1)
@@ -210,16 +210,18 @@ def collectAllData(inDirectory, outDirectory, popDirectory):
     PTs, PEVs, PLVs = processEvents(inDirectory)
 
     BGs = gpd.read_file('scenario/sfbay-blockgroups-2010/641aa0d4-ce5b-4a81-9c30-8790c4ab8cfb202047-1-wkkklf.j5ouj.shp')
-
+    print("Adding blockgroups to trip origins")
     trips = addGeometryIdToDataFrame(trips, BGs, 'originX', 'originY', 'startBlockGroup')
+    print("Adding blockgroups to trip destinations")
     trips = addGeometryIdToDataFrame(trips, BGs, 'destinationX', 'destinationY', 'endBlockGroup')
-
+    print("Adding blockgroups to activities")
     activities = addGeometryIdToDataFrame(activities, BGs, 'x', 'y', 'activityBlockGroup')
-
+    print("Adding blockgroups to path traversal origins")
     PTs = addGeometryIdToDataFrame(PTs, BGs, 'startX', 'startY', 'startBlockGroup')
+    print("Adding blockgroups to path traversal destinations")
     PTs = addGeometryIdToDataFrame(PTs, BGs, 'endX', 'endY', 'endBlockGroup')
     PTs.index.set_names('PathTraversalID', inplace=True)
-
+    print("Writing trips to ", outDirectory + 'trips.csv.gz')
     trips.to_csv(outDirectory + 'trips.csv.gz', index=True)
     PTs.to_csv(outDirectory + 'pathTraversals.csv.gz', index=True)
     activities.to_csv(outDirectory + 'activities.csv.gz', index=True)
