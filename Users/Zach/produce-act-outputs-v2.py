@@ -55,10 +55,10 @@ def processEvents(directory):
             PT = chunk.loc[(chunk['type'] == 'PathTraversal') & (chunk['length'] > 0)].dropna(how='all', axis=1)
             PT['departureTime'] = PT['departureTime'].astype(int)
             PT['arrivalTime'] = PT['arrivalTime'].astype(int)
-            if 'riders' in PT.columns:
-                PT['riders'] = PT.riders.apply(ridersToList)
-            else:
-                PT['riders'] = [[]] * len(PT)
+            # if 'riders' in PT.columns:
+            #     PT['riders'] = PT.riders.apply(ridersToList)
+            # else:
+            #     PT['riders'] = [[]] * len(PT)
             PTs.append(PT[['driver', 'vehicle', 'mode', 'length', 'startX', 'startY', 'endX', 'endY', 'vehicleType',
                            'arrivalTime', 'departureTime', 'primaryFuel', 'primaryFuelType', 'secondaryFuel',
                            'secondaryFuelType', 'numPassengers']])
