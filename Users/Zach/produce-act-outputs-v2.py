@@ -28,7 +28,7 @@ def fixPathTraversals(PTs):
 
 def addGeometryIdToDataFrame(df, gdf, xcol, ycol, idColumn="geometry", df_geom='epsg:4326'):
     gdf_data = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df[xcol], df[ycol]), crs=df_geom)
-    joined = gpd.sjoin(gdf_data.to_crs('epsg:26910'), gdf.to_crs('epsg:26910'))
+    joined = gpd.sjoin(gdf_data.to_crs('epsg:26910'), gdf)
     gdf_data = gdf_data.merge(joined['blkgrpid'], left_index=True, right_index=True, how="left")
     gdf_data.rename(columns={'blkgrpid': idColumn}, inplace=True)
     df = pd.DataFrame(gdf_data.drop(columns='geometry'))
@@ -124,9 +124,9 @@ def processPlans(directory):
     df = addTimesToPlans(df)
     legs = df.loc[(df['ActivityElement'].str.lower().str.contains('leg'))].dropna(how='all', axis=1)
     legsSub = legs[['person_id', 'legDepartureTime',  'PlanElementIndex', 'originX', 'originY', 'destinationX', 'destinationY']]
-    for rowID, val in legsSub.iterrows():
-        personToTripDeparture.setdefault(val.person_id, []).append(
-            {"planID": val.PlanElementIndex, "departureTime": val.legDepartureTime * 3600.0})
+    # for rowID, val in legsSub.iterrows():
+    #     personToTripDeparture.setdefault(val.person_id, []).append(
+    #         {"planID": val.PlanElementIndex, "departureTime": val.legDepartureTime * 3600.0})
     trips.append(legsSub)
     acts = df.loc[(df['ActivityElement'].str.lower().str.contains('activity'))].dropna(how='all', axis=1)
 
@@ -210,7 +210,7 @@ def collectAllData(inDirectory, outDirectory, popDirectory):
 
     BGs = gpd.read_file(
         'scenario/sfbay-blockgroups-2010/641aa0d4-ce5b-4a81-9c30-8790c4ab8cfb202047-1-wkkklf.j5ouj.shp').set_crs(
-        'epsg:4326')
+        'epsg:4326').to_crs('epsg:26910')
     print("Adding blockgroups to trip origins")
     trips = addGeometryIdToDataFrame(trips, BGs, 'originX', 'originY', 'startBlockGroup')
     print("Adding blockgroups to trip destinations")
