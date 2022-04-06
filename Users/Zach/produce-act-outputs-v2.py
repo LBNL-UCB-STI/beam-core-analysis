@@ -1,7 +1,6 @@
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-import boto
 import boto.s3
 
 def fixPathTraversals(PTs):
@@ -122,18 +121,18 @@ def processPlans(directory):
     activities = []
     personToTripDeparture = {}
     print(fullPath)
-    for chunk in pd.read_csv("s3://beam-outputs/" + fullPath, chunksize=100000):
-        chunk = addTimesToPlans(chunk)
-        legs = chunk.loc[(chunk['ActivityElement'].str.lower().str.contains('leg'))].dropna(how='all', axis=1)
-        legsSub = legs[['person_id', 'legDepartureTime',  'PlanElementIndex', 'originX', 'originY', 'destinationX', 'destinationY']]
-        for rowID, val in legsSub.iterrows():
-            personToTripDeparture.setdefault(val.person_id, []).append(
-                {"planID": val.PlanElementIndex, "departureTime": val.legDepartureTime * 3600.0})
-        trips.append(legsSub)
-        acts = chunk.loc[(chunk['ActivityElement'].str.lower().str.contains('activity'))].dropna(how='all', axis=1)
+    df = pd.read_csv("s3://beam-outputs/" + fullPath)
+    df = addTimesToPlans(df)
+    legs = df.loc[(df['ActivityElement'].str.lower().str.contains('leg'))].dropna(how='all', axis=1)
+    legsSub = legs[['person_id', 'legDepartureTime',  'PlanElementIndex', 'originX', 'originY', 'destinationX', 'destinationY']]
+    for rowID, val in legsSub.iterrows():
+        personToTripDeparture.setdefault(val.person_id, []).append(
+            {"planID": val.PlanElementIndex, "departureTime": val.legDepartureTime * 3600.0})
+    trips.append(legsSub)
+    acts = df.loc[(df['ActivityElement'].str.lower().str.contains('activity'))].dropna(how='all', axis=1)
 
-        actsSub = acts[['person_id', 'ActivityType', 'x', 'y', 'departure_time']]
-        activities.append(actsSub)
+    actsSub = acts[['person_id', 'ActivityType', 'x', 'y', 'departure_time']]
+    activities.append(actsSub)
     return pd.concat(trips), pd.concat(activities), personToTripDeparture
 
 
