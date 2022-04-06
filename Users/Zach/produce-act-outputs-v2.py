@@ -209,7 +209,9 @@ def collectAllData(inDirectory, outDirectory, popDirectory):
 
     PTs, PEVs, PLVs = processEvents(inDirectory)
 
-    BGs = gpd.read_file('scenario/sfbay-blockgroups-2010/641aa0d4-ce5b-4a81-9c30-8790c4ab8cfb202047-1-wkkklf.j5ouj.shp')
+    BGs = gpd.read_file(
+        'scenario/sfbay-blockgroups-2010/641aa0d4-ce5b-4a81-9c30-8790c4ab8cfb202047-1-wkkklf.j5ouj.shp').set_crs(
+        'epsg:4326')
     print("Adding blockgroups to trip origins")
     trips = addGeometryIdToDataFrame(trips, BGs, 'originX', 'originY', 'startBlockGroup')
     print("Adding blockgroups to trip destinations")
