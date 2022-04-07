@@ -28,7 +28,7 @@ def fixPathTraversals(PTs):
 
 def addGeometryIdToDataFrame(df, gdf, xcol, ycol, idColumn="geometry", df_geom='epsg:4326'):
     gdf_data = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df[xcol], df[ycol]))
-    gdf_data.crs = {'init': df_geom}
+    gdf_data.set_crs(df_geom)
     joined = gpd.sjoin(gdf_data.to_crs('epsg:26910'), gdf.to_crs('epsg:26910'))
     gdf_data = gdf_data.merge(joined['blkgrpid'], left_index=True, right_index=True, how="left")
     gdf_data.rename(columns={'blkgrpid': idColumn}, inplace=True)
@@ -86,7 +86,7 @@ def createLabeledNetwork(directory, gdf):
     fullPath = 's3://beam-outputs/' + directory + 'network.csv.gz'
     network = pd.read_csv(fullPath)[['linkId', 'fromLocationX', 'fromLocationY']]
     network = gpd.GeoDataFrame(network, geometry=gpd.points_from_xy(network.fromLocationX, network.fromLocationY))
-    network.crs = {'init': 'epsg:26910'}
+    network.crs = 'epsg:26910'
     joined = gpd.sjoin(network, gdf[['geometry', 'blkgrpid']].to_crs('epsg:26910'))
     network = pd.DataFrame(joined.drop(columns=['geometry', 'index_right'])).rename(columns={'blkgrpid': 'blockGroup'})
     return network
@@ -104,15 +104,15 @@ def labelTrips(trips, labeledNetwork):
 def addTimesToPlans(plans):
     legInds = np.where(plans['ActivityElement'].str.lower() == "leg")[0]
     plans.loc[:, 'legDepartureTime'] = np.nan
-    plans.loc[:, 'legDepartureTime'].iloc[legInds] = plans['departure_time'].iloc[legInds - 1].copy()
+    plans.iloc[legInds, plans.columns.get_loc('legDepartureTime')] = plans['departure_time'].iloc[legInds - 1].copy()
     plans.loc[:, 'originX'] = np.nan
-    plans.loc[:, 'originX'].iloc[legInds] = plans['x'].iloc[legInds - 1].copy()
+    plans.iloc[legInds, plans.columns.get_loc('originX')] = plans['x'].iloc[legInds - 1].copy()
     plans.loc[:, 'originY'] = np.nan
-    plans.loc[:, 'originY'].iloc[legInds] = plans['y'].iloc[legInds - 1].copy()
+    plans.iloc[legInds, plans.columns.get_loc('originY')] = plans['y'].iloc[legInds - 1].copy()
     plans.loc[:, 'destinationX'] = np.nan
-    plans.loc[:, 'destinationX'].iloc[legInds] = plans['x'].iloc[legInds + 1].copy()
+    plans.iloc[legInds, plans.columns.get_loc('destinationX')] = plans['x'].iloc[legInds + 1].copy()
     plans.loc[:, 'destinationY'] = np.nan
-    plans.loc[:, 'destinationY'].iloc[legInds] = plans['y'].iloc[legInds + 1].copy()
+    plans.iloc[legInds, plans.columns.get_loc('destinationY')] = plans['y'].iloc[legInds + 1].copy()
     return plans
 
 def processPlans(directory):
@@ -214,8 +214,7 @@ def collectAllData(inDirectory, outDirectory, popDirectory):
     trips = addGeometryIdToDataFrame(trips, BGs, 'originX', 'originY', 'startBlockGroup')
     trips = addGeometryIdToDataFrame(trips, BGs, 'destinationX', 'destinationY', 'endBlockGroup')
 
-    activities = addGeometryIdToDataFrame(activities, BGs, 'activityLocationX', 'activityLocationY',
-                                              'activityBlockGroup', df_geom='epsg:26910')
+    activities = addGeometryIdToDataFrame(activities, BGs, 'x', 'y', 'activityBlockGroup')
 
     PTs = addGeometryIdToDataFrame(PTs, BGs, 'startX', 'startY', 'startBlockGroup')
     PTs = addGeometryIdToDataFrame(PTs, BGs, 'endX', 'endY', 'endBlockGroup')
