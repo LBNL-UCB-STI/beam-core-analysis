@@ -1,0 +1,549 @@
+---
+title: "AustinDataAnalyses"
+author: "Nazanin"
+output:
+  html_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+---
+## Setup
+```{r setup, include=FALSE}
+#library(tidycensus)
+#library(sf)
+#library(purrr)
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+pacman::p_load(
+  tidyverse, # for the tidyverse framework
+  viridis,
+  scales, 
+  forcats,
+  aws.s3, 
+  furrr,
+  tictoc,
+  stringr,
+  caTools,
+  ggthemes,
+  SciViews
+  )
+```
+
+## Parallelize using: furrr (using multiple cores to speed up)
+```{r}
+n_cores <- availableCores() - 1
+plan(multiprocess, # multicore, if supported, otherwise multisession
+     workers = n_cores) # the maximum number of workers
+
+#Check
+tic()
+mean100 <- map(1:1000000, mean)
+toc()
+
+tic()
+mean100 <- future_map(1:1000000, mean)
+toc()
+```
+
+
+## Import Data
+```{r}
+#AWS info - set environment variables
+Sys.setenv("AWS_DEFAULT_REGION"="us-east-2")
+awsDF <- get_bucket_df("beam-core-act", prefix = "GPRAcities/Austin-Q4FY2021") # getting bucket   
+data <- list() # creating list 
+data <- awsDF$Key[grep("*.csv.zip$|*.csv.gz$", awsDF$Key)] #specify austin data objects
+for (i in data) 
+  {x <- aws.s3::s3read_using(read_csv, object=i, bucket="beam-core-act")
+   j <- substr(i,28,nchar(i)-8)
+   assign(j, x)
+   remove(x)
+}
+```
+
+
+## Data Wrangling
+```{r}
+#Sort PassengertoPathTraversal dataset by personID
+austin.passengerToPathTraversal <- austin.passengerToPathTraversal[order(austin.passengerToPathTraversal$personID),]
+
+# Filter Plans = TRUE to help us merge the datasets
+austinPlansTrue <- austin.plan %>% 
+  filter(austin.plan$planSelected == TRUE)
+
+#Replace -Infinity with seconds 86400 in plans
+austinPlansTrue$activityEndTime[austinPlansTrue$activityEndTime == "-Infinity"] <- "86400"
+austinPlansTrue$legDepartureTime[austinPlansTrue$legDepartureTime == "-Infinity"] <- NA
+austinPlansTrue$legTravelTime[austinPlansTrue$legTravelTime == "-Infinity"] <- NA
+
+```
+
+
+```{r}
+#Replace negative values with missing values in households
+austin.household$incomeValue[austin.household$incomeValue < 0] <- NA
+austin.person$earning[austin.person$earning < 0] <- NA
+
+#Replace negative values with missing values of distance in plans
+austinPlansTrue$legRouteDistance[austinPlansTrue$legRouteDistance < 0] <- NA
+```
+
+
+```{r}
+#Convert column types to double 
+austin.trips <- austin.trips %>%
+  mutate(legDepartureTime = as.double(legDepartureTime),
+         legTravelTime = as.double(legTravelTime),
+        startBlockGroup = as.double(startBlockGroup),
+        endBlockGroup = as.double(endBlockGroup))
+
+austin.activities <- austin.activities %>%
+  mutate(legDepartureTime = as.double(activityEndTime),
+        startBlockGroup = as.double(activityBlockGroup))
+
+austinPlansTrue <- austinPlansTrue %>%  
+  mutate(activityEndTime = as.double(activityEndTime),
+         legDepartureTime = as.double(legDepartureTime),
+         legTravelTime = as.double(legTravelTime))
+```
+
+```{r}
+#Drop the decimals in time floor(x) rounds to the nearest integer that’s smaller than x
+austinPlansTrue$activityEndTime <- floor(austinPlansTrue$activityEndTime)
+```
+
+```{r}
+#Convert seconds to minutes in plans and pathtraversals
+austinPlansTrue$activityEndTime <- austinPlansTrue$activityEndTime / 60
+austinPlansTrue$legDepartureTime <- austinPlansTrue$legDepartureTime / 60
+austinPlansTrue$legTravelTime <- austinPlansTrue$legTravelTime / 60
+austinPlansTrue$legRouteTravelTime <- austinPlansTrue$legRouteTravelTime / 60
+austin.pathTraversals$arrivalTime <- austin.pathTraversals$arrivalTime / 60
+austin.pathTraversals$departureTime <- austin.pathTraversals$departureTime / 60
+austin.pathTraversals$duration <- austin.pathTraversals$duration / 60
+```
+
+```{r}
+#rounding time columns to 2 decimals
+austinPlansTrue$activityEndTime <- round(austinPlansTrue$activityEndTime, digits = 2) 
+austinPlansTrue$legDepartureTime <- round(austinPlansTrue$legDepartureTime, digits = 2)
+austinPlansTrue$legTravelTime <- round(austinPlansTrue$legTravelTime, digits = 2)
+austinPlansTrue$legRouteTravelTime <- round(austinPlansTrue$legRouteTravelTime, digits = 2)
+austin.pathTraversals$arrivalTime <- round(austin.pathTraversals$arrivalTime, digits = 2)
+austin.pathTraversals$departureTime <- round(austin.pathTraversals$departureTime, digits = 2)
+austin.pathTraversals$duration <-round(austin.pathTraversals$duration, digits = 2)
+```
+
+```{r}
+#Joining pass and path
+austinPassPath <- full_join(austin.passengerToPathTraversal, austin.pathTraversals, by = c("pathTraversalID" = "PathTraversalID"), copy = FALSE, suffix = c(".x", ".y"))
+```
+
+
+```{r}
+#rename personID to personId in passPath
+austinPassPath <- austinPassPath %>% 
+  rename(personId = personID )
+#names(austinPassPath)[names(austinPassPath) == 'personID'] <- 'personId'
+```
+
+
+```{r}
+#Joining plans, pop and households
+austinPlansPophhPer <- full_join(austinPlansTrue, austin.populatio, by = c("personId"), copy = FALSE, suffix = c(".x", ".y"))
+austinPlansPophhPer <- full_join(austinPlansPophhPer, austin.household, by = c("householdId"), copy = FALSE, suffix = c(".x", ".y"))
+austinPlansPophhPer <- left_join(austinPlansPophhPer, austin.person, by = c("personId"="person_id"), copy = FALSE, suffix = c(".x", ".y"))
+```
+
+
+```{r}
+#add columns year and scenarios
+austinPlansPophhPer$year <- "2010"
+austinPlansPophhPer$scenario <- "austin"
+```
+
+## Saving the dataset as a csv file
+```{r}
+#write.csv(x=austinPlansPophhPer, file="/home/shared/Data/CleanData/austin.PlanPop.Merged.csv", row.names = F)
+```
+
+
+## Including Plots
+```{r}
+#divide incomeValue to two levels
+#austinPlansPophhPer$incomeLevel <- ifelse((austinPlansPophhPer$incomeValue < 14.706), "Low","High")
+
+#divide incomeValue to five levels
+austinPlansPophhPer <- austinPlansPophhPer %>%  
+  mutate(incomeLevel = ntile(incomeValue,5))
+
+austinPlansPophhPer <- austinPlansPophhPer %>%
+  mutate(incomeLevel = as.character(incomeLevel))
+```
+
+
+```{r}
+#Categorize age to 8 groups 
+austinPlansPophhPer <- austinPlansPophhPer %>% 
+  mutate(ageGroup = case_when(age.x < 16 ~ "Below 16",
+                               age.x >= 16 & age.x < 18 ~ "16 - 18",
+                               age.x >= 18 & age.x < 30 ~ "18 - 30",
+                               age.x >= 30 & age.x < 40 ~ "30 - 40",
+                               age.x >= 40 & age.x < 50 ~ "40 - 50",
+                               age.x >= 50 & age.x < 60 ~ "50 - 60",
+                               age.x >= 60 & age.x < 75 ~ "60 - 75",
+                               age.x >= 75 ~ "75 and Above"))
+```
+
+
+```{r}
+#label education
+austinPlansPophhPer <- austinPlansPophhPer %>% 
+  mutate(eduLabel = case_when(edu == 1 ~ "No schooling completed", 
+                              edu == 2 ~ "Nursery school, preschool",
+                              edu == 3 ~ "Kindergartern",
+                              edu == 4 ~ "Grade 1",
+                              edu == 5 ~ "Grade 2",
+                              edu == 6 ~ "Grade 3", 
+                              edu == 7 ~ "Grade 4",
+                              edu == 8 ~ "Grade 5",
+                              edu == 9 ~ "Grade 6",
+                              edu == 10 ~ "Grade 7",
+                              edu == 11 ~ "Grade 8",
+                              edu == 12 ~ "Grade 9",
+                              edu == 13 ~ "Grade 10",
+                              edu == 14 ~ "Grade 11",
+                              edu == 15 ~ "12th grade - no diploma",
+                              edu == 16 ~ "Regular high school diploma",
+                              edu == 17 ~ "GED or alternative credential",
+                              edu == 18 ~ "Some college, but less than 1 year",
+                              edu == 19 ~ " 1 or more years of college credit, no degree",
+                              edu == 20 ~ "Associate's degree",
+                              edu == 21 ~ "Bachelor's degree",
+                              edu == 22 ~ "Master's degree",
+                              edu == 23 ~ "Professional degree beyond a bachelor's degree",
+                              edu == 24 ~ "Doctorate degree"))
+```
+
+
+```{r}
+#Categorize legMode to 5 groups
+austinPlansPophhPer <- austinPlansPophhPer %>% 
+  mutate(legModeCat = case_when(legMode == "car_hov2" | legMode ==   "car_hov3" | legMode == "car" | legMode == "hov2_teleportation" | legMode == "hov3_teleportation" ~ "car",
+                                legMode == "ride_hail" | legMode ==   "ride_hail_pooled" ~ "ride_hail",
+                                 legMode == "walk" ~ "walk",
+                                 legMode == "bike" ~ "bike",
+                                 legMode == "bike_transit" | legMode ==   "walk_transit" | legMode == "drive_transit" ~ "transit"))
+```
+
+
+```{r}
+# Compute the frequency of incomeLevel - the sum is equal to the number of rows
+austinPlansPophhPer %>%
+    group_by(incomeLevel) %>%
+    summarise(counts = n())
+```
+
+
+```{r - data.table}
+#library(data.table)
+#austinFirstLeg1 <- data.table(austinPlansPophhPer)[, firstStopOfTheDay:= #activityType [ planElementIndex == 2], by=personId]
+#detach("package:data.table", unload=TRUE)
+```
+
+## New variables "firstStopOfTheDay"
+```{r - tidyverse}
+austinFirstLeg <- austinPlansPophhPer %>% 
+  group_by(personId) %>%
+  mutate(firstStopOfTheDay=activityType[planElementIndex == 2])
+```
+
+```{r}
+austinFirstLegAc <- austinFirstLeg %>%
+  group_by(personId) %>%
+  mutate(fromActivityType=lag(activityType))
+
+austinFirstLegAct <- austinFirstLegAc %>%
+  group_by(personId) %>%
+  mutate(ToActivityType=lead(activityType))
+```
+
+
+## Select only the first trip 
+```{r}
+#Selecting the first legs only
+austinFirstLegWork <- austinFirstLegAct  %>% 
+    filter(planElementType == "beam.utils.scenario.PlanElement$Leg$@488c76c1" & planElementIndex == 1 & firstStopOfTheDay == "work")
+
+```
+
+## Removing NA 
+```{r}
+#Remove missing values from the columns we would like to plot
+austinlegPlot <- austinFirstLegWork  %>%  filter(!is.na(incomeValue) & !is.na(age.x) & !is.na(legRouteDistance)& !is.na(legMode)& !is.na(race_id)& !is.na(edu)& !is.na(isFemale)& !is.na(earning))
+
+#legTravelTime below 1000 min
+austinlegPlotTT <- austinlegPlot  %>% 
+    filter(legTravelTime < 1000)
+
+#income below 200
+austinlegPlotTTI <- austinlegPlotTT  %>% 
+    filter(incomeValue < 200)
+
+# Compute the frequency of legMode
+modeCount <- austinlegPlot %>%
+  group_by(legModeCat) %>%
+  summarise(counts = round(n()/n_distinct(austinlegPlot$personId),3)) %>% 
+  arrange(desc(counts))
+
+# Preparing the file for plotting Mode-Gender
+modeFCount <- austinlegPlot %>% 
+  group_by(isFemale, legModeCat) %>%
+  summarise(counts = if(isFemale == TRUE) (n()/42315) else (n()/52570))
+
+   
+   
+austinFirstLeg <- austinPlansPophhPer %>% 
+  group_by(personId) %>%
+  mutate(firstStopOfTheDay=activityType[planElementIndex == 2])
+```
+
+```{r}
+austinlegPlot %>%
+    group_by(isFemale) %>%
+    summarise(counts = n())
+```
+
+## Color Schemes (viridis)
+```{r}
+show_col(viridis_pal(option = "turbo")(30))
+show_col(viridis_pal(option = "viridis")(30)
+show_col(economist_pal()(6))
+show_col(calc_pal()(12))
+show_col(gdocs_pal()(20))
+```
+
+```{r}
+options(ggplot2.continuous.colour="viridis")
+
+#For discrete scales
+scale_colour_discrete <- function(...) {
+  scale_colour_brewer(..., palette="viridis")
+}
+```
+
+
+## Mode - Frequency
+```{r, echo=FALSE, fig.height=7, fig.width=7}
+# Create the bar plot
+ggplot(modeCount, aes(x = reorder(legModeCat, -counts), y = counts)) +
+    geom_bar(fill = "#21918c", stat = "identity") +
+    geom_text(aes(label = scales::percent(counts)), vjust = -0.3) +
+    scale_y_continuous(labels = scales::label_percent(accuracy = 1L))+  
+    xlab("Trip Mode")+ 
+    ylab("Frequency")+
+    theme_bw()
+    #theme(axis.text.x = element_text(angle = 90, vjust = 0.5))
+```
+
+## Histogram of Travel Time Frequency (ggplot)
+```{r, echo=FALSE, fig.height=7, fig.width=7}
+ggplot(austinPlansPophhPer, aes(x=legTravelTime)) +
+  geom_histogram(fill="#5ec962", color="black")+
+  #geom_vline(aes(xintercept=mean(legTravelTime)), color="blue", linetype="dashed")+
+  labs(title="Histogram for Travel Time",x="Travel Time (Minutes)", y = "Frequency")+
+  xlim(c(0,700))+
+  ylim(c(0,500000))+
+  scale_y_continuous(labels = scales::comma)+  
+  theme_bw()
+```
+
+## Histogram of Distance Frequency
+```{r, echo=FALSE, fig.height=7, fig.width=7}
+ggplot(austinPlansPophhPer, aes(x=legRouteDistance)) +
+  geom_histogram(fill="#5ec962", color="black")+
+  #geom_vline(aes(xintercept=mean(legTravelTime)), color="blue", linetype="dashed")+
+  labs(title="Histogram for Travel Distance",x="Distance (Meters)", y = "Frequency")+
+  xlim(c(0,160000))+
+  ylim(c(0,250000))+
+  scale_y_continuous(labels = scales::comma)+  
+  theme_bw()
+```
+
+## TravelTime - Earning - Gender 
+```{r - scatter plot}
+ggplot(data = austinlegPlot, aes(x = ln(earning), y = ln(legTravelTime)))+
+    geom_point(aes(color = isFemale), size=1, stat = 'identity')+ 
+    xlab("Earning (dollars)") + 
+    ylab("Travel Time (minutes)")+
+    scale_x_continuous(labels=scales::dollar_format())+
+    #scale_color_viridis(discrete = TRUE, option = "H", begin = 0.4)+
+    scale_colour_economist()+
+    theme_bw()
+```
+
+## TravelTime - Income - Mode
+```{r - scatter plot}
+ggplot(data = austinlegPlotTTI, aes(x = ln(incomeValue), y = legTravelTime))+
+    geom_point(aes(color = legModeCat), size=1, stat = 'identity')+ 
+    xlab("Household Income (dollars)") + 
+    ylab("Travel Time (minutes)")+
+    scale_x_continuous(labels=scales::dollar_format())+
+    scale_color_viridis(discrete = TRUE)+
+    #scale_color_gdocs()+ 
+    #scale_color_calc()+
+    #scale_colour_economist()+
+    theme_bw()
+```
+
+
+## Mode - Distance
+```{r - box plot}
+austinlegPlot %>%
+    ggplot(aes(x = reorder(legModeCat,-legRouteDistance), y = legRouteDistance)) +
+    geom_boxplot()+
+    #stat_summary(fun.y = mean, geom = "errorbar", aes(ymax = ..y.., ymin = ..y..), width = .75, linetype = "dashed")+ #adding mean line
+    xlab("Mode") + 
+    ylab("Travel Distance")+
+    theme_bw()
+    #theme(axis.text.x = element_text(angle = 90, vjust = 0.5))
+```
+
+## Mode - Income
+```{r - box plot}
+austinlegPlot %>%
+    ggplot(aes(x = reorder(legModeCat,-incomeValue), y = incomeValue)) +
+    geom_boxplot()+
+    xlab("Mode") + 
+    ylab("Income (dollars)")+
+    scale_y_continuous(labels=scales::dollar_format())+
+    theme_bw()
+    #theme(axis.text.x = element_text(angle = 90, vjust = 0.5))
+```
+
+# Violin plot
+```{r - violin plot}
+austinlegPlot %>%
+    ggplot(aes(x = reorder(legModeCat, -incomeValue), y = incomeValue)) +
+    geom_violin()+
+    stat_summary(fun = "mean", geom = "point", color = "black")+
+    xlab("Mode") + 
+    ylab("Household Income (dollars")+
+    scale_y_continuous(labels=scales::dollar_format())+
+    theme_bw()+
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5))
+```
+
+# Mode - Income Level 
+```{r - bar plot}
+austinlegPlot %>%
+    ggplot(aes(x = legModeCat)) +
+    geom_bar(aes(fill = incomeLevel), position = "dodge")+
+    scale_fill_viridis(discrete = TRUE, option = "D")+
+    scale_y_continuous(name="Frequency", labels = scales::comma)+
+    xlab("Travel Mode") + 
+    theme_bw()
+    #theme(axis.text.x = element_text(angle = 90, vjust = 0.5))
+```
+
+
+## TravelTime - Race
+```{r - box plot}
+austinlegPlotB250 %>%
+    ggplot(aes(x = reorder(race_id,-legTravelTime), y = legTravelTime)) +
+    geom_boxplot()+
+    xlab("Race") + 
+    ylab("Travel Time (minutes)")+
+    theme_bw()+
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5))
+```
+
+## Mode - Gender
+```{r - bar plot}
+ggplot(modeFCount, aes(x = reorder(legModeCat, -counts), y = counts, fill = isFemale)) +
+    geom_bar(position = "dodge", stat = "identity")+
+    geom_text(aes(label = scales::percent(counts)), position = position_dodge(width = .9),    # move to center of bars
+vjust = -0.5,    # nudge above top of bar 
+size = 3) +
+    scale_fill_viridis(discrete = TRUE, option = "H", begin = 0.2)+
+    scale_y_continuous(labels = scales::label_percent(accuracy = 1L))+  
+    xlab("Trip Mode")+ 
+    ylab("Frequency")+
+    theme_bw()
+```
+
+
+## TravelTime-CarOwnership
+
+```{r}
+austinlegPlotB250 %>%
+    ggplot(aes(x = reorder(cars,-legTravelTime), y = legTravelTime)) +
+    geom_boxplot()+
+    xlab("Car Ownership") + 
+    ylab("Travel Time (minutes)")+
+    theme_bw()+
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5))
+```
+
+## TravelTime - Age
+
+```{r - box plot}
+austinlegPlotB250 %>%
+    ggplot(aes(x = reorder(ageGroup,-legTravelTime), y = legTravelTime)) +
+    geom_boxplot()+
+    xlab("Age (years)") + 
+    ylab("Travel Time (minutes)")+
+    theme_bw()
+```
+
+## TravelTime - Education
+
+```{r - bar plot}
+austinlegPlot %>%
+    ggplot(aes(x = eduLabel)) +
+    geom_bar()+
+    scale_fill_viridis(discrete = TRUE, option = "H", begin = 0.7)+
+    scale_y_continuous(name="Frequency", labels = scales::comma)+
+    xlab("Education")+
+    theme_bw()+
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5))
+```
+
+
+```{r - box plot}
+austinlegPlotB250 %>%
+    ggplot(aes(x = reorder(eduLabel,-legTravelTime), y = legTravelTime)) +
+    geom_boxplot()+
+    xlab("Education Level") + 
+    ylab("Travel Time (minutes)")+
+    theme_bw()+
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5))
+
+```
+
+## TravelTime - Distance
+```{r - scatter plot}
+ggplot(data = austinlegPlot, aes(x = legRouteDistance, y = legTravelTime))+
+    geom_point(size=1, stat = 'identity')+ 
+    xlab("Distance (meters)") + 
+    ylab("Travel Time (minutes)")+
+    #scale_color_viridis(discrete = TRUE, option = "H", begin = 0.4)+
+    scale_colour_economist()+
+    theme_bw()
+```
+
+## TravelTime - DepartureTime
+```{r - scatter plot}
+ggplot(data = austinlegPlot, aes(x = legDepartureTime, y = legTravelTime))+
+    geom_point(size=1, stat = 'identity')+ 
+    xlab("Departure Time (meters)") + 
+    ylab("Travel Time (minutes)")+
+    #scale_color_viridis(discrete = TRUE, option = "H", begin = 0.4)+
+    scale_colour_economist()+
+    theme_bw()
+```
+

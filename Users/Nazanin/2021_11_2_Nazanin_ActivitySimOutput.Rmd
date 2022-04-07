@@ -1,0 +1,461 @@
+---
+title: "SFActivitySimOutput"
+author: "Nazanin"
+output:
+  html_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+ifelse(packageVersion("dplyr") > 1, "The installed version of dplyr package is greater than or equal to 1.0.0", update.packages("dplyr"))
+```
+
+
+```{r}
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(
+  tidyverse, # for the tidyverse framework
+  viridis,
+  scales, 
+  forcats,
+  aws.s3, 
+  furrr,
+  tictoc,
+  stringr,
+  caTools,
+  ggthemes,
+  SciViews,
+  yaml,
+  purrr,
+  janitor
+  )
+```
+
+
+## Parallelize using: furrr (using multiple cores to speed up)
+```{r}
+n_cores <- availableCores() - 1
+plan(multisession, # multicore, if supported, otherwise multisession
+     workers = n_cores) # the maximum number of workers
+```
+
+
+## Import Data
+```{r}
+#AWS info - set environment variables
+Sys.setenv("AWS_DEFAULT_REGION"="us-east-2")
+awsDF <- get_bucket_df("beam-outputs", prefix = "pilates-outputs/austin-2010-2018-central/2018") # getting bucket   
+data <- list() # creating list 
+data <- awsDF$Key[grep("^final.*.csv$", awsDF$Key)] #specify data objects  
+for (i in data) 
+  {x <- aws.s3::s3read_using(read_csv, object=i, bucket="beam-outputs")
+   j <- substr(i,5,nchar(i)-3)
+   assign(j, x)
+   remove(x)
+}
+```
+
+```{r}
+Sys.setenv("AWS_DEFAULT_REGION"="us-east-2")
+awsDF <- get_bucket_df("beam-core-act", prefix = "ActivitySimOutput/100Households-BayArea") # getting bucket 
+data <- list() # creating list 
+data <- awsDF$Key[grep("*.csv$", awsDF$Key)] #specify austin data objects
+for (i in data) 
+  {x <- aws.s3::s3read_using(read_csv, object=i, bucket="beam-core-act")
+   j <- substr(i,41,nchar(i)-5)
+   assign(j, x)
+   remove(x)
+}
+
+```
+
+
+```{r eval=FALSE, include=FALSE}
+#read .yaml file
+#tripModeChoice <- aws.s3::s3read_using(read_yaml, object = "ActivitySimOutput/100Households-BayArea/trip_mode_choice.yaml", bucket = 'beam-core-act')
+```
+
+## Events File
+```{r eval=FALSE, include=FALSE}
+#AWS info - set environment variables
+Sys.setenv("AWS_DEFAULT_REGION"="us-east-2")
+awsDF <- get_bucket_df("beam-outputs", prefix = "pilates-outputs/austin-2010-2018-central/2018") # getting bucket   
+data <- list() # creating list 
+data <- awsDF$Key[grep("*final_*.csv$", awsDF$Key)] #specify austin data objects
+for (i in data) 
+  {x <- aws.s3::s3read_using(read_csv, object=i, bucket="beam-outputs")
+   j <- substr(i,50,nchar(i)-2)
+   assign(j, x)
+   remove(x)
+}
+```
+
+```{r}
+Sys.setenv("AWS_DEFAULT_REGION"="us-east-2")
+data = aws.s3::s3read_using(read_csv, object ="pilates-outputs/austin-2010-2018-central/2018/final_trip_mode_choice_raw.csv", bucket = 'beam-outputs')
+
+```
+
+```{r}
+#Joining households and persons
+households <- households[order(households$household_id),]
+persons <- persons[order(persons$household_id),]
+
+ActSimPerhh <- left_join(persons, households, by = c("household_id"), copy = FALSE, suffix = c(".x", ".y"))
+```
+
+```{r}
+#Joining tours, households and persons
+tour <- tour[order(tour$person_id, tour$tour_id),]
+ActSimTourPerhh <- left_join(tour, ActSimPerhh, by = c("person_id"), copy = FALSE, suffix = c(".x", ".y"))
+```
+
+```{r eval=FALSE, include=FALSE}
+#Export the file
+#write.csv(x=ActSimTourPerhh, file="/Shared-Work/Data/CleanData/ActSimInexusPlots.csv", row.names = F)
+```
+
+```{r}
+#Joining trips, tours, households and persons
+trip <- trip[order(trip$person_id, trip$tour_id),]
+ActSimTourTrip <- left_join(trip, ActSimTourPerhh, by = c("person_id","tour_id"), copy = FALSE, suffix = c(".x", ".y"))
+```
+
+```{r}
+#Joining trips, tours, households, persons and final_trip_mode
+final_trip_mode_choice_value <- final_trip_mode_choice_value[order(final_trip_mode_choice_value$trip_id),]
+ActSimModeChoice <- left_join(ActSimTourTrip, final_trip_mode_choice_value, by = c("trip_id"), copy = FALSE, suffix = c(".x", ".y"))
+```
+
+```{r}
+#write.csv(x=ActSimModeChoice, file="/home/shared/Data/CleanData/ActSim.Merged.csv", row.names = F)
+```
+
+#Read sample data
+```{r}
+ActSimMerged_sample <- read_csv(file='C:/Shared-Work/Data/CleanData/ActSim.Merged_Sample.csv', show_col_types = FALSE) 
+
+specT_sample <- read_csv(file='C:/Shared-Work/Data/CleanData/Spec.Transpose_sample.csv', show_col_types = FALSE)
+
+specs_sample <- read_csv(file='C:/Shared-Work/Data/specs_sample.csv', show_col_types = FALSE) 
+
+```
+
+```{r}
+ActSimSpecSample <- 
+  group_by("trip_mode") %>% 
+  mapply("*", ActSimMerged_sample[intersect(names(ActSimMerged_sample), names(specT_sample))],
+       specT_sample[intersect(names(ActSimMerged_sample), names(specT_sample))])
+```
+
+
+
+#Transpose spec file (We should rename the index column to trip_mode or convert the index to the first column)
+```{r eval=FALSE, include=FALSE}
+rName <- spec_new$Expression
+specT <- as.data.frame(t(spec[,-1])) 
+colnames(specT) <- rName
+#check the type of columns
+#lapply(specT,class)
+```
+
+```{r}
+#Save spec Transpose file
+write.csv(x=specT, file="C:/Shared-Work/Data/CleanData/Spec.Transpose.csv")
+```
+
+
+```{r}
+ActSimMerged <- read_csv(file='C:/Shared-Work/Data/CleanData/ActSim.Merged.csv', show_col_types = FALSE) 
+
+specT <- read_csv(file='C:/Shared-Work/Data/CleanData/Spec.Transpose.csv', show_col_types = FALSE)
+
+#ActSimSpec <- read_csv(file='C:/Shared-Work/Data/CleanData/ActSimSpec.csv', show_col_types = FALSE)
+```
+
+# Reneme the columns in specT
+```{r}
+colnames(specT)[37] <- "@c_ivt*odt_skims['HOV2TOLL_TIME']...37"
+colnames(specT)[294] <- "@c_ivt*odt_skims['HOV2TOLL_TIME']...294"
+```
+
+```{r}
+spec_new <- read_csv(file='C:/Shared-Work/Data/specs.csv', show_col_types = FALSE)
+```
+
+# Clean column names
+```{r eval=FALSE, include=FALSE}
+names(ActSimMerged) = make.names(names(ActSimMerged))
+```
+
+
+# Multiply ActSimMerged by specs file rowwise - mutatae(across(all))
+```{r}
+ActSimSpec <- ActSimMerged %>% 
+  rowwise() %>% 
+  mutate(across(all_of(spec_new$Expression), ~ . * spec_new[match(cur_column(), spec_new$Expression), match(trip_mode, names(spec_new))])) 
+```
+
+```{r}
+#Save file
+write.csv(x=ActSimMerged, file="C:/Shared-Work/Data/CleanData/ActSimSpec.csv", row.names = F)
+```
+
+#Calculate the utility
+```{r}
+#ActSimMerged %>% mutate(utilities = rowSums(!is.na(select(., `sov_available == False`:`@adjust_tnc_shared`))))
+
+#ActSimMerged$utilities <- apply(ActSimMerged[177:555], 1, function(x) sum(!is.na(x)))
+
+#ActSimMerged %>% rowwise() %>% mutate(utilities=sum(!is.na(across(,`sov_available == False`:`@adjust_tnc_shared`))))
+
+
+#ActSimMerged$utilities <- rowSums(ActSimMerged[grep("^var\\d+", names(ActSim_spec))], na.rm = TRUE)
+
+ActSimSpec$mode_choice_utilities <- rowSums(ActSimSpec[,177:555], na.rm=TRUE)
+```
+
+#Calculate time
+```{r}
+ActSimSpec mutate(time = if primary_purpose == atwork %>% 
+  @c_ivt*odt_skims/-0.0279
+```
+
+```{r}
+#Save ActSim_spec  file
+write.csv(x=ActSim_spec, file="C:/Shared-Work/Data/CleanData/ActSim_spec.csv", row.names = F)
+```
+
+
+
+
+#Tibbles don't have rownames - We convert Expressions to row names 
+```{r}
+#spec2 <- spec[,-1]
+  
+spec_new <- column_to_rownames(spec_new, var = "Expression")
+
+#rownames(spec2) <- spec[[-1,]]
+```
+
+
+# Reneme the rows in spec (We don't have rownames in tibble to renames tham!)
+```{r}
+rownames(spec)[26] <- "@c_ivt*odt_skims['HOV2TOLL_TIME']...37"
+rownames(spec)[293] <- "@c_ivt*odt_skims['HOV2TOLL_TIME']...294"
+```
+
+#Get the index of a column
+```{r}
+which(rownames(spec_new) == "@c_ivt * odt_skims['HOV2TOLL_TIME']...37")
+```
+
+```{r}
+#Remove missing values from the columns we would like to multiply
+cols <- intersect(colnames(ActSimMerged), colnames(specT[-1]))
+#ActSimMergedRm <- ActSimMerged %>% drop_na(cols)
+```
+
+
+#Using across - cur_column "NOTWORKING"
+```{r}
+temp1 <- ActSimMerged %>%
+  filter(trip_mode == 'SHARED2PAY') %>%
+  mutate(across(c(), ~ . * t(spec[cur_group_rows('sov_available == False':'hov3_available == False')])))
+
+```
+
+#Check for SHARED2PAY only
+```{r}
+temp1 <- ActSimMerged %>%
+  filter(trip_mode == 'SHARED2PAY') %>%
+  select("trip_id","sov_available == False":"@adjust_tnc_shared") #%>% mutate(across(where(is.numeric), ~ . * spec[cur_column(), 'SHARED2PAY']))
+```
+
+```{r}
+temp2 <- sweep(temp1,2, specT$SHARED2PAY[match(names(temp1),rownames(spec_new))],`*`)
+```
+
+```{r}
+temp3 <- sweep(ActSimMerged[177:555],1, spec_new$TNC_SHARED[match(names(ActSimMerged[177:555]),rownames(spec_new))],`*`)
+```
+
+
+```{r}
+a <- subset(ActSimMerged, select=177:555)
+b <- subset(ActSimMerged_sample, select=177:180)
+```
+
+# Check missing values in the datasets
+```{r}
+missing_spec <- sapply(temp2, function(x) sum(is.na(x)))
+```
+
+```{r}
+#missing_actMerged <- sapply(ActSimMerged, function(x) sum(is.na(x)))
+
+missing_actMerged <- sapply(temp2, function(x) sum(is.na(x)));  missing_actMerged[missing_actMerged>0]
+```
+
+#Multiply all
+```{r}
+ActSim_spec <- sweep(b[],1, specs_sample[match(names(b),rownames(specs_sample))],`*`)
+```
+
+temp2 <- sweep(temp1[],2, spec_new$SHARED2PAY[match(names(temp1),rownames(spec_new))],`*`)
+
+
+# Not Working
+```{r}
+ActSim_select <- ActSimMerged %>%
+  #group_by("trip_mode") %>% 
+  select("trip_mode", "sov_available == False":"@adjust_tnc_shared") #%>% 
+  #keep(is.numeric) * specT %>% keep(is.numeric)
+```
+
+```{r}
+ActSim_spec <- left_join(
+  pivot_longer(ActSim_select, -trip_mode),
+  pivot_longer(specT, -trip_mode),
+  by = "name", suffix = c("2", "1")
+) %>%
+  mutate(value = value1 * value2) %>%
+  select(trip_mode = trip_mode1, name, value) %>%
+  pivot_wider()
+```
+
+
+#Change formats to matrix
+```{r}
+ActSim_mat <- as.matrix(ActSim_select[-1])
+row.names(spec_mat) <- unlist(ActSim_select[1, ])
+
+spec_mat <- as.matrix(spec_new[-1])
+row.names(spec_mat) <- unlist(spec_new[, 1])
+```
+
+```{r}
+lapply(colnames(ActSim_mat), function(x) ActSim_mat[rownames(spec_mat), x] * spec_mat)
+```
+
+
+```{r}
+ActSimMerged %>% 
+     #remove the 'Genes' column 
+     select("trip_mode", "sov_available == False":"@adjust_tnc_shared") %>%
+     #loop the other columns cbind with the Genes column
+     map(~bind_cols(ActSimMerged['trip_mode'], Sample=.)) %>% 
+     #left join with 'fixed_score' dataset by 'Genes'
+     map(~left_join(specT, ., by = "trip_mode")) %>%
+     #multiply the columns selected in 'vars' with 'Sample'
+     map(~mutate_at(., vars(sov_available == False:@adjust_tnc_shared), funs(.*Sample))) %>%
+     #remove the 'Sample' column from the list of tibbles
+     map(~select(., -matches("Sample")))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+#Joining ActSimModeChoice with specT
+ActSimModeSpec <- left_join(ActSimModeChoice, specT, by = c("trip_mode"), copy = FALSE, suffix = c(".x", ".y"))
+```
+
+
+```{r}
+cols <- intersect(colnames(ActSimMerged), colnames(specT[-1]))
+ActSimMerged[cols] <- sweep(ActSimMerged[cols], 2, unlist(specT[cols]), `*`)
+```
+
+
+
+
+
+
+
+
+```{r}
+library(purrr)
+map2_dfc(select(ActSimModeChoice, 'sov_available == False' : '@adjust_tnc_shared'), select(specT, , 'sov_available == False' : '@adjust_tnc_shared'),  `*`) %>%
+  bind_cols(select(ActSimModeChoice, -one_of(nm1)), .)
+```
+
+
+
+
+
+
+```{r}
+#convert index to a column in specT
+specT <- cbind(trip_mode = rownames(specT), specT)
+rownames(specT) <- 1:nrow(specT)
+```
+
+```{r}
+spec[-1][spec[-1]<0] <- 0
+SpecT[-1][SpecT[-1]<0] <- 0
+```
+
+
+
+
+```{r}
+clean_names(spec)
+clean_names(ActSimMerged)
+```
+
+
+```{r}
+data.frame(mapply('*', ActSimMerged[,c('sov_available == False':'@adjust_tnc_shared')],spec["WALK"]))
+```
+
+```{r}
+temp1*spec[col(temp1)]
+```
+
+
+```{r}
+temp1 <- ActSimMerged %>% 
+  filter(trip_mode == 'WALK') %>% 
+  select('trip_id','sov_available == False':'@adjust_tnc_shared')
+
+temp2 <- SpecT %>% 
+  filter(trip_mode == 'WALK') 
+
+#multi <- temp1[,-1]*temp2[,-1]
+```
+
+
+```{r}
+#mult <- data.frame(Map(function(x,y) if(all(is.numeric(x),is.numeric(y))) x * y
+                          #else x, temp1, temp2))
+```
+
+#Dataset3[]<- mapply(`*`, ActSimMerged["sov_available == False": "@adjust_tnc_shared"], SpecT)
+
+
