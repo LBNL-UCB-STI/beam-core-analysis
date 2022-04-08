@@ -375,4 +375,3 @@ ActSimTourPerhh <- ActSimTourPerhh %>%
 #Export the file
 #write.csv(x=ActSimTourPerhh, file="/Shared-Work/Data/CleanData/ActSimInexusFinal.csv", row.names = F)
 ```
-
