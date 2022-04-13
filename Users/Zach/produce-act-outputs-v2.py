@@ -234,17 +234,11 @@ if __name__ == '__main__':
 
     conn = boto.s3.connect_to_region('us-east-2')
     bucket = conn.get_bucket('beam-outputs')
-    allRuns = ["sfbay-2018-base-20220327",
-               "sfbay-RH_fleetsz_0.25-20220329",
-               "sfbay-RH_fleetsz_0.5-20220329",
-               "sfbay-RH_fleetsz_0.67-20220328-failed",
-               "sfbay-RH_fleetsz_1.5-20220328",
-               "sfbay-RH_fleetsz_1.75-20220329",
-               "sfbay-transit_capacity_0.5-20220329",
-               "sfbay-transit_frequencies_0.5-20220228",
-               "sfbay-transit_frequencies_1.5-20220228",
-               "sfbay-transit_frequencies_2.0-20220229",
-               "sfbay-transit_speed_1.5-20220228"]
+    allRuns = ["sfbay-RH_fleetsz_1.75-20220408",
+               "sfbay-RH_fleetsz_0.5-20220408",
+               "sfbay-RH_fleetsz_0.25-20220408",
+               "sfbay-RH_fleetsz_0.125-20220408",
+               "sfbay-base-20220409"]
     for runName in allRuns:
         folders = bucket.list("pilates-outputs/" + runName + "/beam/", "/")
         allBeamOutputs = [folder.name for folder in folders if ('year' in folder.name) & ('final' not in folder.name)]
