@@ -64,7 +64,7 @@ eventsSF["IDMerged"] = pd.to_numeric(eventsSF.IDMerged)
 eventsSF = eventsSF.sort_values(['IDMerged','time']).reset_index(drop=True)
 
 # We assume that the number of passengers is 1 for ride_hail_pooled
-eventsSF['modeBEAM_rh'] = np.where(eventsSF.driver.str.contains("rideHailAgent", na=False), 'ridehail' , eventsSF['modeBEAM'])
+eventsSF['modeBEAM_rh'] = np.where(eventsSF.driver.str.contains("rideHailAgent", na=False), 'ride_hail' , eventsSF['modeBEAM'])
 
 # Adding teleportation mode to the type = TeleportationEvent row 
 eventsSF["modeBEAM_rh"] = np.where(eventsSF['type']=='TeleportationEvent', eventsSF.modeBEAM_rh.fillna(method='ffill'), eventsSF["modeBEAM_rh"])
@@ -72,9 +72,9 @@ eventsSF['modeBEAM_rh_pooled'] = np.where((eventsSF['type'] == 'PersonCost') & (
 eventsSF['modeBEAM_rh_ride_hail_transit'] = np.where((eventsSF['type'] == 'PersonCost') & (eventsSF['modeBEAM'] == 'ride_hail_transit'), 'ride_hail_transit', np.nan)
 eventsSF['modeBEAM_rh_pooled'] = eventsSF['modeBEAM_rh_pooled'].shift(+1)
 eventsSF['modeBEAM_rh_ride_hail_transit'] = eventsSF['modeBEAM_rh_ride_hail_transit'].shift(+1)
-eventsSF['modeBEAM_rh'] = np.where((eventsSF['type'] == 'PathTraversal') & (eventsSF['modeBEAM'] == 'car') & (eventsSF['driver'].str.contains("rideHailAgent", na=False)) & (eventsSF['modeBEAM_rh_pooled'].notna()), eventsSF['modeBEAM_rh_pooled'], eventsSF['modeBEAM_rh'])
+eventsSF['modeBEAM_rh'] = np.where((eventsSF['type'] == 'PathTraversal') & (eventsSF['modeBEAM'] == 'car') & (eventsSF['driver'].str.contains("rideHailAgent", na=False)) & (eventsSF['modeBEAM_rh_pooled'] != 'nan'), eventsSF['modeBEAM_rh_pooled'], eventsSF['modeBEAM_rh'])
 # We don't know if ridehail_transit is ride_hail or ride_hail_pooled
-eventsSF['modeBEAM_rh'] = np.where((eventsSF['type'] == 'PathTraversal') & (eventsSF['modeBEAM'] == 'car') & (eventsSF['driver'].str.contains("rideHailAgent", na=False)) & (eventsSF['modeBEAM_rh_ride_hail_transit'].notna()), eventsSF['modeBEAM_rh_ride_hail_transit'], eventsSF['modeBEAM_rh'])
+eventsSF['modeBEAM_rh'] = np.where((eventsSF['type'] == 'PathTraversal') & (eventsSF['modeBEAM'] == 'car') & (eventsSF['driver'].str.contains("rideHailAgent", na=False)) & (eventsSF['modeBEAM_rh_ride_hail_transit'] != 'nan'), eventsSF['modeBEAM_rh_ride_hail_transit'], eventsSF['modeBEAM_rh'])
 # Dropping the temporary columns
 eventsSF = eventsSF.drop(['modeBEAM_rh_pooled'], axis=1)
 eventsSF = eventsSF.drop(['modeBEAM_rh_ride_hail_transit'], axis=1)
@@ -118,17 +118,18 @@ eventsSF['actStartType'] = np.where(eventsSF['type']=='actstart', eventsSF['actT
 eventsSF["tripIndex"] = eventsSF.groupby("IDMerged")["tourIndex_fixed"].rank(method="first", ascending=True)
 eventsSF["tripIndex"] = eventsSF.tripIndex.fillna(method='ffill')
 
-# Make a new column which determined mode choice numbers for each person and trip
-s = eventsSF.groupby(['IDMerged','tripIndex', 'type']).cumcount().add(1).astype(str).str.zfill(2)
 
-eventsSF['type_number'] = eventsSF['type'].astype(str) + s.astype(str)
-eventsSF['mode_choice_planned_BEAM'] = np.where(eventsSF['type_number'] == 'ModeChoice01' , eventsSF['modeBEAM_rh'], np.nan)
-eventsSF['mode_choice_replanned_BEAM'] = np.where(eventsSF['type_number'] == 'ModeChoice02', eventsSF['modeBEAM_rh'], np.nan)
-eventsSF['replanning_status'] = np.where(eventsSF['type'] == 'Replanning', 1, 0)
+# Mode Choice planned and actual
+eventsSF['mode_choice_actual_BEAM'] = eventsSF.groupby(['IDMerged','tripIndex', 'type'])['modeBEAM'].transform('last')
+eventsSF['mode_choice_planned_BEAM'] = eventsSF.groupby(['IDMerged','tripIndex', 'type'])['modeBEAM'].transform('first')
+eventsSF['mode_choice_actual_BEAM'] = np.where(eventsSF['type'] != 'ModeChoice' , np.nan, eventsSF['mode_choice_actual_BEAM'])
+eventsSF['mode_choice_planned_BEAM'] = np.where(eventsSF['type'] != 'ModeChoice' , np.nan, eventsSF['mode_choice_planned_BEAM'])
 
 # Rename the "netCost" column
-eventsSF.rename(columns={"netCost":"cost_BEAM"}, inplace=True) 
+eventsSF.rename(columns={"netCost":"cost_BEAM"}, inplace=True)
 
+# Replanning events = 1, the rest = 0
+eventsSF['replanning_status'] = np.where(eventsSF['type']=='Replanning', 1, 0)
 
 #Summarised table
 Person_Trip_eventsSF = pd.pivot_table(
@@ -138,11 +139,15 @@ Person_Trip_eventsSF = pd.pivot_table(
             'actEndType': np.sum, 'duration_walking': np.sum, 'duration_in_privateCar': np.sum, 'duration_on_bike': np.sum, 
             'duration_in_ridehail': np.sum, 'travelDistance': np.sum, 'duration_in_transit': np.sum, 'distance_walking': np.sum, 
             'distance_bike': np.sum, 'distance_ridehail': np.sum, 'distance_privateCar': np.sum, 'distance_transit': np.sum, 
-            'legVehicleIds': np.sum, 'mode_choice_planned_BEAM':np.sum,
-            'tripId': np.sum, 'vehicle': lambda x: ', '.join(set(x.dropna().astype(str))),
+            'legVehicleIds': np.sum, 
+            'mode_choice_planned_BEAM':lambda x: ', '.join(set(x.dropna().astype(str))),
+            'mode_choice_actual_BEAM':lambda x: ', '.join(set(x.dropna().astype(str))),
+            'tripId': np.sum, 
+            'vehicle': lambda x: ', '.join(set(x.dropna().astype(str))),
             'numPassengers': lambda x: ', '.join(list(x.dropna().astype(str))),
-            'length_mode_choice': np.sum, 'replanning_status': np.sum, 
-            'reason': lambda x: ', '.join(list(x.dropna().astype(str)))}).reset_index()
+            'length_mode_choice': np.sum, 
+            'replanning_status': np.sum,
+            'reason': lambda x: ', '.join(list(x.dropna().astype(str)))}).reset_index()   
 
 Person_Trip_eventsSF['door_to_door_time'] = Person_Trip_eventsSF['actStartTime'] - Person_Trip_eventsSF['actEndTime'] 
 Person_Trip_eventsSF['waitTime'] = Person_Trip_eventsSF['door_to_door_time'] - Person_Trip_eventsSF['travelTime'] 
