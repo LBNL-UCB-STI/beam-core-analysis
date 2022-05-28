@@ -263,3 +263,6 @@ eventsASim.rename(columns={"mode_choice_logsum_y":"logsum_tours_mode_AS_tours"},
 eventsASim.rename(columns={"tour_mode":"tour_mode_AS_tours"}, inplace=True)
 eventsASim.rename(columns={"mode_choice_logsum_x":"logsum_trip_mode_AS_trips"}, inplace=True)
 eventsASim.rename(columns={"trip_mode":"trip_mode_AS_trips"}, inplace=True)
+
+# Saving the .csv file
+eventsASim.to_csv('C:/Shared-Work/output/sf_2018_base.csv', index = False)
