@@ -1,8 +1,12 @@
 import pandas as pd
 import numpy as np
 import geopandas as gpd
+import h5py
+import boto.s3
+
 # File location on S3 (The address should be updated depending on the version of the code using)
 loc_2018_baseline = "https://beam-outputs.s3.amazonaws.com/pilates-outputs/sfbay-base-20220409/beam/year-2018-iteration-5/ITERS/it.0/"
+
 # Reading the events file
 dtypes = {
     "time": "float32",
@@ -18,13 +22,19 @@ dtypes = {
     "personalVehicleAvailable": "category",
     "person": "object",
     "driver": "object",
-    "riders": "object"
+    "riders": "object",
+    'primaryFuelType': "category",
+    'secondaryFuelType': 'category',
+    'currentTourMode': 'category',
+    'currentActivity': 'category',
+    'nextActivity': 'category'    
 }
 # Use list comprehension to remove the unwanted column in **usecol**
 eventsSF = pd.read_csv(loc_2018_baseline + '0.events.csv.gz', compression = 'gzip', dtype = dtypes)
 
 eventsSF['scenario'] = "baseline"
-eventsSF['year'] = '2018'
+eventsSF['scenario'] = eventsSF['scenario'].astype("category")
+eventsSF['year'] = 2018
 
 # Rename the "mode" column
 eventsSF.rename(columns={"mode":"modeBEAM"}, inplace=True) 
@@ -160,6 +170,56 @@ conditions  = [(eventsSF['modeBEAM_rh'] == 'ride_hail_pooled'),
 choices = [eventsSF['fuel_not_Food']/eventsSF['numPassengers'], 0 , eventsSF['fuelFood'], eventsSF['fuel_not_Food']]
 eventsSF['fuel_marginal'] = np.select(conditions, choices, default=np.nan)
 
+# Marginal emission
+conditions1  = [(eventsSF['modeBEAM_rh'] == 'ride_hail_pooled') & (eventsSF['fuelElectricity'].notna() != 0), 
+               (eventsSF['modeBEAM_rh'] == 'ride_hail_pooled') & (eventsSF['fuelGasoline'].notna() != 0),
+               (eventsSF['modeBEAM_rh'] == 'ride_hail_pooled') & (eventsSF['fuelBiodiesel'].notna() != 0),
+               (eventsSF['modeBEAM_rh'] == 'ride_hail_pooled') & (eventsSF['fuelDiesel'].notna() != 0),             
+               (eventsSF['modeBEAM_rh'] == 'walk_transit') | (eventsSF['modeBEAM_rh'] == 'drive_transit')|
+               (eventsSF['modeBEAM_rh'] == 'ride_hail_transit')|(eventsSF['modeBEAM_rh'] == 'bus')|(eventsSF['modeBEAM_rh'] == 'subway')|
+               (eventsSF['modeBEAM_rh'] == 'rail')|(eventsSF['modeBEAM_rh'] == 'tram')|(eventsSF['modeBEAM_rh'] == 'cable_car')|
+               (eventsSF['modeBEAM_rh'] == 'bike_transit'),
+
+               (eventsSF['modeBEAM_rh'] == 'walk')|(eventsSF['modeBEAM_rh'] == 'bike'),
+               
+               (eventsSF['modeBEAM_rh'] == 'ride_hail')|(eventsSF['modeBEAM_rh'] == 'car')| 
+               (eventsSF['modeBEAM_rh'] == 'car_hov2')| (eventsSF['modeBEAM_rh'] == 'car_hov3')|
+               (eventsSF['modeBEAM_rh'] == 'hov2_teleportation')| (eventsSF['modeBEAM_rh'] == 'hov3_teleportation')&
+               (eventsSF['fuelElectricity'].notna() != 0),
+              
+               (eventsSF['modeBEAM_rh'] == 'ride_hail')|(eventsSF['modeBEAM_rh'] == 'car')| 
+               (eventsSF['modeBEAM_rh'] == 'car_hov2')| (eventsSF['modeBEAM_rh'] == 'car_hov3')|
+               (eventsSF['modeBEAM_rh'] == 'hov2_teleportation')| (eventsSF['modeBEAM_rh'] == 'hov3_teleportation')&
+               (eventsSF['fuelGasoline'].notna() != 0),           
+              
+               (eventsSF['modeBEAM_rh'] == 'ride_hail')|(eventsSF['modeBEAM_rh'] == 'car')| 
+               (eventsSF['modeBEAM_rh'] == 'car_hov2')| (eventsSF['modeBEAM_rh'] == 'car_hov3')|
+               (eventsSF['modeBEAM_rh'] == 'hov2_teleportation')| (eventsSF['modeBEAM_rh'] == 'hov3_teleportation')&
+               (eventsSF['fuelBiodiesel'].notna() != 0),   
+               
+               (eventsSF['modeBEAM_rh'] == 'ride_hail')|(eventsSF['modeBEAM_rh'] == 'car')| 
+               (eventsSF['modeBEAM_rh'] == 'car_hov2')| (eventsSF['modeBEAM_rh'] == 'car_hov3')|
+               (eventsSF['modeBEAM_rh'] == 'hov2_teleportation')| (eventsSF['modeBEAM_rh'] == 'hov3_teleportation')&
+               (eventsSF['fuelDiesel'].notna() != 0),
+
+               (eventsSF['modeBEAM_rh'] == 'ride_hail')|(eventsSF['modeBEAM_rh'] == 'car')| 
+               (eventsSF['modeBEAM_rh'] == 'car_hov2')| (eventsSF['modeBEAM_rh'] == 'car_hov3')|
+               (eventsSF['modeBEAM_rh'] == 'hov2_teleportation')| (eventsSF['modeBEAM_rh'] == 'hov3_teleportation')&
+               (eventsSF['fuelFood'].notna() != 0)]
+
+choices1 = [eventsSF['emissionElectricity']/eventsSF['numPassengers'],
+           eventsSF['emissionGasoline']/eventsSF['numPassengers'],
+           eventsSF['emissionBiodiesel']/eventsSF['numPassengers'],
+           eventsSF['emissionDiesel']/eventsSF['numPassengers'],           
+           0 , 
+           eventsSF['emissionFood'], 
+           eventsSF['emissionElectricity'],
+           eventsSF['emissionGasoline'],
+           eventsSF['emissionBiodiesel'],
+           eventsSF['emissionDiesel'],
+           eventsSF['emissionFood']]
+eventsSF['emission_marginal'] = np.select(conditions1, choices1, default=np.nan)
+
 #TripIndex
 eventsSF["tripIndex"] = eventsSF.tripId.fillna(method='ffill')
 
@@ -187,7 +247,6 @@ eventsSF['transit_rail'] = np.where(eventsSF['modeBEAM_rh']=='rail', 1, 0)
 eventsSF['transit_cable_car'] = np.where(eventsSF['modeBEAM_rh']=='cable_car', 1, 0)
 eventsSF['ride_hail_pooled'] = np.where(eventsSF['modeBEAM_rh']=='ride_hail_pooled', 1, 0)
 
-#Summarised table
 Person_Trip_eventsSF = pd.pivot_table(
    eventsSF,
    index=['IDMerged','tripIndex'],
@@ -211,7 +270,10 @@ Person_Trip_eventsSF = pd.pivot_table(
             'fuelFood': np.sum, 'fuelElectricity': np.sum, 'fuelBiodiesel': np.sum, 
             'fuelDiesel': np.sum, 'fuel_not_Food': np.sum, 'fuelGasoline': np.sum, 'fuel_marginal': np.sum,
             'BlockGroupStart': 'first',
-            'BlockGroupEnd': 'last'}).reset_index() 
+            'BlockGroupEnd': 'last',
+            'emissionFood': np.sum, 'emissionElectricity': np.sum, 'emissionDiesel': np.sum, 'emissionGasoline': np.sum,
+            'emissionBiodiesel': np.sum, 'emission_marginal': np.sum
+           }).reset_index() 
 
 Person_Trip_eventsSF['duration_door_to_door'] = Person_Trip_eventsSF['actStartTime'] - Person_Trip_eventsSF['actEndTime'] 
 Person_Trip_eventsSF['waitTime'] = Person_Trip_eventsSF['duration_door_to_door'] - Person_Trip_eventsSF['duration_travelling'] 
@@ -238,22 +300,46 @@ tours = pd.read_csv(actloc_2018_baseline +'final_tours.csv')
 plans = pd.read_csv(actloc_2018_baseline +'final_plans.csv')
 trips = pd.read_csv(actloc_2018_baseline + 'final_trips.csv')
 
+# PUMS data for Disability information
+filename = "C:/Shared-Work/Data/Disability_PUMS/custom_mpo_06197001_model_data.h5"
+
+with h5py.File(filename, "r") as f:
+    # List all groups
+    print("Keys: %s" % f.keys())
+    a_group_key = list(f.keys())[0]
+
+    # Get the data
+    data = list(f[a_group_key])
+
+# PUMS data for Disability information
+person_5_year_2010 = pd.read_csv('C:/Users/nazanin/Downloads/csv_pca/ss13pca.csv')
+housing_unit_5_year_2010 = pd.read_csv('C:/Users/nazanin/Downloads/csv_hca/ss13hca.csv')
+
+# Merge PUMS households and persons 
+person_5_year_2010 = person_5_year_2010.sort_values(by=['SERIALNO']).reset_index()
+housing_unit_5_year_2010 = housing_unit_5_year_2010.sort_values(by=['SERIALNO']).reset_index()
+hhpersons_PUMS2010 = pd.merge(left=person_5_year_2010, right=housing_unit_5_year_2010, how='left', on='SERIALNO')
+
 # Merge households and persons 
 persons = persons.sort_values(by=['household_id']).reset_index(drop=True)
 households = households.sort_values(by=['household_id']).reset_index(drop=True)
 hhpersons = pd.merge(left=persons, right=households, how='left', on='household_id')
 
+# Merge Disability Columns
+hhpersons_PUMS2010 = hhpersons_PUMS2010.sort_values(by=['SERIALNO', 'SPORDER']).reset_index(drop=True)
+hhpersons = hhpersons.sort_values(by=['serialno', 'PNUM']).reset_index(drop=True)
+hhpersonsDIS = pd.merge(hhpersons, hhpersons_PUMS2010[['SERIALNO', 'SPORDER', 'AGEP', 'SEX', 'DIS', 'HINCP', 'VEH', 'JWMNP', 'JWRIP', 'JWTR', 'RAC1P', 'RAC2P05']], how='left',left_on = ['serialno', 'PNUM'] , right_on=['SERIALNO', 'SPORDER'])
+
 # Merge tours, households and persons
 tours = tours.sort_values(by=['person_id']).reset_index(drop=True)
-hhpersons = hhpersons.sort_values(by=['person_id']).reset_index(drop=True)
-hhperTours = pd.merge(left=tours, right=hhpersons, how='left', on='person_id')
+hhpersonsDIS = hhpersonsDIS.sort_values(by=['person_id']).reset_index(drop=True)
+hhperTours = pd.merge(left=tours, right=hhpersonsDIS, how='left', on='person_id')
 
 # Merge trips, tours, households and persons
 trips = trips.sort_values(by=['person_id', 'tour_id']).reset_index(drop=True)
 hhperTours = hhperTours.sort_values(by=['person_id','tour_id']).reset_index(drop=True)
 tourTripsMerged = pd.merge(left=trips, right=hhperTours, how='left', on=['person_id','tour_id'])
 
-# Merge person_trip level BEAM with activity sim merged files
 # Merge person_trip level BEAM with activity sim merged files
 tourTripsMerged = tourTripsMerged.sort_values(by=['person_id', 'trip_id']).reset_index(drop=True)
 Person_Trip_eventsSF = Person_Trip_eventsSF.sort_values(by=['IDMerged','tripIndex']).reset_index(drop=True)
