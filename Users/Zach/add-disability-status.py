@@ -31,7 +31,7 @@ hhpersons = hhpersons.sort_values(by=['serialno', 'PNUM']).reset_index(drop=True
 hhpersonsDIS = pd.merge(hhpersons, hhpersons_PUMS2010[['SERIALNO', 'SPORDER', 'AGEP', 'SEX', 'DIS', 'HINCP', 'VEH', 'JWMNP', 'JWRIP', 'JWTR', 'RAC1P', 'RAC2P05']], how='left',left_on = ['serialno', 'PNUM'] , right_on=['SERIALNO', 'SPORDER'])
 
 hhpersonsDIS[hh2.columns].groupby('household_id').agg('first').to_csv('disability/households.csv.gz')
-hhpersonsDIS['in_wheelchair'] = hhpersonsDIS['DIS'] == 2
+hhpersonsDIS['in_wheelchair'] = hhpersonsDIS['DIS'] == 1
 per_100 = hhpersonsDIS[list(per2.columns) + ['in_wheelchair']]
 
 
