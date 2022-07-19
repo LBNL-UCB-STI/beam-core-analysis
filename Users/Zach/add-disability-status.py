@@ -7,15 +7,18 @@ import glob
 # import boto3
 from zipfile import ZipFile
 
-filename = "data/pipeline-sfbay-baseline.h5"
-
-persons = pd.read_hdf(filename, '/persons/trip_mode_choice')
-households = pd.read_hdf(filename, '/households/trip_mode_choice')
+# filename = "data/pipeline-sfbay-baseline.h5"
+#
+# persons = pd.read_hdf(filename, '/persons/trip_mode_choice')
+# households = pd.read_hdf(filename, '/households/trip_mode_choice')
 hhpums = pd.read_csv('data/ss13hca.csv')
 perpums = pd.read_csv('data/ss13pca.csv')
 
-per2 = pd.read_csv('https://beam-outputs.s3.amazonaws.com/pilates-outputs/sfbay-2018-baseline-20220704/activitysim/final_persons.csv')
-hh2 = pd.read_csv('https://beam-outputs.s3.amazonaws.com/pilates-outputs/sfbay-2018-baseline-20220704/activitysim/final_households.csv')
+# per2 = pd.read_csv('https://beam-outputs.s3.amazonaws.com/pilates-outputs/sfbay-2018-baseline-20220704/activitysim/final_persons.csv')
+# hh2 = pd.read_csv('https://beam-outputs.s3.amazonaws.com/pilates-outputs/sfbay-2018-baseline-20220704/activitysim/final_households.csv')
+
+per2 = pd.read_csv('disability/persons-lessrh.csv.gz')
+hh2 = pd.read_csv('disability/households-lessrh.csv.gz')
 
 perpums = perpums.sort_values(by=['SERIALNO']).reset_index()
 hhpums = hhpums.sort_values(by=['SERIALNO']).reset_index()
@@ -44,10 +47,11 @@ def downsamplePersons(persons, fractionToKeep):
     persons_out.iloc[idx_to_remove, persons_out.columns.get_loc('in_wheelchair')] = False
     return persons_out
 
-per_100.to_csv('disability/persons_100pct.csv.gz')
-downsamplePersons(per_100, 0.5).to_csv('disability/persons_50pct.csv.gz')
-downsamplePersons(per_100, 0.2).to_csv('disability/persons_20pct.csv.gz')
-downsamplePersons(per_100, 0.05).to_csv('disability/persons_5pct.csv.gz')
+per_100.to_csv('disability/persons-lessrh_100pct.csv.gz')
+downsamplePersons(per_100, 0.5).to_csv('disability/persons-lessrh_50pct.csv.gz')
+downsamplePersons(per_100, 0.2).to_csv('disability/persons-lessrh_20pct.csv.gz')
+downsamplePersons(per_100, 0.1).to_csv('disability/persons-lessrh_10pct.csv.gz')
+downsamplePersons(per_100, 0.05).to_csv('disability/persons-lessrh_5pct.csv.gz')
 
 
 print('done')
