@@ -1,0 +1,48 @@
+---
+title: "Summer2022"
+author: "Annika Nazanin"
+format: html
+---
+
+```{r}
+# library(tikzDevice) # to get really really good looking things use dev tikz
+library(kableExtra)
+library(Cairo)
+library(tinytex)
+# cairo_null_device(4, 3.2)
+library(flextable)
+library(ggplot2)
+# library(magick)
+library(readr)
+# library(purrr)
+library(khroma) 
+library(patchwork)
+library(flexdashboard)
+library(ggridges)
+library(ggExtra) # marginal plots
+library(ggrepel) # make labels not overlap
+# library(cowplot) 
+library(stringr)
+library(scales)
+# library(plotly) # make interactive!
+# library(Hmisc)
+library(stargazer)
+library(svglite)
+library(dplyr)
+library(tidyverse)
+# library(gghighlight)    # highlight one part of plot
+# library(usethis)
+gc()
+```
+
+You can add options to executable code
+like this
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the
+printing of code (only output is
+displayed).
