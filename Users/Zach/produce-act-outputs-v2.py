@@ -50,7 +50,7 @@ def processEvents(directory):
     PEVs = []
     PLVs = []
     print('Reading ', fullPath)
-    for chunk in pd.read_csv("s3://beam-outputs/" + fullPath, chunksize=1500000):
+    for chunk in pd.read_csv("s3://beam-outputs/" + fullPath, chunksize=2500000):
         if sum((chunk['type'] == 'PathTraversal')) > 0:
             chunk['vehicle'] = chunk['vehicle'].astype(str)
             PT = chunk.loc[(chunk['type'] == 'PathTraversal') & (chunk['length'] > 0)].dropna(how='all', axis=1)
@@ -125,9 +125,9 @@ def processPlans(directory):
     df = addTimesToPlans(df)
     legs = df.loc[(df['ActivityElement'].str.lower().str.contains('leg'))].dropna(how='all', axis=1)
     legsSub = legs[['person_id', 'legDepartureTime',  'PlanElementIndex', 'originX', 'originY', 'destinationX', 'destinationY']]
-    for rowID, val in legsSub.iterrows():
-        personToTripDeparture.setdefault(val.person_id, []).append(
-            {"planID": val.PlanElementIndex, "departureTime": val.legDepartureTime * 3600.0})
+    # for rowID, val in legsSub.iterrows():
+    #     personToTripDeparture.setdefault(val.person_id, []).append(
+    #         {"planID": val.PlanElementIndex, "departureTime": val.legDepartureTime * 3600.0})
     trips.append(legsSub)
     acts = df.loc[(df['ActivityElement'].str.lower().str.contains('activity'))].dropna(how='all', axis=1)
 
@@ -209,20 +209,24 @@ def collectAllData(inDirectory, outDirectory, popDirectory):
 
     PTs, PEVs, PLVs = processEvents(inDirectory)
 
-    BGs = gpd.read_file('scenario/sfbay-blockgroups-2010/641aa0d4-ce5b-4a81-9c30-8790c4ab8cfb202047-1-wkkklf.j5ouj.shp')
-
+    BGs = gpd.read_file(
+        'scenario/sfbay-blockgroups-2010/641aa0d4-ce5b-4a81-9c30-8790c4ab8cfb202047-1-wkkklf.j5ouj.shp').set_crs(
+        'epsg:4326').to_crs('epsg:26910')
+    print("Adding blockgroups to trip origins")
     trips = addGeometryIdToDataFrame(trips, BGs, 'originX', 'originY', 'startBlockGroup')
+    print("Adding blockgroups to trip destinations")
     trips = addGeometryIdToDataFrame(trips, BGs, 'destinationX', 'destinationY', 'endBlockGroup')
-
+    print("Adding blockgroups to activities")
     activities = addGeometryIdToDataFrame(activities, BGs, 'x', 'y', 'activityBlockGroup')
-
+    print("Adding blockgroups to path traversal origins")
     PTs = addGeometryIdToDataFrame(PTs, BGs, 'startX', 'startY', 'startBlockGroup')
+    print("Adding blockgroups to path traversal destinations")
     PTs = addGeometryIdToDataFrame(PTs, BGs, 'endX', 'endY', 'endBlockGroup')
     PTs.index.set_names('PathTraversalID', inplace=True)
-
-    trips.to_csv(outDirectory + '/trips.csv.gz', index=True)
-    PTs.to_csv(outDirectory + '/pathTraversals.csv.gz', index=True)
-    activities.to_csv(outDirectory + '/activities.csv.gz', index=True)
+    print("Writing trips to ", outDirectory + 'trips.csv.gz')
+    trips.to_csv(outDirectory + 'trips.csv.gz', index=True)
+    PTs.to_csv(outDirectory + 'pathTraversals.csv.gz', index=True)
+    activities.to_csv(outDirectory + 'activities.csv.gz', index=True)
 
 
 if __name__ == '__main__':
@@ -231,13 +235,26 @@ if __name__ == '__main__':
 
     conn = boto.s3.connect_to_region('us-east-2')
     bucket = conn.get_bucket('beam-outputs')
-    runName = 'sfbay-transit_frequencies_0.5-20220228'
-    folders = bucket.list("pilates-outputs/" + runName + "/beam/", "/")
-    allBeamOutputs = [folder.name for folder in folders]
-
-    inDirectory = allBeamOutputs[-1]
-    popDirectory = inDirectory.replace("/beam/", "/activitysim/")
-    outDirectory = 'out/' + runName
-    collectAllData(inDirectory, outDirectory, popDirectory)
+    allRuns = ["sfbay-RH_fleetsz_1.75-20220408",
+               "sfbay-RH_fleetsz_0.5-20220408",
+               "sfbay-RH_fleetsz_0.25-20220408",
+               "sfbay-RH_fleetsz_0.125-20220408",
+               "sfbay-base-20220409"]
+    for runName in allRuns:
+        folders = bucket.list("pilates-outputs/" + runName + "/beam/", "/")
+        allBeamOutputs = [folder.name for folder in folders if ('year' in folder.name) & ('final' not in folder.name)]
+        yearToMaxIter = dict()
+        for dir in allBeamOutputs:
+            yr = dir.split('-')[-3]
+            it = int(dir.split('-')[-1][:-1])
+            if yr in yearToMaxIter:
+                if it > yearToMaxIter[yr][0]:
+                    yearToMaxIter[yr] = (it, dir)
+            else:
+                yearToMaxIter[yr] = (it, dir)
+        for yr, (_, inDirectory) in yearToMaxIter.items():
+            popDirectory = inDirectory.replace("/beam/", "/activitysim/")
+            outDirectory = "s3://beam-outputs/" + "-".join(inDirectory.split("-")[:-2]) + "-final/"
+            collectAllData(inDirectory, outDirectory, popDirectory)
 
     print('done')
