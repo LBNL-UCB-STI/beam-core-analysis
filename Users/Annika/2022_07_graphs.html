@@ -4,6 +4,7 @@
   <meta name="generator" content="quarto-0.9.80">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
   <meta name="author" content="Annika Nazanin">
+  <meta name="dcterms.date" content="2022-07-19">
   <title>Summer2022</title>
   <style>
     code{white-space: pre-wrap;}
@@ -98,7 +99,8 @@
 <header id="title-block-header" class="quarto-title-block default">
 
 
-<div class="quarto-title"><h1 class="title display-7">Summer2022</h1></div><div class="quarto-title-meta"><div><div class="quarto-title-meta-heading">Author</div><div class="quarto-title-meta-contents"><div class="quarto-title-authors"><p>Annika Nazanin</p></div></div></div></div></header>
+
+<div class="quarto-title"><h1 class="title display-7">Summer2022</h1></div><div class="quarto-title-meta"><div><div class="quarto-title-meta-heading">Author</div><div class="quarto-title-meta-contents"><div class="quarto-title-authors"><p>Annika Nazanin</p></div></div></div><div><div class="quarto-title-meta-heading">Published</div><div class="quarto-title-meta-contents"><p class="date">Invalid Date</p></div></div></div></header>
 <div class="cell">
 <div class="sourceCode" id="cb1"><pre class="sourceCode r cell-code code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># library(tikzDevice) # to get really really good looking things use dev tikz</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(kableExtra)</span>
@@ -214,35 +216,29 @@ tidyverse 1.3.2 ──</code></pre>
 <span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="fu">gc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-stdout">
 <pre><code>          used (Mb) gc trigger  (Mb) max used  (Mb)
-Ncells 1214761 64.9    2218251 118.5  2218251 118.5
-Vcells 1985596 15.2    8388608  64.0  3060406  23.4</code></pre>
+Ncells 1216206 65.0    2220554 118.6  2220554 118.6
+Vcells 1988913 15.2    8388608  64.0  3009345  23.0</code></pre>
 </div>
 </div>
 <section id="save-graphs" class="level1">
 <h1>Save Graphs?</h1>
-<div class="cell">
-<div class="sourceCode" id="cb30"><pre class="sourceCode r cell-code code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>saveGraphsTF <span class="ot">=</span> <span class="cn">TRUE</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
 </section>
 <section id="define-y" class="level1">
 <h1>DEFINE Y</h1>
 <section id="y-variables" class="level3">
 <h3 class="anchored" data-anchor-id="y-variables">Y Variables</h3>
 <div class="cell">
-<div class="sourceCode" id="cb31"><pre class="sourceCode r cell-code code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>listY <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="st">"logsum_trip_mode_AS_trips"</span>,<span class="st">"duration_door_to_door"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-stdout">
+<pre><code>[[1]]
+[1] "logsum_trip_mode_AS_trips"
+
+[[2]]
+[1] "duration_door_to_door"</code></pre>
+</div>
 </div>
 </section>
 <section id="define-het" class="level3">
 <h3 class="anchored" data-anchor-id="define-het">define Het</h3>
-<div class="cell">
-<div class="cell-output-stdout">
-<pre><code>[[1]]
-[1] "ownCarYNLabel"
-
-[[2]]
-[1] "l_inc_HiLo10"</code></pre>
-</div>
-</div>
 </section>
 <section id="test-of-graphics" class="level3">
 <h3 class="anchored" data-anchor-id="test-of-graphics">TEST of graphics</h3>
