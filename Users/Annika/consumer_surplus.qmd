@@ -1,0 +1,35 @@
+---
+title: "Consumer_Surplus"
+author: "annika nazanin"
+date: "`r Sys.Date()`"
+format: html
+echo: false
+---
+
+## Consumer Surplus
+
+The change in consumer surplus resulting from scenario A relative to baseline is:
+
+$$
+{1/\alpha}\sum_{scenarioA} INEXUS_{it} - {1/\alpha}\sum_{scenario} INEXUS_{it} 
+$$
+
+Here we are assuming that ${\alpha = }$
+
+## CS for scenarios relative to baseline
+
+```{r}
+
+
+```
+
+## CS heterogeneity
+
+Choose one of the scenarios that gives the biggest difference, and then calculate
+for low income, etc
+
+```{r}
+
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
