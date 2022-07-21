@@ -6,17 +6,22 @@ format: html
 echo: false
 ---
 
+## Setup
+
+Only mandatory
+
 ## Consumer Surplus
 
 The change in consumer surplus resulting from scenario A relative to baseline is:
 
 $$
-{1/\alpha}\sum_{scenarioA} INEXUS_{it} - {1/\alpha}\sum_{scenario} INEXUS_{it} 
+{1/\alpha}\sum_{leverA} INEXUS_{it} - {1/\alpha}\sum_{baseline} INEXUS_{it} 
 $$
 
-Here we are assuming that ${\alpha = }$
+Here we are assuming that ${\alpha = .1}$, so multiply the INEXUS by 10 to get the
+INEXUS scaled into a dollar amount
 
-## CS for scenarios relative to baseline
+## calculate change in CS for 3 levers relative to baseline, with a table
 
 ```{r}
 
@@ -26,10 +31,8 @@ Here we are assuming that ${\alpha = }$
 ## CS heterogeneity
 
 Choose one of the scenarios that gives the biggest difference, and then calculate
-for low income, etc
+for income quartiles
 
 ```{r}
 
 ```
-
-The `echo: false` option disables the printing of code (only output is displayed).
