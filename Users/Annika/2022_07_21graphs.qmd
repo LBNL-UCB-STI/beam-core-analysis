@@ -67,8 +67,10 @@ figures_folder <- paste0(output_dir_on_this_machine,"figures")
 print(figures_folder)
 ```
 
+### Save graphs right now?
+
 ```{r TFsave_graphs, include=FALSE}
-saveGraphsTF = FALSE
+saveGraphsTF = TRUE
 ```
 
 ## Setup
@@ -182,8 +184,8 @@ mmmmmThis text is two inches:
 #             paste0(data_dir_on_this_machine,
 #                    "df_stacked_from_list_small.rds"))
   df_stacked_from_list <-
-    aws.s3::s3read_using(read_csv, 
-                         object = file_to_use, 
+    aws.s3::s3read_using(read_csv,
+                         object = file_to_use,
                          bucket = "beam-core-act")
 
 ```
@@ -194,6 +196,58 @@ mmmmmThis text is two inches:
 description_df   <- read_csv(file ="ScenarioTitlesColorsEtc.csv")
 ```
 
+### Variables
+
+```{r}
+names(df_stacked_from_list)
+```
+
+### Clean
+
+!!!! NEED TO MAKE A SHORTENED LIST WITH FEWER VARIABLES BUT THEY DONT MATCH MINE
+
+```{r}
+  df_stacked_from_list <- df_stacked_from_list %>%
+    mutate(income10levels = ntile(income_in_thousands,10))  
+  
+  # df_stacked_from_list <- df_stacked_from_list %>%
+  # select(IDMerged,
+  #        person_id,
+  #        trip_id,
+  #        home_is_urban,
+  #        auto_ownership,
+  #        income_in_thousands,
+  #        # earning,
+  #        hh_value_of_time,
+  #        median_value_of_time,
+  #        value_of_time,
+  #        actEndTime,
+  #        actStartTime,
+  #        # travelTime,
+  #        waitTime,
+  #        # roundtrip_auto_time_to_school,
+  #        # roundtrip_auto_time_to_work,
+  #        starts_with("duration"),
+  #        # actPurpose,
+  #        # mandatoryType,
+  #        income10levels,
+  #        # incomeLow30Label,
+  #        # incomeLoHi10Lab,
+  #        # ownCarYNLabel,
+  #        # scenShort,
+  #        # scenYear,
+  #        lever_position,
+  #        # category,
+  #        lever,
+  #        # scenYr,
+  #        # scenPl,
+  #        # scenBind,
+  #        # num_young_children,
+  #        # logsum_trip_mode_AS_trips
+  # )
+
+```
+
 ### Scenarios
 
 ```{r}
@@ -201,12 +255,6 @@ description_df   <- read_csv(file ="ScenarioTitlesColorsEtc.csv")
   print(levels(as_factor(df_stacked_from_list$lever_position)))
   print(levels(df_stacked_from_list$lever))
   print(levels(df_stacked_from_list$category))
-```
-
-### Variables
-
-```{r}
-names(df_stacked_from_list)
 ```
 
 ## Define Labels, Titles, Other
@@ -251,7 +299,7 @@ description_df <- description_df |>
     yaxishigh =
       case_when(
         variable == "logsum_trip_mode_AS_trips" ~
-          median_hilow(df_stacked_from_list[[y_var]], conf.int =
+          median_hilow(df_stacked_from_list$logsum_trip_mode_AS_trips, conf.int =
                          .95)[["ymax"]],
         variable == "duration_door_to_door" ~
           median_hilow(df_stacked_from_list$duration_door_to_door, conf.int =
@@ -261,7 +309,7 @@ description_df <- description_df |>
     yaxismedian =
       case_when(
         variable == "logsum_trip_mode_AS_trips" ~
-          median_hilow(df_stacked_from_list[[y_var]], conf.int =
+          median_hilow(df_stacked_from_list$logsum_trip_mode_AS_trips, conf.int =
                          .95)[["y"]],
         variable == "duration_door_to_door" ~
           median_hilow(df_stacked_from_list$duration_door_to_door, conf.int =
@@ -330,7 +378,7 @@ fx_SUMMARY_STATS <- function(df) {
     group_by(lever_position) |> 
     summarise(
       avLS = mean(.data[["logsum_trip_mode_AS_trips"]]),
-      avY = mean(.data[[y_var]]), 
+      avY = mean(.data[["logsum_trip_mode_AS_trips"]]), 
       n=n()
     )
   print(sssumm)
@@ -338,7 +386,7 @@ fx_SUMMARY_STATS <- function(df) {
     group_by(lever_position) |> 
     summarise(
       avLS = mean(.data[["logsum_trip_mode_AS_trips"]]),
-      avY = mean(.data[[y_var]]), 
+      avY = mean(.data[["logsum_trip_mode_AS_trips"]]), 
       qsLS=quantile(.data[["logsum_trip_mode_AS_trips"]]),
       qsTIV=quantile(.data[["duration_total"]], na.rm = TRUE),
       n=n()
@@ -354,72 +402,6 @@ fx_SUMMARY_STATS(df_stacked_from_list)
 
 ## LOOP ACROSS Y VARS and Heterogeneity
 
-### Within
-
-```{r echo=FALSE}
-fx_Het_WithinScenario <- function(df, y_var, het = "none",
-                                  nm = "noName",      ...) {
-  yvarTitle <- filter(description_df,variable == y_var)[["Title"]]
-  plottttt <- ggplot() +
-    geom_density(
-      data = df ,
-        aes(
-          x = .data[[y_var]],
-          fill = .data[[het]],
-          color = .data[[het]],
-          group = .data[[het]]
-      ),
-      alpha = .3
-    ) +
-    # layout a lot of graphs
-    facet_wrap(facets = df[[het]] , ncol = 3) +
-# Now usual
-    coord_cartesian(xlim = c(
-      filter(description_df, variable == y_var)[["yaxislow"]],
-      filter(description_df, variable == y_var)[["yaxishigh"]])) +
-    # TITLE
-    labs(title = str_glue("{year} {category} {lever}"),
-           subtitle = str_glue("Examine {yvarTitle}, with heterogeneity across: {het}")
-      ) +
-    xlab(filter(description_df, variable == y_var)[["Title"]]) +
-    ylab(" density ")
-  labs(title = str_glue("{year} {category} {lever}"),
-         subtitle = str_glue("Examine {yvarTitle}, with heterogeneity across: {het}")
-    )
-  # theme(legend.position = "none")
-  print(plottttt)
-  # ggsave(str_glue("figures/{Sys.Date()}_{nm}_het{het}.png"))
-  # ggsave(str_glue("figures/{Sys.Date()}_{nm}_het{het}.pdf"))
-  
-# width  = dev.size("in")[1], height = dev.size("in")[2])
-
-  return(list(g_w_g0 = plottttt, title = nm))
-}
-
-# List of corresponding datasets (maybe filtered)
-#   data_inc_HiLo10 <-
-#     map(df_in_a_list,
-#         ~ .x |>
-#           filter(.x[["income10levels"]] == 1 |
-#                    .x[["income10levels"]] == 10))
-# 
-# 
-# 
-# g_het_loop <- map2(listHet,listHetFilter,
-#     function(z,w) imap(w, 
-#            ~ fx_Het_WithinScenario(df = .x,
-#                                 nm = .y,
-#                                 het = z)))
-g_het_loop <- map(listHet,
-           ~ fx_Het_WithinScenario(y_var = "logsum_trip_mode_AS_trips",
-             df = df_stacked_from_list,
-                                nm = "scenario",
-                                het = .x))
-# print(g_het_loop)
-```
-
-## 
-
 ### Across
 
 ```{r}
@@ -427,20 +409,7 @@ fx_Het_AcrossScenario <- function(df, y_var, het = "none",
                                   nm = "", tit = "noTitle", 
                                   ...) {
   yvarTitle <- filter(description_df,variable == y_var)[["Title"]]
-  plottttt <- ggplot() +
-    geom_density(
-      data = df ,
-        aes(
-          x = .data[[y_var]],
-          fill = .data[[het]],
-          color = .data[[het]],
-          group = .data[[het]]
-      ),
-      alpha = .3
-    ) +
-# layout a lot of graphs
-    facet_wrap(df_stacked_from_list$lever_position, ncol = 3) +
-    # facet_wrap(facets = df_stacked_from_list$ownCarYNLabel , ncol = 3) +
+  plotttaaaa0 <- ggplot() +
 # Now usual
     coord_cartesian(xlim = c(
     filter(description_df, variable == y_var)[["yaxislow"]],
@@ -450,11 +419,47 @@ fx_Het_AcrossScenario <- function(df, y_var, het = "none",
            subtitle = str_glue("Examine {yvarTitle}, with heterogeneity across: {het}")
       ) +
     xlab(filter(description_df, variable == y_var)[["Title"]]) +
-    ylab(" density ")
-  ggsave(str_glue("figures/{Sys.Date()}_{nm}_{y_var}_{het}_{category}_{lever}_{year}.png"))
-  ggsave(str_glue("figures/{Sys.Date()}_{nm}_{y_var}_{het}_{category}_{lever}_{year}.pdf"))
-  print(plottttt)
-  return(list(g_w_g0 = plottttt, title = nm))
+    ylab(" density ") 
+# facet wrap LEVER
+  plottttt <- plotttaaaa0 +
+    geom_density(
+      data = df ,
+        aes(
+          x = .data[[y_var]],
+          fill = .data[[het]],
+          color = .data[[het]],
+          group = .data[[het]]
+      ),
+      alpha = .3
+    )    +
+    facet_wrap(df_stacked_from_list$lever_position, ncol = 3)
+    print(plottttt)
+    if(saveGraphsTF == TRUE) {
+         ggsave(str_glue("figures/{Sys.Date()}_{nm}_{y_var}_{het}_{category}_wrap-{lever}_{year}.png"))
+         ggsave(str_glue("figures/{Sys.Date()}_{nm}_{y_var}_{het}_{category}_wrap-{lever}_{year}.pdf"))
+    }
+# facet wrap HET    
+  plottttt <- plotttaaaa0 +
+    geom_density(
+      data = df ,
+        aes(
+          x = .data[[y_var]],
+          fill =  .data[["lever_position"]],
+          # alpha = .data[["lever_position"]]*.1,
+          color = .data[["lever_position"]],
+          group = .data[["lever_position"]]
+      )
+      ,
+      alpha = .1
+        
+    )    +
+    facet_wrap(facets = df_stacked_from_list$ownCarYNLabel , ncol = 3) 
+    print(plottttt)
+    if(saveGraphsTF == TRUE) {
+         ggsave(str_glue("figures/{Sys.Date()}_{nm}_{y_var}_wrap-{het}_{category}_{lever}_{year}.png"))
+         ggsave(str_glue("figures/{Sys.Date()}_{nm}_{y_var}_wrap-{het}_{category}_{lever}_{year}.pdf"))
+    }
+return(plottttt)
 }
 
  g_het_loop_across <- map(
@@ -470,11 +475,5 @@ fx_Het_AcrossScenario <- function(df, y_var, het = "none",
      )
    )
  )
-```
-
-### START AGAIN HERE
-
-```{r}
-    facet_wrap(facets = df_stacked_from_list$ownCarYNLabel , ncol = 3) +
-
+ g_het_loop_across
 ```
