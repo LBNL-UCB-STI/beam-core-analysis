@@ -1,9 +1,11 @@
 ---
-title: "Summer2022"
+title: "Graphs SF Bay Summer 2022"
 author: "Annika Nazanin"
-date: "`r Sys.Date()`"
+date: "`r {Sys.Date()}`"
 format: html
 ---
+
+## setup
 
 ```{r, include=FALSE}
 # library(tikzDevice) # to get really really good looking things use dev tikz
@@ -12,7 +14,6 @@ library(Cairo)
 library(tinytex)
 # cairo_null_device(4, 3.2)
 library(flextable)
-library(ggplot2)
 # library(magick)
 library(readr)
 # library(purrr)
@@ -31,18 +32,17 @@ library(stargazer)
 library(svglite)
 library(dplyr)
 library(tidyverse)
+library(ggplot2)
 # library(gghighlight)    # highlight one part of plot
 # library(usethis)
 gc()
 ```
 
-# Save Graphs?
-
-```{r, include=FALSE}
+```{r TFsave_graphs, include=FALSE}
 saveGraphsTF = FALSE
 ```
 
-```{r, include=FALSE}
+```{r define_paths, include=FALSE}
 source( paste0(getwd(),
         "/2022_06_14_global_file_directories.R") )
 # returns: 
@@ -52,16 +52,16 @@ figures_folder <- paste0(output_dir_on_this_machine,"figures")
 print(figures_folder)
 ```
 
-# DEFINE Y
+## Define Variables
 
-### Y Variables
+### Y variables:
 
 ```{r echo=FALSE}
 listY <- list("logsum_trip_mode_AS_trips","duration_door_to_door")
 print(listY)
 ```
 
-### define Het
+### Heterogeneity:
 
 ```{r g_Het_WithinScenario, echo=FALSE}
 # With imap, going through a list using a |> , .x is the thing in the list, and .y is the name of the thing in the list.  So like, .x is each dataframe in the list, and .y is the name of the dataframe in the list. The other way is    map2( .x = df_in_a_list, .y = names(df_in_a_list), ~fx_H...
@@ -72,10 +72,11 @@ print(listHet)
 
 ### TEST of graphics
 
-Make sure width and size are consistent
-with what i see
+Make sure width and size are consistent with what i see. This is what I see in the
+GUI, and\
+mmmmmThis text is two inches:
 
-```{r TEST, eval=FALSE, include=FALSE}
+```{r TEST, echo=FALSE}
 df <- tibble::tribble( ~x, ~y, ~name,
   1,  1,  "12pt font",
   3,  3,  "f",
@@ -117,3 +118,18 @@ ggsave(filename = paste0("test.png"), path = figures_folder, width  = dev.size("
 ggsave(filename = paste0("test.pdf"), path = figures_folder, width  = dev.size("in")[1], height = dev.size("in")[2])
 rm(df)
 ```
+
+This is the pdf version, and \
+mmmmmThis text is two inches:
+
+![](output/figures/test.pdf)
+
+This is the png version, and \
+mmmmmThis text is two inches:
+
+![](output/figures/test.png)
+
+This is the svg version, and \
+mmmmmThis text is two inches:
+
+![](output/figures/test.svg)
