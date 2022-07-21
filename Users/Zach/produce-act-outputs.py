@@ -36,7 +36,7 @@ def addGeometryIdToDataFrame(df, gdf, xcol, ycol, idColumn="geometry", df_geom='
 
 
 def processEvents(directory):
-    fullPath = directory + 'events.csv.gz'
+    fullPath = directory + 'ITERS/it.0/0.events.csv.gz'
     PTs = []
     PEVs = []
     PLVs = []
@@ -187,7 +187,7 @@ def collectAllData(inDirectory, outDirectory, prefix):
 
     PTs, PEVs, PLVs = processEvents(filePath)
     # personToPathTraversal(PTs, PEVs, PLVs, personToTripDeparture)
-    vehiclePathPassenger = personToPathTraversal(PTs, PEVs, PLVs, personToTripDeparture)
+    # vehiclePathPassenger = personToPathTraversal(PTs, PEVs, PLVs, personToTripDeparture)
     # BGs = gpd.read_file('scenario/sfbay-blockg  roups-2010.zip')
 
     if False:
@@ -207,12 +207,26 @@ def collectAllData(inDirectory, outDirectory, prefix):
     PTs.to_csv(outDirectory + '/pathTraversals.csv', index=True)
     activities.to_csv(outDirectory + '/activities.csv', index=True)
 
+def compare(outdir):
+    p2pt = pd.read_csv(outdir + '/passengerToPathTraversal.csv')
+    pt = pd.read_csv(outdir + '/pathTraversals.csv')
+    per = pd.read_csv('/Users/zaneedell/Desktop/git/beam/test/input/sf-light/urbansim/1k/persons.csv')
+    wheelchairUsers = per.loc[per.in_wheelchair,'person_id']
+    wheelchairUsers = set(per.loc[per.in_wheelchair,'person_id'].values)
+    joined = p2pt.merge(pt, left_on='pathTraversalID', right_index=True)
+    rh = joined.loc[joined.isRH]
+    rh['isWheelchairUser'] = rh.personID.isin(wheelchairUsers)
+    return rh
 
 if __name__ == '__main__':
-    inDirectory = 'https://beam-outputs.s3.amazonaws.com/pilates-outputs/austin-2010-2018-central/2018/beam_outputs'
-    prefixes = ['austin-pilates-base__2021-12-16_00-35-49_vre/ITERS/it.0/0']
-    outDirectory = 'out/austin-pilates'
+    inDirectory = '/Users/zaneedell/Desktop/git/beam/output/sf-light'
+    prefixes = ['urbansim-1k__2022-01-14_17-04-35_apo/ITERS/it.0/0']
+    #inDirectory = 'https://beam-outputs.s3.amazonaws.com/pilates-outputs/austin-2010-2018-central/2018/beam_outputs'
+    #prefixes = ['austin-pilates-base__2021-12-16_00-35-49_vre/ITERS/it.0/0']
+    outDirectory = 'out/rh-accessibility'
     for prefix in prefixes:
         collectAllData(inDirectory, outDirectory, prefix)
 
     print('done')
+    
+
