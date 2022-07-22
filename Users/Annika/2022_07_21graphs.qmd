@@ -11,7 +11,9 @@ format: html
 
 ```{r}
 category <- "Transit"
+category_short <- "Tr"
 lever <- "Frequency"
+lever_short <- "Fr"
 year <- "2018"
 ```
 
@@ -55,7 +57,7 @@ print(figures_folder)
 ### Y variables:
 
 ```{r echo=FALSE}
-listY <- list("Potential_INEXUS_in_dollar","duration_door_to_door")
+listY <- list("Potential_INEXUS_in_dollar","duration_door_to_door", "Realized_INEXUS_in_dollar", "Realized_INEXUS")
 print(listY)
 ```
 
@@ -63,7 +65,7 @@ print(listY)
 
 ```{r g_Het_WithinScenario, echo=FALSE}
 # With imap, going through a list using a |> , .x is the thing in the list, and .y is the name of the thing in the list.  So like, .x is each dataframe in the list, and .y is the name of the dataframe in the list. The other way is    map2( .x = df_in_a_list, .y = names(df_in_a_list), ~fx_H...
-listHet       <- list("ownCarYNLabel", "l_inc_HiLo10")
+listHet       <- list("ownCarYNLabel", "l_inc_HiLo10","mode_choice_actual_6")
 # listHetFilter <- list(df_in_a_list, data_inc_HiLo10)
 print(listHet)
 ```
@@ -307,6 +309,19 @@ fx_LABELS <- function(x) {
 df_stacked_from_list <- fx_LABELS(df_stacked_from_list)
 ```
 
+### Short labels for saving files
+
+```{r}
+description_df <- description_df |>
+  mutate(
+    y_var_short =
+      case_when(
+        variable == "Potential_INEXUS_in_dollar" ~ "potInex",
+        variable == "duration_door_to_door" ~  "doorDoor"        
+      ))
+
+```
+
 ### Limits of y variables, scales
 
 ```{r}
@@ -388,6 +403,12 @@ theme_update(plot.title = element_text(face = "bold"),
 )
 ```
 
+### Save Definitions as csv
+
+```{r}
+write_excel_csv(description_df, file ="ScenarioTitlesColorsEtc.csv")
+```
+
 ## Summary stats
 
 ### quantiles mean median
@@ -433,6 +454,7 @@ fx_Het_AcrossScenario <- function(df, y_var, het = "none",
                                   nm = "", tit = "noTitle", 
                                   ...) {
   yvarTitle <- filter(description_df,variable == y_var)[["Title"]]
+  yvarShortName <- filter(description_df,variable == y_var)[["y_var_short"]]
   plotttaaaa0 <- ggplot() +
 # Now usual
     coord_cartesian(xlim = c(
@@ -459,9 +481,11 @@ fx_Het_AcrossScenario <- function(df, y_var, het = "none",
     facet_wrap(df_stacked_from_list$lever_position, ncol = 3)
     print(plottttt)
     if(saveGraphsTF == TRUE) {
-         ggsave(str_glue("figures/{Sys.Date()}_{nm}_{y_var}_{het}_{category}_wrap-{lever}_{year}.png"))
-         ggsave(str_glue("figures/{Sys.Date()}_{nm}_{y_var}_{het}_{category}_wrap-{lever}_{year}.pdf"))
-    }
+         ggsave(str_glue("figures/{Sys.Date()}_{nm}_{yvarShortName}_{het}_{category_short}_wrap-{lever_short}_{year}.png"))
+         ggsave(str_glue("figures/{Sys.Date()}_{nm}_{yvarShortName}_{het}_{category_short}_wrap-{lever_short}_{year}.pdf"))
+         # ggsave(str_glue("figures/{Sys.Date()}_a.png"))
+         # ggsave(str_glue("figures/{Sys.Date()}_a.pdf"))
+         }
 # facet wrap HET    
   plottttt <- plotttaaaa0 +
     geom_density(
@@ -477,11 +501,13 @@ fx_Het_AcrossScenario <- function(df, y_var, het = "none",
       alpha = .1
         
     )    +
-    facet_wrap(facets = df_stacked_from_list$ownCarYNLabel , ncol = 3) 
+    facet_wrap(facets = as_factor(df_stacked_from_list$ownCarYNLabel) , ncol = 3) 
     print(plottttt)
     if(saveGraphsTF == TRUE) {
-         ggsave(str_glue("figures/{Sys.Date()}_{nm}_{y_var}_wrap-{het}_{category}_{lever}_{year}.png"))
-         ggsave(str_glue("figures/{Sys.Date()}_{nm}_{y_var}_wrap-{het}_{category}_{lever}_{year}.pdf"))
+         # ggsave(str_glue("figures/{Sys.Date()}_b.png"))
+         # ggsave(str_glue("figures/{Sys.Date()}_b.pdf"))
+         ggsave(str_glue("figures/{Sys.Date()}_{nm}_{yvarShortName}_wrap-{het}_{category_short}_{lever_short}_{year}.png"))
+         ggsave(str_glue("figures/{Sys.Date()}_{nm}_{yvarShortName}_wrap-{het}_{category_short}_{lever_short}_{year}.pdf"))
     }
 return(plottttt)
 }
