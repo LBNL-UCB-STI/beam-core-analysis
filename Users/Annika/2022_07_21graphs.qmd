@@ -23,8 +23,9 @@ year <- "2018"
 library(aws.s3)
 library(dbplyr) # to get from aws
 aws_prefix <- "deepDive/CleanData/SanFrancisco"
-Sys.setenv("AWS_DEFAULT_REGION"="us-east-2")
-awsDF <- get_bucket_df("beam-core-act", prefix = aws_prefix) # bucket directory
+Sys.setenv("AWS_DEFAULT_REGION"="us-east-2", TZ='GMT')
+awsDF <- get_bucket("beam-core-act", prefix = aws_prefix)
+# bucket directory
 ```
 
 ```{r aws_data_file_list, include=FALSE}
