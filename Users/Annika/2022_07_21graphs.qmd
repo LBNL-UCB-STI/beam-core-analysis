@@ -10,8 +10,8 @@ format: html
 ### Scenario and lever
 
 ```{r}
-category <- "Ride Hail"
-lever <- "Fleet size"
+category <- "Transit"
+lever <- "Frequency"
 year <- "2018"
 ```
 
@@ -180,13 +180,14 @@ mmmmmThis text is two inches:
 ### Dataset
 
 ```{r open_files}
-# df_stacked_from_list   <- read_rds(file =
-#             paste0(data_dir_on_this_machine,
+df_stacked_from_list   <- read_rds(file =
+            paste0(data_dir_on_this_machine,
+                   "df_stacked_from_list3.rds"))
 #                    "df_stacked_from_list_small.rds"))
-  df_stacked_from_list <-
-    aws.s3::s3read_using(read_csv,
-                         object = file_to_use,
-                         bucket = "beam-core-act")
+  # df_stacked_from_list <-
+  #   aws.s3::s3read_using(read_csv,
+  #                        object = file_to_use,
+  #                        bucket = "beam-core-act")
 
 ```
 
@@ -207,10 +208,30 @@ names(df_stacked_from_list)
 !!!! NEED TO MAKE A SHORTENED LIST WITH FEWER VARIABLES BUT THEY DONT MATCH MINE
 
 ```{r}
+
+df_stacked_from_list <-   df_stacked_from_list |> 
+  mutate(across(where(is.character), as_factor))
+
   df_stacked_from_list <- df_stacked_from_list %>%
-    mutate(income10levels = ntile(income_in_thousands,10))  
+    mutate(income10levels = ntile(income_in_thousands,10))  %>%  
+    mutate(ownCarYNLabel = 
+           case_when(auto_ownership >= 1 ~ "Owns Car",
+                     auto_ownership == 0 ~ "Does not own Car"
+                     )  )
   
-  # df_stacked_from_list <- df_stacked_from_list %>%
+  df_stacked_from_list <- df_stacked_from_list %>%
+    select(-c(contains("fuel"),
+             SEX,	DIS,	VEH,	DRIVEALONEFREE,	DRIVEALONEPAY,
+SHARED2PAY,	SHARED3FREE,	SHARED3PAY,	WALK,	BIKE,
+WALK_LRF,	WALK_EXP,	WALK_HVY,	WALK_COM,	DRIVE_LOC,
+DRIVE_EXP,	DRIVE_HVY,	DRIVE_COM	, TAXI,	
+
+
+TNC_SINGLE
+               ))
+  
+  df_stacked_from_list <- df_stacked_from_list |> 
+    mutate(logsum_trip_mode_AS_trips = Potential_INEXUS_in_dollar)
   # select(IDMerged,
   #        person_id,
   #        trip_id,
@@ -388,7 +409,7 @@ fx_SUMMARY_STATS <- function(df) {
       avLS = mean(.data[["logsum_trip_mode_AS_trips"]]),
       avY = mean(.data[["logsum_trip_mode_AS_trips"]]), 
       qsLS=quantile(.data[["logsum_trip_mode_AS_trips"]]),
-      qsTIV=quantile(.data[["duration_total"]], na.rm = TRUE),
+      qsTIV=quantile(.data[["logsum_trip_mode_AS_trips"]], na.rm = TRUE),
       n=n()
     )
   print(sssummQuantiles)
