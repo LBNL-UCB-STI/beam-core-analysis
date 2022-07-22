@@ -5,7 +5,7 @@ date: "`r {Sys.Date()}`"
 format: html
 ---
 
-## What are we looking at
+## DEFINE Globals
 
 ### Scenario and lever
 
@@ -17,7 +17,7 @@ year <- "2018"
 
 ### File name
 
-#### Get from AWS
+#### Look on AWS
 
 ```{r set_aws_params}
 library(aws.s3)
@@ -39,10 +39,22 @@ data_file_list_paths_chrACTUAL
 file_to_use <- "deepDive/CleanData/SanFrancisco/Stacked/sf_2018_stacked_tr_fr_v4.csv" 
 ```
 
+#### Define the path file in separate R file
+
+```{r define_paths, include=FALSE}
+source( paste0(getwd(),
+        "/2022_06_14_global_file_directories.R") )
+# returns: 
+print(data_dir_on_this_machine)
+print(output_dir_on_this_machine)
+figures_folder <- paste0(output_dir_on_this_machine,"figures")
+print(figures_folder)
+```
+
 ### Y variables:
 
 ```{r echo=FALSE}
-listY <- list("logsum_trip_mode_AS_trips","duration_door_to_door")
+listY <- list("Potential_INEXUS_in_dollar","duration_door_to_door")
 print(listY)
 ```
 
@@ -55,19 +67,7 @@ listHet       <- list("ownCarYNLabel", "l_inc_HiLo10")
 print(listHet)
 ```
 
-### Define the path file in separate R file
-
-```{r define_paths, include=FALSE}
-source( paste0(getwd(),
-        "/2022_06_14_global_file_directories.R") )
-# returns: 
-print(data_dir_on_this_machine)
-print(output_dir_on_this_machine)
-figures_folder <- paste0(output_dir_on_this_machine,"figures")
-print(figures_folder)
-```
-
-### Save graphs right now?
+### Should we save graphs right now?
 
 ```{r TFsave_graphs, include=FALSE}
 saveGraphsTF = TRUE
@@ -219,19 +219,19 @@ df_stacked_from_list <-   df_stacked_from_list |>
                      auto_ownership == 0 ~ "Does not own Car"
                      )  )
   
-  df_stacked_from_list <- df_stacked_from_list %>%
-    select(-c(contains("fuel"),
-             SEX,	DIS,	VEH,	DRIVEALONEFREE,	DRIVEALONEPAY,
-SHARED2PAY,	SHARED3FREE,	SHARED3PAY,	WALK,	BIKE,
-WALK_LRF,	WALK_EXP,	WALK_HVY,	WALK_COM,	DRIVE_LOC,
-DRIVE_EXP,	DRIVE_HVY,	DRIVE_COM	, TAXI,	
-
-
-TNC_SINGLE
-               ))
+#   df_stacked_from_list <- df_stacked_from_list %>%
+#     select(-c(contains("fuel"),
+#              SEX,	DIS,	VEH,	DRIVEALONEFREE,	DRIVEALONEPAY,
+# SHARED2PAY,	SHARED3FREE,	SHARED3PAY,	WALK,	BIKE,
+# WALK_LRF,	WALK_EXP,	WALK_HVY,	WALK_COM,	DRIVE_LOC,
+# DRIVE_EXP,	DRIVE_HVY,	DRIVE_COM	, TAXI,	
+# 
+# 
+# TNC_SINGLE
+#                ))
   
-  df_stacked_from_list <- df_stacked_from_list |> 
-    mutate(logsum_trip_mode_AS_trips = Potential_INEXUS_in_dollar)
+  # df_stacked_from_list <- df_stacked_from_list |> 
+  #   mutate(logsum_trip_mode_AS_trips = Potential_INEXUS_in_dollar)
   # select(IDMerged,
   #        person_id,
   #        trip_id,
@@ -264,7 +264,7 @@ TNC_SINGLE
   #        # scenPl,
   #        # scenBind,
   #        # num_young_children,
-  #        # logsum_trip_mode_AS_trips
+  #        # Potential_INEXUS_in_dollar
   # )
 
 ```
@@ -272,10 +272,10 @@ TNC_SINGLE
 ### Scenarios
 
 ```{r}
-  print(levels(df_stacked_from_list$scenShort))
+  # print(levels(df_stacked_from_list$scenShort))
   print(levels(as_factor(df_stacked_from_list$lever_position)))
   print(levels(df_stacked_from_list$lever))
-  print(levels(df_stacked_from_list$category))
+  # print(levels(df_stacked_from_list$category))
 ```
 
 ## Define Labels, Titles, Other
@@ -313,14 +313,16 @@ description_df <- description_df |>
   mutate(
     yaxislow =
       case_when(
-        variable == "logsum_trip_mode_AS_trips" ~
-          median_hilow(df_stacked_from_list$logsum_trip_mode_AS_trips, conf.int =                         .95)[["ymin"]],
+        variable == "Potential_INEXUS_in_dollar" ~
+          median_hilow(df_stacked_from_list$Potential_INEXUS_in_dollar, 
+                       conf.int =                         .95)[["ymin"]],
         variable == "duration_door_to_door" ~          0
       ),
     yaxishigh =
       case_when(
-        variable == "logsum_trip_mode_AS_trips" ~
-          median_hilow(df_stacked_from_list$logsum_trip_mode_AS_trips, conf.int =
+        variable == "Potential_INEXUS_in_dollar" ~
+          median_hilow(df_stacked_from_list$Potential_INEXUS_in_dollar, 
+                       conf.int =
                          .95)[["ymax"]],
         variable == "duration_door_to_door" ~
           median_hilow(df_stacked_from_list$duration_door_to_door, conf.int =
@@ -329,8 +331,8 @@ description_df <- description_df |>
       ),
     yaxismedian =
       case_when(
-        variable == "logsum_trip_mode_AS_trips" ~
-          median_hilow(df_stacked_from_list$logsum_trip_mode_AS_trips, conf.int =
+        variable == "Potential_INEXUS_in_dollar" ~
+          median_hilow(df_stacked_from_list$Potential_INEXUS_in_dollar, conf.int =
                          .95)[["y"]],
         variable == "duration_door_to_door" ~
           median_hilow(df_stacked_from_list$duration_door_to_door, conf.int =
@@ -398,18 +400,18 @@ fx_SUMMARY_STATS <- function(df) {
   sssumm <- df %>%
     group_by(lever_position) |> 
     summarise(
-      avLS = mean(.data[["logsum_trip_mode_AS_trips"]]),
-      avY = mean(.data[["logsum_trip_mode_AS_trips"]]), 
+      avLS = mean(.data[["Potential_INEXUS_in_dollar"]]),
+      avY = mean(.data[["Potential_INEXUS_in_dollar"]]), 
       n=n()
     )
   print(sssumm)
   sssummQuantiles <- df %>%
     group_by(lever_position) |> 
     summarise(
-      avLS = mean(.data[["logsum_trip_mode_AS_trips"]]),
-      avY = mean(.data[["logsum_trip_mode_AS_trips"]]), 
-      qsLS=quantile(.data[["logsum_trip_mode_AS_trips"]]),
-      qsTIV=quantile(.data[["logsum_trip_mode_AS_trips"]], na.rm = TRUE),
+      avLS = mean(.data[["Potential_INEXUS_in_dollar"]]),
+      avY = mean(.data[["Potential_INEXUS_in_dollar"]]), 
+      qsLS=quantile(.data[["Potential_INEXUS_in_dollar"]]),
+      qsTIV=quantile(.data[["Potential_INEXUS_in_dollar"]], na.rm = TRUE),
       n=n()
     )
   print(sssummQuantiles)

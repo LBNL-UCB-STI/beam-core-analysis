@@ -6,4 +6,4 @@
 ,,rh_flsz_1p5,rh_flsz_1p5,rh,1.5,flsz,rh,1p5,1p5,#ee7733,1.5
 ,,rh_flsz_1p75,rh_flsz_1p75,rh,1.75,flsz,rh,1p75,1p75,#ee7733,1.75
 duration_door_to_door,Door-to-door Travel Time,,,,,,,,,,
-logsum_trip_mode_AS_trips,Potential INEXUS,,,,,,,,,,
+Potential_INEXUS_in_dollar,Potential INEXUS,,,,,,,,,,
