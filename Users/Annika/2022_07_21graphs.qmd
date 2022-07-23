@@ -57,7 +57,7 @@ print(figures_folder)
 ### Y variables:
 
 ```{r echo=FALSE}
-listY <- list("Potential_INEXUS_in_dollar","duration_door_to_door", "Realized_INEXUS_in_dollar", "Realized_INEXUS")
+listY <- list("Potential_INEXUS_in_dollar","duration_door_to_door", "Realized_INEXUS_in_dollar", "Social_INEXUS")
 print(listY)
 ```
 
