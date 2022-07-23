@@ -332,12 +332,27 @@ description_df <- description_df |>
         variable == "Potential_INEXUS_in_dollar" ~
           median_hilow(df_stacked_from_list$Potential_INEXUS_in_dollar, 
                        conf.int =                         .95)[["ymin"]],
+        variable == "Realized_INEXUS_in_dollar" ~
+          median_hilow(df_stacked_from_list$Realized_INEXUS_in_dollar, 
+                       conf.int =                         .95)[["ymin"]],
+        variable == "Social_INEXUS" ~
+          median_hilow(df_stacked_from_list$Social_INEXUS, 
+                       conf.int =                         .95)[["ymin"]],
+
         variable == "duration_door_to_door" ~          0
       ),
     yaxishigh =
       case_when(
         variable == "Potential_INEXUS_in_dollar" ~
           median_hilow(df_stacked_from_list$Potential_INEXUS_in_dollar, 
+                       conf.int =
+                         .95)[["ymax"]],
+         variable == "Realized_INEXUS_in_dollar" ~
+          median_hilow(df_stacked_from_list$Realized_INEXUS_in_dollar, 
+                       conf.int =
+                         .95)[["ymax"]],
+         variable == "Social_INEXUS" ~
+          median_hilow(df_stacked_from_list$Social_INEXUS, 
                        conf.int =
                          .95)[["ymax"]],
         variable == "duration_door_to_door" ~
@@ -350,11 +365,20 @@ description_df <- description_df |>
         variable == "Potential_INEXUS_in_dollar" ~
           median_hilow(df_stacked_from_list$Potential_INEXUS_in_dollar, conf.int =
                          .95)[["y"]],
-        variable == "duration_door_to_door" ~
+         variable == "Realized_INEXUS_in_dollar" ~
+          median_hilow(df_stacked_from_list$Realized_INEXUS_in_dollar, 
+                       conf.int =
+                         .95)[["y"]],
+         variable == "Social_INEXUS" ~
+          median_hilow(df_stacked_from_list$Social_INEXUS, 
+                       conf.int =
+                         .95)[["y"]],
+          variable == "duration_door_to_door" ~
           median_hilow(df_stacked_from_list$duration_door_to_door, conf.int =
                          .95)[["y"]]
       )
   )
+
 ```
 
 ### Colors
