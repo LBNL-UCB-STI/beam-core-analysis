@@ -1,0 +1,15 @@
+﻿variable,Title,y_var_short,name_df,scenShort,scenYear,lever_position,lever,category,scenYr,scenPl,colorOfScenario,alphaOfScenario,yaxislow,yaxishigh,yaxismedian
+NA,NA,NA,base,base,base,1,base,base,base,base,#EAECCC,1,NA,NA,NA
+NA,NA,NA,rh_flsz_0p125,rh_flsz_0p125,rh,0.125,flsz,rh,0p125,0p125,#ee7733,0.125,NA,NA,NA
+NA,NA,NA,rh_flsz_0p25,rh_flsz_0p25,rh,0.25,flsz,rh,0p25,0p25,#ee7733,0.25,NA,NA,NA
+NA,NA,NA,rh_flsz_0p5,rh_flsz_0p5,rh,0.5,flsz,rh,0p5,0p5,#ee7733,0.5,NA,NA,NA
+NA,NA,NA,rh_flsz_1p5,rh_flsz_1p5,rh,1.5,flsz,rh,1p5,1p5,#ee7733,1.5,NA,NA,NA
+NA,NA,NA,rh_flsz_1p75,rh_flsz_1p75,rh,1.75,flsz,rh,1p75,1p75,#ee7733,1.75,NA,NA,NA
+duration_door_to_door,Door-to-door Travel Time,doorDoor,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,0,91.38333333,20.08333333
+Potential_INEXUS_in_dollar,Potential INEXUS,potInex,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,-41.96087508,3.749750007,-9.499082555
+Realized_INEXUS_in_dollar,Realized INEXUS,realInex,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,-40.96087508,4.749750007,-8.499082555
+Social_INEXUS,Social INEXUS,socInex,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,-38.96087508,6.749750007,-6.499082555
+ownCarYNLabel,Car Ownership,carOwn,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,,,
+l_inc_HiLo10,Highest and Lowest 10% Income,Inc10hiLo,,ggg,,,,,,,,,,,
+mode_choice_actual_6,Mode Choice,mode,,,,,,,,,,,,,
+mode_4categories,Mode Choice,mode,,,fffff,,,,,,,,,,

@@ -3,23 +3,36 @@ title: "Graphs SF Bay Summer 2022"
 author: "Annika Nazanin"
 date: "`r {Sys.Date()}`"
 format: html
+echo: FALSE
 ---
 
-## What are we looking at
-
-### Scenario and lever
+## CHANGE Scenario and lever
 
 ```{r}
-category <- "Transit"
-lever <- "Frequency"
+category <- "Ride-Hail"
+category_short <- "rh"
+lever <- "Fleet Size"
+lever_short <- "flsz"
 year <- "2018"
 ```
 
+## CHANGE dataset
+
+## ABOVE HERE CHANGE
+
+```{r}
+# file_to_use <- "deepDive/CleanData/SanFrancisco/Stacked/sf_2018_stacked_tr_fr_v4.csv" 
+# file_to_use <- "df_stacked_from_list3.rds" # this is transit
+file_to_use <- "df_stacked_from_list_rh_flsz_small2.rds"
+```
+
+## Define Other Globals
+
 ### File name
 
-#### Get from AWS
+#### Look on AWS
 
-```{r set_aws_params}
+```{r set_aws_params, eval=FALSE, include=FALSE}
 library(aws.s3)
 library(dbplyr) # to get from aws
 aws_prefix <- "deepDive/CleanData/SanFrancisco"
@@ -28,35 +41,14 @@ awsDF <- get_bucket("beam-core-act", prefix = aws_prefix)
 # bucket directory
 ```
 
-```{r aws_data_file_list, include=FALSE}
+```{r aws_data_file_list, eval=FALSE, include=FALSE}
 # We want stacked dataset for these graphs
-data_file_list_paths_chrACTUAL <- awsDF$Key[grep(pattern = "*.tacked*", awsDF$Key)]
-data_file_list_paths_chrACTUAL
+data_file_list_paths_AWS <- awsDF$Key[grep(pattern = "*.deep*", awsDF$Key)]
+data_file_list_paths_AWS <- awsDF$Key[grep(pattern = "*.tacked*", awsDF$Key)]
+data_file_list_paths_AWS
 ```
 
-####CHANGE
-
-```{r}
-file_to_use <- "deepDive/CleanData/SanFrancisco/Stacked/sf_2018_stacked_tr_fr_v4.csv" 
-```
-
-### Y variables:
-
-```{r echo=FALSE}
-listY <- list("logsum_trip_mode_AS_trips","duration_door_to_door")
-print(listY)
-```
-
-### Heterogeneity variables:
-
-```{r g_Het_WithinScenario, echo=FALSE}
-# With imap, going through a list using a |> , .x is the thing in the list, and .y is the name of the thing in the list.  So like, .x is each dataframe in the list, and .y is the name of the dataframe in the list. The other way is    map2( .x = df_in_a_list, .y = names(df_in_a_list), ~fx_H...
-listHet       <- list("ownCarYNLabel", "l_inc_HiLo10")
-# listHetFilter <- list(df_in_a_list, data_inc_HiLo10)
-print(listHet)
-```
-
-### Define the path file in separate R file
+#### Define the path file in separate R file
 
 ```{r define_paths, include=FALSE}
 source( paste0(getwd(),
@@ -66,9 +58,38 @@ print(data_dir_on_this_machine)
 print(output_dir_on_this_machine)
 figures_folder <- paste0(output_dir_on_this_machine,"figures")
 print(figures_folder)
+# data_file_list_paths_local <- awsDF$Key[grep(pattern = "*.deep*", awsDF$Key)]
+
+
 ```
 
-### Save graphs right now?
+### Y variables:
+
+```{r echo=FALSE}
+listY <- list("Potential_INEXUS_in_dollar"
+              # ,
+              # "duration_door_to_door", 
+              # "Realized_INEXUS_in_dollar", 
+              # "Social_INEXUS"
+              )
+print(listY)
+```
+
+### Heterogeneity variables:
+
+```{r g_Het_WithinScenario, echo=FALSE}
+# With imap, going through a list using a |> , .x is the thing in the list, and .y is the name of the thing in the list.  So like, .x is each dataframe in the list, and .y is the name of the dataframe in the list. The other way is    map2( .x = df_in_a_list, .y = names(df_in_a_list), ~fx_H...
+listHet       <- list("ownCarYNLabel", 
+                      "l_inc_HiLo10",
+                      # "mode_choice_actual_6",
+                      "mode_4categories",
+                      "incomeXcar"
+                      )
+# listHetFilter <- list(df_in_a_list, data_inc_HiLo10)
+print(listHet)
+```
+
+### Should we save graphs right now?
 
 ```{r TFsave_graphs, include=FALSE}
 saveGraphsTF = TRUE
@@ -180,11 +201,21 @@ mmmmmThis text is two inches:
 
 ### Dataset
 
-```{r open_files}
+<!-- ## END OF KNITTER -->
+
+```{r}
+# knitr::knit_exit()
+```
+
+```{r open_file}
+
+
 df_stacked_from_list   <- read_rds(file =
             paste0(data_dir_on_this_machine,
-                   "df_stacked_from_list3.rds"))
-#                    "df_stacked_from_list_small.rds"))
+                   file_to_use # ridehail
+                   ))
+  
+  
   # df_stacked_from_list <-
   #   aws.s3::s3read_using(read_csv,
   #                        object = file_to_use,
@@ -192,13 +223,16 @@ df_stacked_from_list   <- read_rds(file =
 
 ```
 
-### Key description file
+### Open key description file
 
-```{r open_files}
-description_df   <- read_csv(file ="ScenarioTitlesColorsEtc.csv")
+```{r open_file2}
+description_df   <- read_csv(file ="ScenarioTitlesColorsEtc2.csv")
+View(description_df)
 ```
 
-### Variables
+## Modify and Define
+
+### List Variables
 
 ```{r}
 names(df_stacked_from_list)
@@ -206,105 +240,94 @@ names(df_stacked_from_list)
 
 ### Clean
 
-!!!! NEED TO MAKE A SHORTENED LIST WITH FEWER VARIABLES BUT THEY DONT MATCH MINE
-
 ```{r}
 
 df_stacked_from_list <-   df_stacked_from_list |> 
   mutate(across(where(is.character), as_factor))
 
-  df_stacked_from_list <- df_stacked_from_list %>%
-    mutate(income10levels = ntile(income_in_thousands,10))  %>%  
-    mutate(ownCarYNLabel = 
+df_stacked_from_list <- df_stacked_from_list  %>%
+    mutate(income10levels = as_factor(ntile(income_in_thousands,10)))  %>%  
+    mutate(ownCarYNLabel = as_factor(
            case_when(auto_ownership >= 1 ~ "Owns Car",
                      auto_ownership == 0 ~ "Does not own Car"
-                     )  )
-  
-  df_stacked_from_list <- df_stacked_from_list %>%
-    select(-c(contains("fuel"),
-             SEX,	DIS,	VEH,	DRIVEALONEFREE,	DRIVEALONEPAY,
-SHARED2PAY,	SHARED3FREE,	SHARED3PAY,	WALK,	BIKE,
-WALK_LRF,	WALK_EXP,	WALK_HVY,	WALK_COM,	DRIVE_LOC,
-DRIVE_EXP,	DRIVE_HVY,	DRIVE_COM	, TAXI,	
+           )))
+df_stacked_from_list <- df_stacked_from_list  %>%
+    mutate(incomeXcar = as_factor(
+      case_when(
+        auto_ownership ==0 &  income10levels == 1  ~ "Bottom 10%, no car ",
+        auto_ownership ==0 &  income10levels == 10 ~ "Top 10%, no car",
+        auto_ownership ==1 &  income10levels == 1  ~ "Bottom 10%, owns car",
+        auto_ownership ==1 &  income10levels == 10 ~ "Top 10%, owns car"
+        # TRUE ~ NA
+        )))  
+df_stacked_from_list <- df_stacked_from_list  %>%
+    mutate(l_inc_HiLo10 = as_factor(
+        case_when(
+          income10levels == 1 ~ "Bottom 10% Income ",
+          income10levels == 10 ~ "Top 10% Income"
+          # TRUE ~ NA
+        )))
 
+df_stacked_from_list <- df_stacked_from_list  %>%
+    mutate(
+      mode_4categories = as_factor(
+        case_when(
+          mode_5categories == "bike" ~ "Walk or Bike",
+          mode_5categories == "walk" ~ "Walk or Bike",
+          mode_5categories == "ride_hail" ~ "Ride Hail",
+          mode_5categories == "car" ~ "Car",
+          mode_5categories == "transit" ~ "Transit"
+        )))
 
-TNC_SINGLE
-               ))
-  
-  df_stacked_from_list <- df_stacked_from_list |> 
-    mutate(logsum_trip_mode_AS_trips = Potential_INEXUS_in_dollar)
-  # select(IDMerged,
-  #        person_id,
-  #        trip_id,
-  #        home_is_urban,
-  #        auto_ownership,
-  #        income_in_thousands,
-  #        # earning,
-  #        hh_value_of_time,
-  #        median_value_of_time,
-  #        value_of_time,
-  #        actEndTime,
-  #        actStartTime,
-  #        # travelTime,
-  #        waitTime,
-  #        # roundtrip_auto_time_to_school,
-  #        # roundtrip_auto_time_to_work,
-  #        starts_with("duration"),
-  #        # actPurpose,
-  #        # mandatoryType,
-  #        income10levels,
-  #        # incomeLow30Label,
-  #        # incomeLoHi10Lab,
-  #        # ownCarYNLabel,
-  #        # scenShort,
-  #        # scenYear,
-  #        lever_position,
-  #        # category,
-  #        lever,
-  #        # scenYr,
-  #        # scenPl,
-  #        # scenBind,
-  #        # num_young_children,
-  #        # logsum_trip_mode_AS_trips
-  # )
 
 ```
 
-### Scenarios
+### List Scenarios
 
 ```{r}
-  print(levels(df_stacked_from_list$scenShort))
+  # print(levels(df_stacked_from_list$scenShort))
   print(levels(as_factor(df_stacked_from_list$lever_position)))
   print(levels(df_stacked_from_list$lever))
-  print(levels(df_stacked_from_list$category))
+  print(levels(df_stacked_from_list$mandatoryType))
+  print(levels(as_factor(df_stacked_from_list$income10levels)))
+  print(levels(as_factor(df_stacked_from_list$ownCarYNLabel)))
+  print(levels(df_stacked_from_list$l_inc_HiLo10))
+  print(levels(df_stacked_from_list$incomeXcar))
+  print(levels(df_stacked_from_list$mode_4categories))
+  
+  # print(levels(df_stacked_from_list$category))
 ```
 
 ## Define Labels, Titles, Other
 
 Here we modify the csv sheet
 
-### Titles of Graphs
+### Titles of Y vars
 
-### Labels of variables
+```{r , echo=FALSE}
+description_df <- description_df |>
+  mutate(Title =
+# Only add ones that are new, the others will be saved           
+      case_when(
+        variable == "Potential_INEXUS_in_dollar" ~ "Potential INEXUS",
+        TRUE ~ Title
+      ))
+```
 
-```{r fx_LABELS, echo=FALSE}
-fx_LABELS <- function(x) {
-  x <- x %>%
-    mutate(
-      l_inc_HiLo10 =
-        case_when(
-          income10levels == 1 ~ "Lowest 10% Inc ",
-          income10levels == 10 ~ "Highest 10% Income ",
-          TRUE ~ "Middle 80% Income"
-        )
-    )
-  return(x)
-}
+### Short labels for saving files
 
-# RUN FUNCTION
-# df_in_a_list <- map(df_in_a_list, ~ fx_LABELS(.))
-# df_merged_from_list <- fx_LABELS(df_merged_from_list)
-df_stacked_from_list <- fx_LABELS(df_stacked_from_list)
+```{r}
+description_df <- description_df |>
+  mutate(
+    y_var_short =
+      case_when(
+        # variable == "Potential_INEXUS_in_dollar" ~ "potInex",
+        # variable == "duration_door_to_door" ~  "doorDoor"   ,     
+        # variable == "Realized_INEXUS_in_dollar" ~ "realInex",
+        # variable == "Social_INEXUS" ~ "socInex",
+        variable == "Potential_INEXUS_in_dollar" ~ "potInex",
+        TRUE ~ y_var_short
+      ))
 ```
 
 ### Limits of y variables, scales
@@ -314,30 +337,56 @@ description_df <- description_df |>
   mutate(
     yaxislow =
       case_when(
-        variable == "logsum_trip_mode_AS_trips" ~
-          median_hilow(df_stacked_from_list$logsum_trip_mode_AS_trips, conf.int =                         .95)[["ymin"]],
+        variable == "Potential_INEXUS_in_dollar" ~
+          median_hilow(df_stacked_from_list$Potential_INEXUS_in_dollar, 
+                       conf.int =                         .75)[["ymin"]],
+        variable == "Realized_INEXUS_in_dollar" ~
+          median_hilow(df_stacked_from_list$Realized_INEXUS_in_dollar, 
+                       conf.int =                         .75)[["ymin"]],
+        variable == "Social_INEXUS" ~
+          median_hilow(df_stacked_from_list$Social_INEXUS, 
+                       conf.int =                         .75)[["ymin"]],
+
         variable == "duration_door_to_door" ~          0
       ),
     yaxishigh =
       case_when(
-        variable == "logsum_trip_mode_AS_trips" ~
-          median_hilow(df_stacked_from_list$logsum_trip_mode_AS_trips, conf.int =
-                         .95)[["ymax"]],
+        variable == "Potential_INEXUS_in_dollar" ~
+          median_hilow(df_stacked_from_list$Potential_INEXUS_in_dollar, 
+                       conf.int =
+                         .90)[["ymax"]],
+         variable == "Realized_INEXUS_in_dollar" ~
+          median_hilow(df_stacked_from_list$Realized_INEXUS_in_dollar,
+                       conf.int =
+                         .90)[["ymax"]],
+         variable == "Social_INEXUS" ~
+          median_hilow(df_stacked_from_list$Social_INEXUS,
+                       conf.int =
+                         .90)[["ymax"]],
         variable == "duration_door_to_door" ~
           median_hilow(df_stacked_from_list$duration_door_to_door, conf.int =
-                         .90)[["ymax"]]
+                         .80)[["ymax"]]
         
       ),
     yaxismedian =
       case_when(
-        variable == "logsum_trip_mode_AS_trips" ~
-          median_hilow(df_stacked_from_list$logsum_trip_mode_AS_trips, conf.int =
+        variable == "Potential_INEXUS_in_dollar" ~
+          median_hilow(df_stacked_from_list$Potential_INEXUS_in_dollar, conf.int =
                          .95)[["y"]],
-        variable == "duration_door_to_door" ~
+         variable == "Realized_INEXUS_in_dollar" ~
+          median_hilow(df_stacked_from_list$Realized_INEXUS_in_dollar, 
+                       conf.int =
+                         .95)[["y"]],
+         variable == "Social_INEXUS" ~
+          median_hilow(df_stacked_from_list$Social_INEXUS, 
+                       conf.int =
+                         .95)[["y"]],
+          variable == "duration_door_to_door" ~
           median_hilow(df_stacked_from_list$duration_door_to_door, conf.int =
                          .95)[["y"]]
       )
   )
+
 ```
 
 ### Colors
@@ -386,6 +435,12 @@ theme_update(plot.title = element_text(face = "bold"),
 )
 ```
 
+### Save Definitions as csv
+
+```{r}
+write_excel_csv(description_df, file ="ScenarioTitlesColorsEtc2.csv")
+```
+
 ## Summary stats
 
 ### quantiles mean median
@@ -399,18 +454,18 @@ fx_SUMMARY_STATS <- function(df) {
   sssumm <- df %>%
     group_by(lever_position) |> 
     summarise(
-      avLS = mean(.data[["logsum_trip_mode_AS_trips"]]),
-      avY = mean(.data[["logsum_trip_mode_AS_trips"]]), 
+      avLS = mean(.data[["Potential_INEXUS_in_dollar"]]),
+      avY = mean(.data[["Potential_INEXUS_in_dollar"]]), 
       n=n()
     )
   print(sssumm)
   sssummQuantiles <- df %>%
     group_by(lever_position) |> 
     summarise(
-      avLS = mean(.data[["logsum_trip_mode_AS_trips"]]),
-      avY = mean(.data[["logsum_trip_mode_AS_trips"]]), 
-      qsLS=quantile(.data[["logsum_trip_mode_AS_trips"]]),
-      qsTIV=quantile(.data[["logsum_trip_mode_AS_trips"]], na.rm = TRUE),
+      avLS = mean(.data[["Potential_INEXUS_in_dollar"]]),
+      avY = mean(.data[["Potential_INEXUS_in_dollar"]]), 
+      qsLS=quantile(.data[["Potential_INEXUS_in_dollar"]]),
+      qsTIV=quantile(.data[["Potential_INEXUS_in_dollar"]], na.rm = TRUE),
       n=n()
     )
   print(sssummQuantiles)
@@ -420,6 +475,19 @@ fx_SUMMARY_STATS <- function(df) {
 fx_SUMMARY_STATS(df_stacked_from_list)
 ```
 
+### deciles of income
+
+```{r}
+df_stacked_from_list |> 
+  filter(lever_position == 1) |> 
+  group_by(income10levels) |> 
+  summarise(potential = mean(Potential_INEXUS_in_dollar),
+            inc = mean(income_in_thousands),
+            n = n(),
+            lever = mean(lever_position)
+    )
+```
+
 ## START THE GRAPHS!
 
 ## LOOP ACROSS Y VARS and Heterogeneity
@@ -427,61 +495,103 @@ fx_SUMMARY_STATS(df_stacked_from_list)
 ### Across
 
 ```{r}
-fx_Het_AcrossScenario <- function(df, y_var, het = "none",
-                                  nm = "", tit = "noTitle", 
-                                  ...) {
+# saveGraphsTF = FALSE
+```
+
+```{r}
+fx_Het_AcrossScenario <- function(df, y_var, het = "none",nm = "", tit = "noTitle", ...) {
+
+# Dataset that doesn't have the missing income 80%
+    dfmmmmm <- df |> drop_na(paste0(het)) 
+# get names etc from the description file    
   yvarTitle <- filter(description_df,variable == y_var)[["Title"]]
+  yvarShortName <- filter(description_df,variable == y_var)[["y_var_short"]]
+  hetShortName <- filter(description_df,variable == het)[["y_var_short"]]
+  hetTitle <- filter(description_df,variable == het)[["Title"]]
+
+#  BASE VLANK plot
   plotttaaaa0 <- ggplot() +
-# Now usual
     coord_cartesian(xlim = c(
     filter(description_df, variable == y_var)[["yaxislow"]],
     filter(description_df, variable == y_var)[["yaxishigh"]])) +
-    # TITLE
-    labs(title = str_glue("{year} {category} {lever}"),
-           subtitle = str_glue("Examine {yvarTitle}, with heterogeneity across: {het}")
-      ) +
-    xlab(filter(description_df, variable == y_var)[["Title"]]) +
+# TITLE
+# THE TITLE OF THE GRAPH
+    labs(title = str_glue("{year} {category} {lever} {yvarTitle}"),
+    subtitle = str_glue("Separated into {hetTitle} and {lever}")) +
+    xlab(yvarTitle) +
     ylab(" density ") 
-# facet wrap LEVER
-  plottttt <- plotttaaaa0 +
+# END of Base graph
+  
+# Individual Graphs  
+  map(as.list(levels(
+      as_factor(df_stacked_from_list$lever_position))),
+      
+       ~ print(
+         plotttaaaa0 +
+                   # |> filter(lever_position==.data[[x]])
+           # .data[[lever_position]]==as_number(str_glue("{.x}")))
+            geom_density(
+              data = (dfmmmmm |> filter(lever_position==.x)) ,
+              aes(
+                x = .data[[y_var]],
+                fill = .data[[het]],
+                color = .data[[het]],
+                group = .data[[het]]
+            ),
+            alpha = .3) +
+           labs(subtitle = str_glue("Separated into {het} 
+                                    and {lever} at {.x}")) 
+    
+        )
+  )
+  
+    # print(plotttttIndiv)
+      if(saveGraphsTF == TRUE) {
+           ggsave(str_glue("figures/{Sys.Date()}_{category_short}_{lever_short}_Y-{yvarShortName}_H-{hetShortName}_Ind.png"))
+           ggsave(str_glue("figures/{Sys.Date()}_{category_short}_{lever_short}_Y-{yvarShortName}_H-{hetShortName}_Ind.pdf"))
+      }
+    
+# Now facet by lever
+print("Now  plot  heterogeneity,  separate graphs into different levers")
+  plottttta1 <- plotttaaaa0 +
     geom_density(
-      data = df ,
-        aes(
-          x = .data[[y_var]],
-          fill = .data[[het]],
-          color = .data[[het]],
-          group = .data[[het]]
-      ),
-      alpha = .3
-    )    +
-    facet_wrap(df_stacked_from_list$lever_position, ncol = 3)
-    print(plottttt)
+        data = dfmmmmm ,
+        aes(x = .data[[y_var]],
+            fill = .data[[het]],
+            color = .data[[het]],
+            group = .data[[het]]),
+        alpha = .3) +
+    facet_wrap(dfmmmmm$lever_position, ncol = 3)
+      # geom_density_ridges( y =       dfmmmmm$lever_position) 
+  #print and save
+  print(plottttta1)
     if(saveGraphsTF == TRUE) {
-         ggsave(str_glue("figures/{Sys.Date()}_{nm}_{y_var}_{het}_{category}_wrap-{lever}_{year}.png"))
-         ggsave(str_glue("figures/{Sys.Date()}_{nm}_{y_var}_{het}_{category}_wrap-{lever}_{year}.pdf"))
-    }
-# facet wrap HET    
-  plottttt <- plotttaaaa0 +
+         ggsave(str_glue("figures/{Sys.Date()}_{category_short}_{lever_short}_Y-{yvarShortName}_H-{hetShortName}_Faceted-levers.png"))
+         ggsave(str_glue("figures/{Sys.Date()}_{category_short}_{lever_short}_Y-{yvarShortName}_H-{hetShortName}_Faceted-levers.pdf"))
+          }
+
+# Now facet by het
+print("Now  plot  levers,  separate graphs into different heterogeneous groups")
+  plotttttb1 <- plotttaaaa0 +
     geom_density(
-      data = df ,
+        data = dfmmmmm ,
         aes(
           x = .data[[y_var]],
           fill =  .data[["lever_position"]],
           # alpha = .data[["lever_position"]]*.1,
           color = .data[["lever_position"]],
-          group = .data[["lever_position"]]
-      )
-      ,
-      alpha = .1
-        
-    )    +
-    facet_wrap(facets = df_stacked_from_list$ownCarYNLabel , ncol = 3) 
-    print(plottttt)
-    if(saveGraphsTF == TRUE) {
-         ggsave(str_glue("figures/{Sys.Date()}_{nm}_{y_var}_wrap-{het}_{category}_{lever}_{year}.png"))
-         ggsave(str_glue("figures/{Sys.Date()}_{nm}_{y_var}_wrap-{het}_{category}_{lever}_{year}.pdf"))
-    }
-return(plottttt)
+          group = .data[["lever_position"]] ),
+      alpha = .1)     +
+    scale_fill_binned(guide = guide_colorsteps()) +
+    facet_wrap(as_factor(dfmmmmm[[het]]) , ncol = 3) 
+  # print and save  
+         print(plotttttb1)
+         if(saveGraphsTF == TRUE) {
+            ggsave(str_glue("figures/{Sys.Date()}_{category_short}_{lever_short}_Y-{yvarShortName}_HF{hetShortName}.png"))
+            ggsave(str_glue("figures/{Sys.Date()}_{category_short}_{lever_short}_Y-{yvarShortName}_HF{hetShortName}.pdf"))
+         }
+
+return(plotttttb1)
 }
 
  g_het_loop_across <- map(
@@ -490,12 +600,105 @@ return(plottttt)
      .x = .x,
      .y = listHet,
      ~ fx_Het_AcrossScenario(
-       df = df_stacked_from_list,
+       df = df_stacked_from_list |> 
+         filter(1==1 
+                & (
+                  lever_position == 0.25 |
+                  lever_position == 1 |
+                  lever_position == 1.75)
+                ),
        y_var = .x,
        het = .y,
-       nm = "HetAcross"
+       nm = ""
      )
    )
  )
  g_het_loop_across
+ 
+```
+
+### ridge
+
+```{r}
+y_var <- "Potential_INEXUS_in_dollar"
+hetShortName <- "incomeCar"
+  ridge0000 <- 
+  ggplot(data = df_stacked_from_list      |> 
+           drop_na(incomeXcar) |>
+         filter(1==1 
+                & (lever_position == 0.25 |                   lever_position == 1 |
+                  lever_position == 1.75)
+                ),
+       aes(x = Potential_INEXUS_in_dollar,
+           y = as_factor(lever_position),
+           fill = incomeXcar,
+           color = incomeXcar),
+       alpha = .3)  +
+    coord_cartesian(xlim = c(
+      filter(description_df, variable == y_var)[["yaxislow"]],
+      filter(description_df, variable == y_var)[["yaxishigh"]]
+    )) +
+    geom_density_ridges( alpha = .3    ) +
+     scale_y_discrete(expand = c(.01,.2))
+ 
+    # geom_ridgeline()
+if(saveGraphsTF == TRUE) {
+  ggsave(str_glue("figures/{Sys.Date()}_{category_short}_{lever_short}_ridge{hetShortName}.png"))
+  ggsave(str_glue("figures/{Sys.Date()}_{category_short}_{lever_short}_ridge{hetShortName}.pdf"))
+ }
+  print(ridge0000)
+```
+
+### directions for the wavy plot
+
+```{r echo = FALSE}
+# the same figure with colors, and using the ggplot2 density stat
+gtest1 <- ggplot(diamonds, aes(x = price, y = cut, fill = cut, height = ..density..)) +
+  geom_density_ridges(scale = 4, stat = "density") +
+  scale_y_discrete(expand = c(0.01, 0)) +
+  scale_x_continuous(expand = c(0.01, 0)) +
+  scale_fill_brewer(palette = 4) +
+  theme_ridges() + theme(legend.position = "none") 
+
+gtest2 <- gtest1 +
+  scale_y_discrete(expand = c(0.8, 0))  +
+  scale_x_continuous(expand = c(0.01, 0))
+gtest3 <- gtest1 +
+  scale_y_discrete(expand = c(0.1, 0))  +
+  scale_x_continuous(expand = c(0.8, 0))
+gtest4 <-  gtest1 + 
+    scale_y_discrete(expand = c(0.01, 0)) +
+  scale_x_continuous(expand = c(0.01, 0)) +
+
+print(gtest1)
+print(gtest2)
+print(gtest3)
+
+ggplot(diamonds, aes(x = price, y = cut)) +
+  geom_density_ridges(scale = 4) +
+  scale_y_discrete(expand = c(0.01, 0)) +
+  scale_x_continuous(expand = c(0.01, 0)) +
+  theme_ridges()
+```
+
+```{r}
+  y_var <- "Potential_INEXUS_in_dollar"
+  ridge0000 <- 
+  ggplot(data = df_stacked_from_list,
+       aes(x = Potential_INEXUS_in_dollar,
+           y = as_factor(lever_position),
+           fill = ownCarYNLabel,
+           color = ownCarYNLabel),
+       alpha = .3) +
+         coord_cartesian(xlim = c(
+    filter(description_df, variable == y_var)[["yaxislow"]],
+    filter(description_df, variable == y_var)[["yaxishigh"]])) +
+    geom_density_ridges( alpha = .3    ) 
+    # geom_ridgeline()
+  
+  print(ridge0000)
+```
+
+```{r}
+
 ```
