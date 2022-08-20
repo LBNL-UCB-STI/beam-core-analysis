@@ -1,0 +1,15 @@
+﻿title,title_short,variable,category,lever,colorOfScenario,alphaOfScenario,axislow,axishigh,axismedian
+Frequency,fq,NA,NA,fq,NA,NA,NA,NA,NA
+Transit,tr,NA,tr,NA,NA,NA,NA,NA,NA
+Fleet Size,flsz,NA,NA,flsz,NA,NA,NA,NA,NA
+Ride Hail,rh,NA,rh,NA,NA,NA,NA,NA,NA
+Door-to-door Travel Time,doorDoor,duration_door_to_door,NA,NA,NA,NA,0,3934,1192
+Potential INEXUS,potInex,Potential_INEXUS_in_dollar,NA,NA,NA,NA,-23.65942691,2.234881624,-9.349486286
+Realized INEXUS,realInex,Realized_INEXUS_in_dollar,NA,NA,NA,NA,-23.65942691,2.234881624,-9.349486286
+Social INEXUS,socInex,Social_INEXUS,NA,NA,NA,NA,-23.65942691,2.234881624,-13.27146369
+Car Ownership,carOwn,ownCarYNLabel,NA,NA,NA,NA,-23.65942691,2.234881624,NA
+Highest and Lowest 10% Income,Inc10hiLo,l_inc_HiLo10,NA,NA,NA,NA,-23.65942691,2.234881624,NA
+Mode Choice,mode,mode_choice_actual_6,NA,NA,NA,NA,-23.65942691,2.234881624,NA
+Mode Choice,mode,mode_4categories,NA,NA,NA,NA,-23.65942691,2.234881624,NA
+Income and Car,incXcar,incomeXcar,NA,NA,NA,NA,-23.65942691,2.234881624,NA
+Emissions (Cost of Carbon),carbon,socialCarbonCost,NA,NA,NA,NA,0,0,NA
