@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+  <meta charset="utf-8">
+  <meta name="generator" content="quarto-0.9.80">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Annika Nazanin">
+  <meta name="dcterms.date" content="2022-07-27">
+  <title>Graphs SF Bay Summer 2022</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+  </style>
+
+  <script src="2022_07_21graphs_files/libs/clipboard/clipboard.min.js"></script>
+  <script src="2022_07_21graphs_files/libs/quarto-html/quarto.js"></script>
+  <script src="2022_07_21graphs_files/libs/quarto-html/popper.min.js"></script>
+  <script src="2022_07_21graphs_files/libs/quarto-html/tippy.umd.min.js"></script>
+  <script src="2022_07_21graphs_files/libs/quarto-html/anchor.min.js"></script>
+  <link href="2022_07_21graphs_files/libs/quarto-html/tippy.css" rel="stylesheet">
+  <link href="2022_07_21graphs_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet">
+  <script src="2022_07_21graphs_files/libs/bootstrap/bootstrap.min.js"></script>
+  <link href="2022_07_21graphs_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+  <link href="2022_07_21graphs_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet">
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body class="fullcontent">
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+<header id="title-block-header" class="quarto-title-block default">
+
+
+
+<div class="quarto-title"><h1 class="title display-7">Graphs SF Bay Summer 2022</h1></div><div class="quarto-title-meta"><div><div class="quarto-title-meta-heading">Author</div><div class="quarto-title-meta-contents"><div class="quarto-title-authors"><p>Annika Nazanin</p></div></div></div><div><div class="quarto-title-meta-heading">Published</div><div class="quarto-title-meta-contents"><p class="date">Invalid Date</p></div></div></div></header>
+<section id="change-scenario-and-lever" class="level2">
+<h2 class="anchored" data-anchor-id="change-scenario-and-lever">CHANGE Scenario and lever</h2>
+<div class="cell">
+
+</div>
+</section>
+<section id="change-dataset" class="level2">
+<h2 class="anchored" data-anchor-id="change-dataset">CHANGE dataset</h2>
+</section>
+<section id="above-here-change" class="level2">
+<h2 class="anchored" data-anchor-id="above-here-change">ABOVE HERE CHANGE</h2>
+<div class="cell">
+
+</div>
+</section>
+<section id="define-other-globals" class="level2">
+<h2 class="anchored" data-anchor-id="define-other-globals">Define Other Globals</h2>
+<section id="file-name" class="level3">
+<h3 class="anchored" data-anchor-id="file-name">File name</h3>
+<section id="look-on-aws" class="level4">
+<h4 class="anchored" data-anchor-id="look-on-aws">Look on AWS</h4>
+</section>
+<section id="define-the-path-file-in-separate-r-file" class="level4">
+<h4 class="anchored" data-anchor-id="define-the-path-file-in-separate-r-file">Define the path file in separate R file</h4>
+</section>
+</section>
+<section id="y-variables" class="level3">
+<h3 class="anchored" data-anchor-id="y-variables">Y variables:</h3>
+<div class="cell">
+<div class="cell-output-stdout">
+<pre><code>[[1]]
+[1] "Potential_INEXUS_in_dollar"</code></pre>
+</div>
+</div>
+</section>
+<section id="heterogeneity-variables" class="level3">
+<h3 class="anchored" data-anchor-id="heterogeneity-variables">Heterogeneity variables:</h3>
+<div class="cell">
+<div class="cell-output-stdout">
+<pre><code>[[1]]
+[1] "ownCarYNLabel"
+
+[[2]]
+[1] "l_inc_HiLo10"
+
+[[3]]
+[1] "mode_4categories"
+
+[[4]]
+[1] "incomeXcar"</code></pre>
+</div>
+</div>
+</section>
+<section id="should-we-save-graphs-right-now" class="level3">
+<h3 class="anchored" data-anchor-id="should-we-save-graphs-right-now">Should we save graphs right now?</h3>
+</section>
+</section>
+<section id="setup" class="level2">
+<h2 class="anchored" data-anchor-id="setup">Setup</h2>
+<section id="library" class="level3">
+<h3 class="anchored" data-anchor-id="library">Library</h3>
+</section>
+<section id="graphics-device-test-of-graphic-size-and-dpi" class="level3">
+<h3 class="anchored" data-anchor-id="graphics-device-test-of-graphic-size-and-dpi">Graphics device test of graphic size and dpi</h3>
+<p>Make sure width and size are consistent with what i see. This is what I see in the GUI, and<br>
+mmmmmThis text is two inches:</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/TEST-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>This is the pdf version, and<br>
+mmmmmThis text is two inches:</p>
+<p><embed src="output/figures/test.pdf" class="img-fluid"></p>
+<p>This is the png version, and<br>
+mmmmmThis text is two inches:</p>
+<p><img src="output/figures/test.png" class="img-fluid"></p>
+<p>This is the svg version, and<br>
+mmmmmThis text is two inches:</p>
+<p><img src="output/figures/test.svg" class="img-fluid"></p>
+</section>
+</section>
+<section id="open-data-and-summarize" class="level2">
+<h2 class="anchored" data-anchor-id="open-data-and-summarize">Open data and summarize</h2>
+<section id="dataset" class="level3">
+<h3 class="anchored" data-anchor-id="dataset">Dataset</h3>
+<!-- ## END OF KNITTER -->
+<div class="cell">
+
+</div>
+<div class="cell">
+
+</div>
+</section>
+<section id="open-key-description-file" class="level3">
+<h3 class="anchored" data-anchor-id="open-key-description-file">Open key description file</h3>
+<div class="cell">
+<div class="cell-output-stderr">
+<pre><code>Rows: 15 Columns: 16
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr (11): variable, Title, y_var_short, name_df, scenShort, scenYear, lever,...
+dbl  (5): lever_position, alphaOfScenario, yaxislow, yaxishigh, yaxismedian
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="modify-and-define" class="level2">
+<h2 class="anchored" data-anchor-id="modify-and-define">Modify and Define</h2>
+<section id="list-variables" class="level3">
+<h3 class="anchored" data-anchor-id="list-variables">List Variables</h3>
+<div class="cell">
+<div class="cell-output-stdout">
+<pre><code> [1] "IDMerged"                    "person_id"                  
+ [3] "trip_id"                     "mode_5categories"           
+ [5] "mode_6categories"            "home_is_urban"              
+ [7] "auto_ownership"              "income_in_thousands"        
+ [9] "hh_value_of_time"            "median_value_of_time"       
+[11] "value_of_time"               "actEndTime"                 
+[13] "actStartTime"                "travelTime"                 
+[15] "waitTime"                    "roundtrip_auto_time_to_work"
+[17] "duration_in_privateCar"      "duration_in_ridehail"       
+[19] "duration_in_transit"         "duration_on_bike"           
+[21] "duration_total"              "duration_walking"           
+[23] "duration_door_to_door"       "duration"                   
+[25] "mandatoryType"               "income10levels"             
+[27] "ownCarYNLabel"               "scenShort"                  
+[29] "lever_position"              "category"                   
+[31] "lever"                       "scenYr"                     
+[33] "num_young_children"          "logsum_trip_mode_AS_trips"  
+[35] "Potential_INEXUS_in_dollar"  "Realized_INEXUS_in_dollar"  
+[37] "Social_INEXUS"               "mode_choice_actual_6"       </code></pre>
+</div>
+</div>
+</section>
+<section id="clean" class="level3">
+<h3 class="anchored" data-anchor-id="clean">Clean</h3>
+<div class="cell">
+
+</div>
+</section>
+<section id="list-scenarios" class="level3">
+<h3 class="anchored" data-anchor-id="list-scenarios">List Scenarios</h3>
+<div class="cell">
+<div class="cell-output-stdout">
+<pre><code>[1] "0.125" "0.25"  "0.5"   "1"     "1.5"   "1.75" </code></pre>
+</div>
+<div class="cell-output-stdout">
+<pre><code>[1] "base" "flsz"</code></pre>
+</div>
+<div class="cell-output-stdout">
+<pre><code>[1] "fromM_toH" "fromH_toM" "fromM_toM"</code></pre>
+</div>
+<div class="cell-output-stdout">
+<pre><code> [1] "1"  "2"  "3"  "4"  "5"  "6"  "7"  "8"  "9"  "10"</code></pre>
+</div>
+<div class="cell-output-stdout">
+<pre><code>[1] "Owns Car"         "Does not own Car"</code></pre>
+</div>
+<div class="cell-output-stdout">
+<pre><code>[1] "Top 10% Income"     "Bottom 10% Income "</code></pre>
+</div>
+<div class="cell-output-stdout">
+<pre><code>[1] "Bottom 10%, owns car" "Top 10%, owns car"    "Top 10%, no car"     
+[4] "Bottom 10%, no car " </code></pre>
+</div>
+<div class="cell-output-stdout">
+<pre><code>[1] "Car"          "Transit"      "Walk or Bike" "Ride Hail"   </code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="define-labels-titles-other" class="level2">
+<h2 class="anchored" data-anchor-id="define-labels-titles-other">Define Labels, Titles, Other</h2>
+<p>Here we modify the csv sheet</p>
+<section id="titles-of-y-vars" class="level3">
+<h3 class="anchored" data-anchor-id="titles-of-y-vars">Titles of Y vars</h3>
+<div class="cell">
+
+</div>
+</section>
+<section id="short-labels-for-saving-files" class="level3">
+<h3 class="anchored" data-anchor-id="short-labels-for-saving-files">Short labels for saving files</h3>
+<div class="cell">
+
+</div>
+</section>
+<section id="limits-of-y-variables-scales" class="level3">
+<h3 class="anchored" data-anchor-id="limits-of-y-variables-scales">Limits of y variables, scales</h3>
+<div class="cell">
+
+</div>
+</section>
+<section id="colors" class="level3">
+<h3 class="anchored" data-anchor-id="colors">Colors</h3>
+<section id="for-divergent" class="level4">
+<h4 class="anchored" data-anchor-id="for-divergent">for divergent</h4>
+<div class="cell">
+
+</div>
+</section>
+<section id="for-the-modes" class="level4">
+<h4 class="anchored" data-anchor-id="for-the-modes">for the modes</h4>
+<div class="cell">
+<div class="cell-output-stdout">
+<pre><code># A tibble: 15 × 16
+   variable   Title y_var…¹ name_df scenS…² scenY…³ lever…⁴ lever categ…⁵ scenYr
+   &lt;chr&gt;      &lt;chr&gt; &lt;chr&gt;   &lt;chr&gt;   &lt;chr&gt;   &lt;chr&gt;     &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;   &lt;chr&gt; 
+ 1 &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;    base    base    base      1     base  base    base  
+ 2 &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;    rh_fls… rh_fls… rh        0.125 flsz  rh      0p125 
+ 3 &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;    rh_fls… rh_fls… rh        0.25  flsz  rh      0p25  
+ 4 &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;    rh_fls… rh_fls… rh        0.5   flsz  rh      0p5   
+ 5 &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;    rh_fls… rh_fls… rh        1.5   flsz  rh      1p5   
+ 6 &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;    rh_fls… rh_fls… rh        1.75  flsz  rh      1p75  
+ 7 duration_… Door… doorDo… &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;     NA     &lt;NA&gt;  &lt;NA&gt;    &lt;NA&gt;  
+ 8 Potential… Pote… potInex &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;     NA     &lt;NA&gt;  &lt;NA&gt;    &lt;NA&gt;  
+ 9 Realized_… Real… realIn… &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;     NA     &lt;NA&gt;  &lt;NA&gt;    &lt;NA&gt;  
+10 Social_IN… Soci… socInex &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;     NA     &lt;NA&gt;  &lt;NA&gt;    &lt;NA&gt;  
+11 ownCarYNL… Car … carOwn  &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;     NA     &lt;NA&gt;  &lt;NA&gt;    &lt;NA&gt;  
+12 l_inc_HiL… High… Inc10h… &lt;NA&gt;    ggg     &lt;NA&gt;     NA     &lt;NA&gt;  &lt;NA&gt;    &lt;NA&gt;  
+13 mode_choi… Mode… mode    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;     NA     &lt;NA&gt;  &lt;NA&gt;    &lt;NA&gt;  
+14 mode_4cat… Mode… mode    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;     NA     &lt;NA&gt;  &lt;NA&gt;    &lt;NA&gt;  
+15 incomeXcar Inco… incXcar &lt;NA&gt;    &lt;NA&gt;    fffff    NA     &lt;NA&gt;  &lt;NA&gt;    &lt;NA&gt;  
+# … with 6 more variables: scenPl &lt;chr&gt;, colorOfScenario &lt;chr&gt;,
+#   alphaOfScenario &lt;dbl&gt;, yaxislow &lt;dbl&gt;, yaxishigh &lt;dbl&gt;, yaxismedian &lt;dbl&gt;,
+#   and abbreviated variable names ¹​y_var_short, ²​scenShort, ³​scenYear,
+#   ⁴​lever_position, ⁵​category
+# ℹ Use `colnames()` to see all variable names</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="themes" class="level3">
+<h3 class="anchored" data-anchor-id="themes">Themes</h3>
+<div class="cell">
+
+</div>
+</section>
+<section id="save-definitions-as-csv" class="level3">
+<h3 class="anchored" data-anchor-id="save-definitions-as-csv">Save Definitions as csv</h3>
+<div class="cell">
+
+</div>
+</section>
+</section>
+<section id="summary-stats" class="level2">
+<h2 class="anchored" data-anchor-id="summary-stats">Summary stats</h2>
+<section id="quantiles-mean-median" class="level3">
+<h3 class="anchored" data-anchor-id="quantiles-mean-median">quantiles mean median</h3>
+<div class="cell">
+<div class="cell-output-stdout">
+<pre><code>[1] "0.125" "0.25"  "0.5"   "1"     "1.5"   "1.75" 
+[1] 0.125 0.25  0.5   1     1.5   1.75 
+Levels: 0.125 0.25 0.5 1 1.5 1.75
+[1] "base"          "rh_flsz_0p125" "rh_flsz_0p25"  "rh_flsz_0p5"  
+[5] "rh_flsz_1p5"   "rh_flsz_1p75" </code></pre>
+</div>
+<div class="cell-output-stderr">
+<pre><code>Warning: Unknown or uninitialised column: `Short`.</code></pre>
+</div>
+<div class="cell-output-stdout">
+<pre><code>factor(0)
+Levels: 
+# A tibble: 6 × 4
+  lever_position  avLS   avY      n
+           &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt;
+1          0.125 -12.2 -12.2 730222
+2          0.25  -12.4 -12.4 733023
+3          0.5   -12.6 -12.6 735747
+4          1     -12.3 -12.3 739901
+5          1.5   -12.3 -12.3 737566
+6          1.75  -11.2 -11.2 738757</code></pre>
+</div>
+<div class="cell-output-stderr">
+<pre><code>`summarise()` has grouped output by 'lever_position'. You can override using
+the `.groups` argument.</code></pre>
+</div>
+<div class="cell-output-stdout">
+<pre><code># A tibble: 30 × 6
+# Groups:   lever_position [6]
+   lever_position  avLS   avY    qsLS   qsTIV      n
+            &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;  &lt;int&gt;
+ 1          0.125 -12.2 -12.2 -944.   -944.   730222
+ 2          0.125 -12.2 -12.2  -17.8   -17.8  730222
+ 3          0.125 -12.2 -12.2   -9.55   -9.55 730222
+ 4          0.125 -12.2 -12.2   -3.82   -3.82 730222
+ 5          0.125 -12.2 -12.2   19.0    19.0  730222
+ 6          0.25  -12.4 -12.4 -655.   -655.   733023
+ 7          0.25  -12.4 -12.4  -17.9   -17.9  733023
+ 8          0.25  -12.4 -12.4   -9.59   -9.59 733023
+ 9          0.25  -12.4 -12.4   -3.82   -3.82 733023
+10          0.25  -12.4 -12.4   19.0    19.0  733023
+# … with 20 more rows
+# ℹ Use `print(n = ...)` to see more rows</code></pre>
+</div>
+<div class="cell-output-stdout">
+<pre><code>$lever_position
+[1] 0.125 0.250 0.500 1.000 1.500 1.750
+
+$avLS
+[1] -12.20501 -12.37143 -12.59171 -12.26445 -12.29810 -11.18594
+
+$avY
+[1] -12.20501 -12.37143 -12.59171 -12.26445 -12.29810 -11.18594
+
+$n
+[1] 730222 733023 735747 739901 737566 738757
+
+$lever_position
+ [1] 0.125 0.125 0.125 0.125 0.125 0.250 0.250 0.250 0.250 0.250 0.500 0.500
+[13] 0.500 0.500 0.500 1.000 1.000 1.000 1.000 1.000 1.500 1.500 1.500 1.500
+[25] 1.500 1.750 1.750 1.750 1.750 1.750
+
+$avLS
+ [1] -12.20501 -12.20501 -12.20501 -12.20501 -12.20501 -12.37143 -12.37143
+ [8] -12.37143 -12.37143 -12.37143 -12.59171 -12.59171 -12.59171 -12.59171
+[15] -12.59171 -12.26445 -12.26445 -12.26445 -12.26445 -12.26445 -12.29810
+[22] -12.29810 -12.29810 -12.29810 -12.29810 -11.18594 -11.18594 -11.18594
+[29] -11.18594 -11.18594
+
+$avY
+ [1] -12.20501 -12.20501 -12.20501 -12.20501 -12.20501 -12.37143 -12.37143
+ [8] -12.37143 -12.37143 -12.37143 -12.59171 -12.59171 -12.59171 -12.59171
+[15] -12.59171 -12.26445 -12.26445 -12.26445 -12.26445 -12.26445 -12.29810
+[22] -12.29810 -12.29810 -12.29810 -12.29810 -11.18594 -11.18594 -11.18594
+[29] -11.18594 -11.18594
+
+$qsLS
+         0%         25%         50%         75%        100%          0% 
+-944.437303  -17.848575   -9.551155   -3.824241   18.973382 -655.333336 
+        25%         50%         75%        100%          0%         25% 
+ -17.930444   -9.594647   -3.824235   18.973379 -688.839935  -17.990651 
+        50%         75%        100%          0%         25%         50% 
+  -9.649641   -3.816318   18.973381 -537.503603  -17.910533   -9.568133 
+        75%        100%          0%         25%         50%         75% 
+  -3.773428   19.052413 -739.034488  -17.874240   -9.554391   -3.768934 
+       100%          0%         25%         50%         75%        100% 
+  19.052412 -407.051001  -17.036168   -9.079196   -3.563478   19.040511 
+
+$qsTIV
+         0%         25%         50%         75%        100%          0% 
+-944.437303  -17.848575   -9.551155   -3.824241   18.973382 -655.333336 
+        25%         50%         75%        100%          0%         25% 
+ -17.930444   -9.594647   -3.824235   18.973379 -688.839935  -17.990651 
+        50%         75%        100%          0%         25%         50% 
+  -9.649641   -3.816318   18.973381 -537.503603  -17.910533   -9.568133 
+        75%        100%          0%         25%         50%         75% 
+  -3.773428   19.052413 -739.034488  -17.874240   -9.554391   -3.768934 
+       100%          0%         25%         50%         75%        100% 
+  19.052412 -407.051001  -17.036168   -9.079196   -3.563478   19.040511 
+
+$n
+ [1] 730222 730222 730222 730222 730222 733023 733023 733023 733023 733023
+[11] 735747 735747 735747 735747 735747 739901 739901 739901 739901 739901
+[21] 737566 737566 737566 737566 737566 738757 738757 738757 738757 738757</code></pre>
+</div>
+</div>
+</section>
+<section id="deciles-of-income" class="level3">
+<h3 class="anchored" data-anchor-id="deciles-of-income">deciles of income</h3>
+<div class="cell">
+<div class="cell-output-stdout">
+<pre><code># A tibble: 10 × 5
+   income10levels potential   inc     n lever
+   &lt;fct&gt;              &lt;dbl&gt; &lt;dbl&gt; &lt;int&gt; &lt;dbl&gt;
+ 1 1                  -13.7  17.4 74048     1
+ 2 2                  -12.5  38.1 74177     1
+ 3 3                  -12.1  55.2 73907     1
+ 4 4                  -12.6  72.4 74494     1
+ 5 5                  -12.4  91.1 75479     1
+ 6 6                  -11.9 110.  71936     1
+ 7 7                  -11.8 133.  73909     1
+ 8 8                  -11.9 164.  74073     1
+ 9 9                  -11.8 212.  74693     1
+10 10                 -11.9 389.  73185     1</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="start-the-graphs" class="level2">
+<h2 class="anchored" data-anchor-id="start-the-graphs">START THE GRAPHS!</h2>
+</section>
+<section id="loop-across-y-vars-and-heterogeneity" class="level2">
+<h2 class="anchored" data-anchor-id="loop-across-y-vars-and-heterogeneity">LOOP ACROSS Y VARS and Heterogeneity</h2>
+<section id="across" class="level3">
+<h3 class="anchored" data-anchor-id="across">Across</h3>
+<div class="cell">
+
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-3.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-4.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-5.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-stderr">
+<pre><code>Saving 7 x 5 in image
+Saving 7 x 5 in image</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-6.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-stdout">
+<pre><code>[1] "Now  plot  heterogeneity,  separate graphs into different levers"</code></pre>
+</div>
+<div class="cell-output-stderr">
+<pre><code>Saving 7 x 5 in image
+Saving 7 x 5 in image</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-7.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-stdout">
+<pre><code>[1] "Now  plot  levers,  separate graphs into different heterogeneous groups"</code></pre>
+</div>
+<div class="cell-output-stderr">
+<pre><code>Saving 7 x 5 in image
+Saving 7 x 5 in image</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-8.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-9.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-10.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-11.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-12.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-13.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-stderr">
+<pre><code>Saving 7 x 5 in image
+Saving 7 x 5 in image</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-14.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-stdout">
+<pre><code>[1] "Now  plot  heterogeneity,  separate graphs into different levers"</code></pre>
+</div>
+<div class="cell-output-stderr">
+<pre><code>Saving 7 x 5 in image
+Saving 7 x 5 in image</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-15.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-stdout">
+<pre><code>[1] "Now  plot  levers,  separate graphs into different heterogeneous groups"</code></pre>
+</div>
+<div class="cell-output-stderr">
+<pre><code>Saving 7 x 5 in image
+Saving 7 x 5 in image</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-16.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-17.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-18.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-19.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-20.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-21.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-stderr">
+<pre><code>Saving 7 x 5 in image
+Saving 7 x 5 in image</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-22.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-stdout">
+<pre><code>[1] "Now  plot  heterogeneity,  separate graphs into different levers"</code></pre>
+</div>
+<div class="cell-output-stderr">
+<pre><code>Saving 7 x 5 in image
+Saving 7 x 5 in image</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-23.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-stdout">
+<pre><code>[1] "Now  plot  levers,  separate graphs into different heterogeneous groups"</code></pre>
+</div>
+<div class="cell-output-stderr">
+<pre><code>Saving 7 x 5 in image
+Saving 7 x 5 in image</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-24.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-25.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-26.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-27.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-28.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-29.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-stderr">
+<pre><code>Saving 7 x 5 in image
+Saving 7 x 5 in image</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-30.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-stdout">
+<pre><code>[1] "Now  plot  heterogeneity,  separate graphs into different levers"</code></pre>
+</div>
+<div class="cell-output-stderr">
+<pre><code>Saving 7 x 5 in image
+Saving 7 x 5 in image</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-31.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-stdout">
+<pre><code>[1] "Now  plot  levers,  separate graphs into different heterogeneous groups"</code></pre>
+</div>
+<div class="cell-output-stderr">
+<pre><code>Saving 7 x 5 in image
+Saving 7 x 5 in image</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-32.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-stdout">
+<pre><code>[[1]]
+[[1]][[1]]</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-33.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-stdout">
+<pre><code>
+[[1]][[2]]</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-34.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-stdout">
+<pre><code>
+[[1]][[3]]</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-35.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-stdout">
+<pre><code>
+[[1]][[4]]</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-19-36.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="ridge" class="level3">
+<h3 class="anchored" data-anchor-id="ridge">ridge</h3>
+<div class="cell">
+<div class="cell-output-stderr">
+<pre><code>Saving 7 x 5 in image</code></pre>
+</div>
+<div class="cell-output-stderr">
+<pre><code>Picking joint bandwidth of 1.59</code></pre>
+</div>
+<div class="cell-output-stderr">
+<pre><code>Saving 7 x 5 in image</code></pre>
+</div>
+<div class="cell-output-stderr">
+<pre><code>Picking joint bandwidth of 1.59
+Picking joint bandwidth of 1.59</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-20-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="directions-for-the-wavy-plot" class="level3">
+<h3 class="anchored" data-anchor-id="directions-for-the-wavy-plot">directions for the wavy plot</h3>
+<div class="cell">
+<div class="cell-output-stderr">
+<pre><code>Scale for 'y' is already present. Adding another scale for 'y', which will
+replace the existing scale.</code></pre>
+</div>
+<div class="cell-output-stderr">
+<pre><code>Scale for 'x' is already present. Adding another scale for 'x', which will
+replace the existing scale.</code></pre>
+</div>
+<div class="cell-output-stderr">
+<pre><code>Scale for 'y' is already present. Adding another scale for 'y', which will
+replace the existing scale.</code></pre>
+</div>
+<div class="cell-output-stderr">
+<pre><code>Scale for 'x' is already present. Adding another scale for 'x', which will
+replace the existing scale.</code></pre>
+</div>
+<div class="cell-output-stderr">
+<pre><code>Scale for 'y' is already present. Adding another scale for 'y', which will
+replace the existing scale.</code></pre>
+</div>
+<div class="cell-output-stderr">
+<pre><code>Scale for 'x' is already present. Adding another scale for 'x', which will
+replace the existing scale.</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-21-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-21-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-21-3.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-stderr">
+<pre><code>Picking joint bandwidth of 458</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-21-4.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-stderr">
+<pre><code>Picking joint bandwidth of 1.01</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="2022_07_21graphs_files/figure-html/unnamed-chunk-22-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+
+</div>
+</section>
+</section>
+</main>
+<!-- /main column -->
+<script type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    setTimeout(function() {
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      let href = ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
+      });
+      return popup.innerHTML;
+    });
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+</body></html>

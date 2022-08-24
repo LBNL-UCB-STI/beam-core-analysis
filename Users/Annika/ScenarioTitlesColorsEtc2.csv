@@ -1,16 +1,18 @@
-﻿"variable","Title","y_var_short","name_df","scenShort","scenYear","lever_position","lever","category","scenYr","scenPl","colorOfScenario","alphaOfScenario","yaxislow","yaxishigh","yaxismedian"
-NA,NA,NA,"base","base","base",1,"base","base","base","base","#EAECCC",1,NA,NA,NA
-NA,NA,NA,"rh_flsz_0p125","rh_flsz_0p125","rh",0.125,"flsz","rh","0p125","0p125","#ee7733",0.125,NA,NA,NA
-NA,NA,NA,"rh_flsz_0p25","rh_flsz_0p25","rh",0.25,"flsz","rh","0p25","0p25","#ee7733",0.25,NA,NA,NA
-NA,NA,NA,"rh_flsz_0p5","rh_flsz_0p5","rh",0.5,"flsz","rh","0p5","0p5","#ee7733",0.5,NA,NA,NA
-NA,NA,NA,"rh_flsz_1p5","rh_flsz_1p5","rh",1.5,"flsz","rh","1p5","1p5","#ee7733",1.5,NA,NA,NA
-NA,NA,NA,"rh_flsz_1p75","rh_flsz_1p75","rh",1.75,"flsz","rh","1p75","1p75","#ee7733",1.75,NA,NA,NA
-"duration_door_to_door","Door-to-door Travel Time","doorDoor",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,0,65.1,20.083333333333332
-"Potential_INEXUS_in_dollar","Potential INEXUS","potInex",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,-23.919121361786296,2.095647139183449,-9.499082555358797
-"Realized_INEXUS_in_dollar","Realized INEXUS","realInex",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,-22.919121361786296,3.0956471391834484,-8.499082555358797
-"Social_INEXUS","Social INEXUS","socInex",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,-20.919121361786296,5.095647139183448,-6.499082555358796
-"ownCarYNLabel","Car Ownership","carOwn",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
-"l_inc_HiLo10","Highest and Lowest 10% Income","Inc10hiLo",NA,"ggg",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
-"mode_choice_actual_6","Mode Choice","mode",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
-"mode_4categories","Mode Choice","mode",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
-"incomeXcar","Income and Car","incXcar",NA,NA,"fffff",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+﻿"type","type_title","title","title_short","variable","category","lever","colorOfScenario","alphaOfScenario","scaleLow","scaleHigh","leverLevels","alwaysKeep"
+"year","year","2018","2018","2018",NA,NA,NA,NA,0,1,NA,NA
+"place","place","San Francisco","sf","sf",NA,NA,NA,NA,0,1,NA,NA
+"category","category_tr","Transit","tr","tr","tr",NA,NA,NA,0,1,NA,NA
+"lever","lever_fq","Frequency","fq","fq",NA,"fq",NA,NA,0,1,NA,NA
+"category","category_rh","Ride Hail","rh","rh","rh",NA,NA,NA,0,1,NA,NA
+"lever","lever_flsz","Fleet Size","flsz","flsz",NA,"flsz",NA,NA,0,1,"[1] 0.25 1.00 1.75",NA
+"yvar","yvar_doorDoor","Door-to-door Travel Time","doorDoor","duration",NA,NA,NA,NA,1e-6,60,NA,NA
+"yvar","yvar_potInex","Potential INEXUS","potInex","Potential_INEXUS_in_dollar",NA,NA,NA,NA,24,3,NA,NA
+"yvar","yvar_realInex","Realized INEXUS","realInex","Realized_INEXUS_in_dollar",NA,NA,NA,NA,24,3,NA,NA
+"yvar","yvar_socInex","Social INEXUS","socInex","Social_INEXUS",NA,NA,NA,NA,24,3,NA,NA
+"hetvar","hetvar_carOwn","Car Ownership","carOwn","ownCarYNLabel",NA,NA,NA,NA,0,4,NA,NA
+"hetvar","hetvar_Inc10hiLo","Highest and Lowest 10% Income","Inc10hiLo","l_inc_HiLo10",NA,NA,NA,NA,0,11,NA,NA
+"yvar","yvar_mode","Mode Choice","mode","mode_choice_actual_6",NA,NA,NA,NA,0,8,NA,NA
+"yvar","yvar_mode","Mode Choice","mode","mode_4categories",NA,NA,NA,NA,0,8,NA,NA
+"hetvar","hetvar_incXcar","Income and Car","incXcar","incomeXcar",NA,NA,NA,NA,0,11,NA,NA
+"yvar","yvar_carbon","Emissions (Cost of Carbon)","carbon","socialCarbonCost",NA,NA,NA,NA,0,24,NA,NA
+"generic","generic_plot","DataLens Plot","generic","generic",NA,NA,NA,NA,-50,50,NA,NA

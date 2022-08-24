@@ -1,0 +1,149 @@
+---
+title: "Untitled"
+format: html
+---
+
+# Setup
+
+```{r}
+categoryNameShort <- "rh"
+leverNameShort <- "flsz"
+```
+
+```{r libraries}
+library(knitr)
+library(tidyverse)
+library(reader)
+library(aws.s3)
+library(furrr) # o use multiple cores
+library(tictoc) # to test timing of runs for mult cores etc
+library(stringi)
+library(purrr)
+```
+
+# Get the file path for this computer
+
+```{r}
+source( paste0(getwd(),
+        "/2022_06_14_global_file_directories.R") )
+# returns: 
+  print(data_dir_on_this_machine)
+```
+
+### Switch this
+
+```{r}
+df <- read_csv("C:/Users/annik/tmpOnATBcomputer/sf_2018_stacked_rh_flsz.csv", 
+         # id(NAMEofFILEkeepTHIS),
+         num_threads = 30,
+         col_select = 
+             
+
+c(IDMerged,
+         person_id,
+         trip_id,
+         # mode_5categories,
+         # mode_6categories,
+         home_is_urban,
+         auto_ownership,
+         income_in_thousands,
+         # earning,
+         hh_value_of_time,
+         median_value_of_time,
+         value_of_time,
+         actEndTime,
+         actStartTime,
+         # travelTime,
+         waitTime,
+         # roundtrip_auto_time_to_school,
+         # roundtrip_auto_time_to_work,
+         contains("duration"),
+         contains("mode"),
+         contains("logsum"),
+        contains("relative"),
+  duration_travelling,
+  emission_marginal,
+  actPurpose,
+  cost_BEAM,
+  year,
+  hh_size,
+  hh_income,
+  hh_cars,
+  home_is_urban,
+  # auto_ownership,
+  hh_value_of_time,
+  median_value_of_time,
+  DIS,
+  socialCarbonCost,
+  
+         # actPurpose,
+         contains("mandatory"),
+         # income10levels,
+         # incomeLow30Label,
+         # incomeLoHi10Lab,
+         # ownCarYNLabel,
+         # scenShort,
+         # scenYear,
+         lever_position,
+         # category,
+         lever,
+         # scenYr,
+         # scenPl,
+         # scenBind,
+         # num_young_children,
+        contains("INEXUS"),
+         logsum_trip_mode_AS_trips
+  )
+)
+```
+
+## Mandatory trips only
+
+```{r}
+
+df <-   df %>%
+  filter( mandatoryCat ==  "from_M_to_H" |
+         mandatoryCat ==    "from_H_to_M" |
+          mandatoryCat ==   "from_M_to_M" )
+```
+
+```{r}
+df <- df  %>%
+    mutate(
+      mode_4categories = as_factor(
+        case_when(
+          mode_choice_actual_5 == "bike" ~ "Walk or Bike",
+          mode_choice_actual_5 == "walk" ~ "Walk or Bike",
+          mode_choice_actual_5 == "ride_hail" ~ "Ride Hail",
+          mode_choice_actual_5 == "car" ~ "Car",
+          mode_choice_actual_5 == "transit" ~ "Transit"
+        )))
+
+
+# df_stacked_from_list <- df_stacked_from_list  %>%
+#     mutate(
+#       mode_4categories = as_factor(
+#         case_when(
+#           mode_5categories == "bike" ~ "Walk or Bike",
+#           mode_5categories == "walk" ~ "Walk or Bike",
+#           mode_5categories == "ride_hail" ~ "Ride Hail",
+#           mode_5categories == "car" ~ "Car",
+#           mode_5categories == "transit" ~ "Transit"
+#         )))
+```
+
+## Make factors for everything
+
+```{r}
+df <-   df |> 
+  mutate(across(where(is.character), as_factor))
+```
+
+```{r}
+names(df) 
+write_rds(df,
+file = paste0(data_dir_on_this_machine, "df_stacked_from_list_",
+              categoryNameShort,"_",
+              leverNameShort,".rds"))
+
+```
