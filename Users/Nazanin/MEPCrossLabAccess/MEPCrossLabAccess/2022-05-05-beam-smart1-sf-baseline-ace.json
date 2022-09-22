@@ -1,0 +1,395 @@
+{
+    "user": {
+        "email": "haitam.laarabi@lbl.gov",
+        "scenarioName": "sf_2010_base",
+        "batchName": "beam",
+        "date": "2022-05-19"
+    },
+    "query": {
+        "hoursOfDay": [
+            8
+        ],
+        "modalQueries": [
+            {
+                "alias": "walk",
+                "query": [
+                    {
+                        "maxModeTime": {
+                            "walk": 40
+                        }
+                    }
+                ]
+            },
+            {
+                "alias": "bike",
+                "query": [
+                    {
+                        "maxModeTime": {
+                            "bike": 40
+                        }
+                    }
+                ]
+            },
+            {
+                "alias": "drive",
+                "query": [
+                    {
+                        "maxModeTime": {
+                            "drive": 40
+                        }
+                    }
+                ]
+            },
+            {
+                "alias": "tnc",
+                "query": [
+                    {
+                        "maxModeTime": {
+                            "tnc": 40
+                        }
+                    }
+                ]
+            },
+            {
+                "alias": "transit",
+                "query": [
+                    {
+                        "allowedModes": [
+                            "walk",
+                            "transit"
+                        ]
+                    },
+                    {
+                        "departureLimit": {
+                            "walk": 10
+                        },
+                        "arrivalLimit": {
+                            "walk": 10
+                        }
+                    },
+                    {
+                        "maxOverallTime": 40
+                    }
+                ]
+            }
+        ],
+        "searchType": "isochrone"
+    },
+    "input": {
+        "grid": {
+            "input": {
+                "csvFilePath": "s3://nrel-mep-shared/input/beam/sf_2010_base/city_grid.csv.gz",
+                "geometryColumnName": "WKT",
+                "geometrySrid": 4326,
+                "geometryXYOrdering": true,
+                "properties": {
+                    "cellId": "id"
+                }
+            }
+        },
+        "roadNetwork": {
+            "input": {
+                "csvFilePath": "s3://nrel-mep-shared/input/beam/sf_2010_base/physsim-network.csv.gz",
+                "geometryColumnName": "WKT",
+                "geometrySrid": 4326,
+                "geometryXYOrdering": true,
+                "properties": {
+                    "linkId": "linkId",
+                    "srcNodeId": "o",
+                    "dstNodeId": "d",
+                    "distance": "lengthKm",
+                    "validModes": "modes"
+                }
+            },
+            "distanceUnit": "kilometer",
+            "modeMapping": {
+                "car": [
+                    "drive",
+                    "tnc"
+                ],
+                "walk": [
+                    "walk"
+                ],
+                "bike": [
+                    "bike"
+                ]
+            },
+            "validModesDelimiter": ",",
+            "nodeSnapTolerance": 0.0001,
+            "directed": true
+        },
+        "modalParameters": [
+            {
+                "mode": "walk",
+                "speed": 5.0,
+                "speedUnit": "KilometersPerHour"
+            },
+            {
+                "mode": "bike",
+                "speed": 16.0,
+                "speedUnit": "KilometersPerHour"
+            },
+            {
+                "mode": "drive",
+                "input": {
+                    "csvFilePath": "s3://nrel-mep-shared/input/beam/sf_2010_base/linkstats.csv.gz",
+                    "properties": {
+                        "linkId": "link",
+                        "hour": "hour",
+                        "travelTime": "traveltime"
+                    }
+                },
+                "timeUnit": "seconds",
+                "fillMethod": "average",
+                "wideLayout": false,
+                "directed": true
+            },
+            {
+                "mode": "drive",
+                "input": {
+                    "left": {
+                        "csvFilePath": "s3://nrel-mep-shared/input/beam/sf_2010_base/parkingStats-fix.csv.gz",
+                        "properties": {
+                            "egress": "inboundParkingOverheadTime",
+                            "hour": "timeBin",
+                            "TAZ": "TAZ"
+                        }
+                    },
+                    "right": {
+                        "csvFilePath": "s3://nrel-mep-shared/input/beam/sf_2010_base/taz_geometries.csv.gz",
+                        "geometryColumnName": "WKT",
+                        "geometrySrid": 4326,
+                        "geometryXYOrdering": true,
+                        "properties": [
+                            "taz_id"
+                        ]
+                    },
+                    "leftIdColumnName": "TAZ",
+                    "rightIdColumnName": "taz_id",
+                    "properties": [
+                        "egress",
+                        "hour"
+                    ],
+                    "foreignKey": "left"
+                },
+                "timeUnit": "seconds",
+                "ingress": false,
+                "egress": true,
+                "fillMethod": "zero"
+            },
+            {
+                "mode": "tnc",
+                "input": {
+                    "csvFilePath": "s3://nrel-mep-shared/input/beam/sf_2010_base/linkstats.csv.gz",
+                    "properties": {
+                        "linkId": "link",
+                        "hour": "hour",
+                        "travelTime": "traveltime"
+                    }
+                },
+                "timeUnit": "seconds",
+                "fillMethod": "average",
+                "wideLayout": false,
+                "directed": true
+            },
+            {
+                "mode": "tnc",
+                "input": {
+                    "left": {
+                        "csvFilePath": "s3://nrel-mep-shared/input/beam/sf_2010_base/rideHailWaitingStats.csv.gz",
+                        "properties": {
+                            "egress": "avgWait",
+                            "hour": "timeBin",
+                            "TAZ": "TAZ"
+                        }
+                    },
+                    "right": {
+                        "csvFilePath": "s3://nrel-mep-shared/input/beam/sf_2010_base/taz_geometries.csv.gz",
+                        "geometryColumnName": "WKT",
+                        "geometrySrid": 4326,
+                        "geometryXYOrdering": true,
+                        "properties": [
+                            "taz_id"
+                        ]
+                    },
+                    "leftIdColumnName": "TAZ",
+                    "rightIdColumnName": "taz_id",
+                    "properties": [
+                        "egress",
+                        "hour"
+                    ]
+                },
+                "timeUnit": "seconds",
+                "ingress": false,
+                "egress": true,
+                "fillMethod": "zero"
+            }
+        ],
+        "transitNetwork": {
+            "gtfsPath": "s3://nrel-mep-shared/input/beam/sf_2010_base/gtfs",
+            "queryDate": "2017-01-04",
+            "networkMatchingThreshold": 0.001
+        },
+        "opportunities": {
+            "input": {
+                "left": {
+                    "left": {
+                        "csvFilePath": "s3://nrel-mep-shared/input/beam/sf_2010_base/parcels.csv.gz",
+                        "xColumnName": "x",
+                        "yColumnName": "y",
+                        "geometrySrid": 4326,
+                        "properties": [
+                            "parcel_id"
+                        ]
+                    },
+                    "right": {
+                        "csvFilePath": "s3://nrel-mep-shared/input/beam/sf_2010_base/buildings.csv.gz",
+                        "properties": [
+                            "parcel_id",
+                            "building_id"
+                        ]
+                    },
+                    "leftIdColumnName": "parcel_id",
+                    "rightIdColumnName": "parcel_id",
+                    "properties": [
+                        "building_id"
+                    ]
+                },
+                "right": {
+                    "csvFilePath": "s3://nrel-mep-shared/input/beam/sf_2010_base/jobs.csv.gz",
+                    "properties": [
+                        "sector_id",
+                        "building_id"
+                    ]
+                },
+                "leftIdColumnName": "building_id",
+                "rightIdColumnName": "building_id",
+                "properties": {
+                    "activityType": "sector_id"
+                },
+                "foreignKey": "right"
+            },
+            "networkMatchingThreshold": 0.0025,
+            "activityMapping": {
+                "services": [
+                    "61"
+                ],
+                "healthcare": [
+                    "62"
+                ],
+                "entertainment": [
+                    "71"
+                ],
+                "retail": [
+                    "42",
+                    "44",
+                    "45"
+                ],
+                "food": [
+                    "72"
+                ],
+                "jobs": [
+                    "11",
+                    "21",
+                    "22",
+                    "23",
+                    "31",
+                    "32",
+                    "33",
+                    "42",
+                    "44",
+                    "45",
+                    "48",
+                    "49",
+                    "51",
+                    "52",
+                    "53",
+                    "54",
+                    "55",
+                    "56",
+                    "61",
+                    "62",
+                    "71",
+                    "72",
+                    "81",
+                    "92",
+                    "99"
+                ]
+            }
+        },
+        "population": {
+            "input": {
+                "left": {
+                    "left": {
+                        "csvFilePath": "s3://nrel-mep-shared/input/beam/sf_2010_base/parcels.csv.gz",
+                        "xColumnName": "x",
+                        "yColumnName": "y",
+                        "geometrySrid": 4326,
+                        "properties": [
+                            "parcel_id"
+                        ]
+                    },
+                    "right": {
+                        "csvFilePath": "s3://nrel-mep-shared/input/beam/sf_2010_base/buildings.csv.gz",
+                        "properties": [
+                            "parcel_id",
+                            "building_id"
+                        ]
+                    },
+                    "leftIdColumnName": "parcel_id",
+                    "rightIdColumnName": "parcel_id",
+                    "properties": [
+                        "building_id"
+                    ]
+                },
+                "right": {
+                    "csvFilePath": "s3://nrel-mep-shared/input/beam/sf_2010_base/households.csv.gz",
+                    "properties": [
+                        "persons",
+                        "building_id"
+                    ]
+                },
+                "leftIdColumnName": "building_id",
+                "rightIdColumnName": "building_id",
+                "properties": {
+                    "population": "persons"
+                },
+                "foreignKey": "right"
+            },
+            "populationTypes": [
+                "population",
+                "popProportion"
+            ]
+        },
+        "activityWeighting": {
+            "frequencies": {
+                "healthcare": 3.1,
+                "retail": 1.5,
+                "entertainment": 19.5,
+                "services": 8.4,
+                "food": 6.7,
+                "jobs": 16.6
+            },
+            "normalizingActivity": "food"
+        },
+        "modalWeighting": {
+            "energyWeights": {
+                "walk": 0.0,
+                "bike": 0.0,
+                "drive": 0.48,
+                "tnc": 1.54,
+                "transit": 0.855
+            },
+            "costWeights": {
+                "walk": 0.0,
+                "bike": 0.0,
+                "drive": 0.9,
+                "tnc": 1.8,
+                "transit": 0.65
+            },
+            "alpha": -0.5,
+            "beta": -0.08,
+            "sigma": -0.5
+        }
+    }
+}
