@@ -1,0 +1,209 @@
+---
+title: "Clean then select vars"
+format: html
+---
+
+## Define file pathways for data and output
+
+```{r }
+t <- "/00__global_file_directories.R"
+print(paste("opening source file ", t))
+source( paste0(getwd(),t) ) # returns: 
+figures_folder <- paste0(output_dir_on_this_machine,"figures")
+print(paste("defining file location ",figures_folder))
+# data_file_list_paths_local <- awsDF$Key[grep(pattern = "*.deep*", awsDF$Key)]
+```
+
+## Read
+
+```{r}
+library(vroom) # progress = TRUE
+library(glue)
+df_temp <- vroom::vroom(file = paste0(data_dir_on_this_machine,
+                   glue("{placeFilename}_{year}_",
+                        "stacked_",
+                        "{categoryTitleShort}_{leverTitleShort}_",
+                        "GraphClean",
+                        "_1")) 
+)
+```
+
+# subset certain vars
+
+```{r}
+df_temp <- df_temp |> 
+    select(c(
+IDMerged,
+tripIndex,
+scenario,
+contains("lever"),
+lever,
+lever_position,
+# Realized_INEXUS,
+Social_INEXUS,
+Potential_INEXUS_in_dollar,
+Realized_INEXUS_in_dollar,
+logsum_relative_to_baseline,
+door_to_door_time_relative_to_baseline,
+# income,
+# actPurpose,
+# logsum_trip_Potential_INEXUS,
+mode_choice_actual_BEAM,
+mandatoryCat,
+# actEndTime,
+# actEndType,
+# actStartTime,
+# actStartType,
+# cost_BEAM,
+# distance_bike,
+# distance_mode_choice,
+# distance_privateCar,
+# distance_ridehail,
+# distance_transit,
+# distance_travelling,
+# distance_walking,
+# duration_in_privateCar,
+# duration_in_ridehail,
+# duration_in_transit,
+# duration_on_bike,
+# duration_travelling,
+# duration_walking,
+# emissionBiodiesel,
+# emissionDiesel,
+# emissionElectricity,
+# emissionFood,
+# emissionGasoline,
+emission_marginal,
+# fuelBiodiesel,
+# fuelDiesel,
+# fuelElectricity,
+# fuelFood,
+# fuelGasoline,
+# fuel_marginal,
+# fuel_not_Food,
+mode_choice_planned_BEAM,
+# numPassengers,
+# parkingType,
+# reason,
+# replanning_status,
+ride_hail_pooled,
+# transit_bus,
+# transit_cable_car,
+# transit_rail,
+# transit_subway,
+# transit_tram,
+# vehicleIds,
+# year,
+duration_door_to_door,
+waitTime,
+mode_choice_actual_5,
+mode_choice_actual_6,
+# trip_id,
+# person_id,
+# household_id,
+# tour_id,
+# primary_purpose_x,
+# trip_count,
+# purpose,
+trip_mode_AS_trips,
+# tour_type,
+# tour_category,
+# start,
+# end,
+duration,
+# tour_mode_AS_tours,
+# earning,
+# person_sex,
+# sex,
+# edu,
+# race,
+# work_at_home,
+# age,
+# value_of_time,
+# free_parking_at_work,
+# num_mand,
+# lcm_county_id,
+# tenure_mover,
+# hh_size,
+# tenure,
+hh_cars,
+# hh_income,
+# hhsize,
+income_in_thousands,
+# median_value_of_time,
+# hh_value_of_time,
+# home_is_urban,
+# home_is_rural,
+auto_ownership,
+# DRIVEALONEFREE,
+# DRIVEALONEPAY,
+# SHARED2FREE,
+# SHARED2PAY,
+# SHARED3FREE,
+# SHARED3PAY,
+# WALK,
+# BIKE,
+# WALK_LOC,
+# WALK_LRF,
+# WALK_EXP,
+# WALK_HVY,
+# WALK_COM,
+# DRIVE_LOC,
+# DRIVE_LRF,
+# DRIVE_EXP,
+# DRIVE_HVY,
+# DRIVE_COM,
+# TAXI,
+# TNC_SINGLE,
+# TNC_SHARED,
+# income_quartiles,
+# MedianQuartiles,
+alpha,
+socialCarbonCost
+))
+```
+
+# Subset observations
+
+```{r mandatory}
+## Mandatory trips only
+
+# df_temp <-   df_temp %>%
+#   filter( mandatoryCat ==  "from_H_to_M" )
+          
+         #  |
+         # mandatoryCat ==    "from_M_to_H" |
+         #  mandatoryCat ==   "from_M_to_M" )
+
+# df_temp <- df_temp |>
+#   mutate(Social_INEXUS = Realized_INEXUS_in_dollar - socialCarbonCost)
+```
+
+```{r}
+names(df_temp)
+```
+
+# Save subsetted data
+
+```{r}
+vroom::vroom_write(df_temp, file = paste0(data_dir_on_this_machine,
+                   glue("{placeFilename}_{year}_",
+                        "stacked_",
+                        "{categoryTitleShort}_{leverTitleShort}_",
+                        "GraphClean_",
+                        "Subset_",
+                        "Mand",
+                        "_2",   ""  )),
+                progress = TRUE)
+# readr::write_rds        ".rds")))
+```
+
+Do next steps: clean and create new vars
+
+```{r}
+       rmarkdown::render("06__CreateNewVariables")
+```
+
+```{r}
+
+```

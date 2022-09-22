@@ -1,0 +1,94 @@
+---
+title: "DataLens SF Bay, Specific For RH fleet size"
+author: "Annika Nazanin Carlos"
+date: "`r {Sys.Date()}`"
+format:
+  html:
+    toc: true
+    code-fold: true
+    self-contained: true
+    fontsize: 10px
+    linestretch: 1
+echo: false
+output-file: "2022_09_20"
+params:
+  useAWStoReadWrite: FALSE
+  RERUNopenCleanAWSdataYN: FALSE
+  RERUNsubsetofTheVARSinsteadofAll: FALSE
+  wantSUBSETofTheVARSinsteadofAll: TRUE
+  RERUNsubsetofVerySmallVars: FALSE
+  hardcodeFileName: "none"
+  scen________: "___scenario____________________"
+  place: "SanFrancisco"
+  category_rh:    TRUE
+  lever_flsz:     TRUE
+  category_tr:  FALSE
+  lever_fq:     FALSE
+  year:
+    label: "Year"
+    value: 2018
+    input: slider
+    min: 2018
+    max: 2040
+    step: 1
+  subset________: "___ subset by ____________________"
+  HomeToMandatory: TRUE
+  MandatoryToHome: FALSE
+  MandatoryToMandatory: FALSE
+  yvars________: "___ y variables ____________________"
+  yvar_doorDoor:    TRUE
+  yvar_potInex:     TRUE
+  yvar_realInex:    TRUE
+  yvar_socInex:     TRUE
+  yvar_mode:        TRUE
+  yvar_carbon:      false
+  het________: "___heterogeneity variables_____"
+  hetvar_incXcar:   TRUE
+  hetvar_carOwn:    TRUE
+  hetvar_Inc10hiLo: TRUE
+  hetvar_mode:      TRUE
+  save_______: "___save graphs this time_____"
+  saveGraphsTF:     TRUE
+editor_options: 
+  chunk_output_type: inline
+---
+
+# BEGIN STARTUP BOILERPLATE. DO NOT DELETE.
+
+```{r }
+TEMP_PARAMS <- params
+save(TEMP_PARAMS, file = "TEMP_PARAMS.RData")
+```
+
+```{r }
+rmarkdown::render(paste0(getwd(),"/100_MasterSetupStartEverythingAfterRunningThis.qmd"))
+html(contentsOfData,  levelType='table' )
+print(descr |> filter(type == "yvar"))
+print(glue("
+               Scenario: {categoryTitleLong} ({categoryTitleShort}),
+                  lever: {leverTitleLong} ({leverTitleShort}),
+           lever Levels: {leverlevelsStr}"))
+```
+
+### ----END STARTUP
+
+# Now start graphs
+
+# Density curves
+
+## With 1 y_var
+
+The titles overlap! Gah.
+
+```{r}
+# | echo: false
+g1meta <- 
+  map(.x = listY, 
+      ~ map2(.x = .x, .y = listHet,
+             ~ fx_META_graph_choose(df = df_temp , y_var = .x, het = .y ,
+                                     totalGr=TRUE,
+                                     hetGr = FALSE,
+                                     saveGraph = TRUE     )))
+print(g1meta)
+```
+

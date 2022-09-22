@@ -1,0 +1,981 @@
+---
+title: "DataLens SF Bay"
+author: "Annika Nazanin Carlos"
+# date: "`r {Sys.Date()}`"
+# format:
+#   html:
+#     toc: true
+#     code-fold: true
+#     self-contained: true
+#     fontsize: 10px
+#     linestretch: 1
+# echo: false
+# output-file: "2022_09_20"
+# params:
+#   useAWStoReadWrite: FALSE
+#   RERUNopenCleanAWSdataYN: FALSE
+#   RERUNsubsetofTheVARSinsteadofAll: FALSE
+#   wantSUBSETofTheVARSinsteadofAll: TRUE
+#   RERUNsubsetofVerySmallVars: FALSE
+#   hardcodeFileName: "none"
+#   scen________: "___scenario____________________"
+#   place: "SanFrancisco"
+#   category_rh:    TRUE
+#   lever_flsz:     TRUE
+#   category_tr:  FALSE
+#   lever_fq:     FALSE
+#   year:
+#     label: "Year"
+#     value: 2018
+#     input: slider
+#     min: 2018
+#     max: 2040
+#     step: 1
+#   subset________: "___ subset by ____________________"
+#   HomeToMandatory: TRUE
+#   MandatoryToHome: FALSE
+#   MandatoryToMandatory: FALSE
+#   yvars________: "___ y variables ____________________"
+#   yvar_doorDoor:    TRUE
+#   yvar_potInex:     TRUE
+#   yvar_realInex:    TRUE
+#   yvar_socInex:     TRUE
+#   yvar_mode:        TRUE
+#   yvar_carbon:      false
+#   het________: "___heterogeneity variables_____"
+#   hetvar_incXcar:   TRUE
+#   hetvar_carOwn:    TRUE
+#   hetvar_Inc10hiLo: TRUE
+#   hetvar_mode:      TRUE
+#   save_______: "___save graphs this time_____"
+#   saveGraphsTF:     TRUE
+# editor_options: 
+#   chunk_output_type: inline
+---
+
+This is common to all projects. Any time we change the title of a graph or a table, or the colors, or the variable names, etc, it should be in here And then this file should be run before ANY of the other ones.
+
+All functions for graphs, regressions, etc, should be defined as FUNCTIONS, not in files, so that they are common across all projects.
+
+A file for a specific project should only incude the YAML parameters and then Call functions And then not much else. \# Setup {#sec-setup}
+
+::: panel-tabset
+## Scenario
+
+Description of the setup
+
+## Source Files
+
+Define file pathways for data and output
+
+```{r }
+t <- "/00__global_file_directories.R"
+print(paste("opening source file ", t))
+source( paste0(getwd(),t) ) # returns: 
+figures_folder <- paste0(output_dir_on_this_machine,"figures")
+print(paste("defining file location ",figures_folder))
+```
+
+Open libraries and define setup functions
+
+```{r }
+t <- "/02__SetupLibrary.qmd"
+print(paste("opening source file ", t))
+rmarkdown::render(paste0(getwd(),t))
+```
+
+Open description file, with the Titles and colors that are common across all projects
+
+```{r }
+#| include: FALSE 
+t <- "03__ScenarioTitlesColorsEtc3.csv"
+print(paste("opening source file ", t))
+description_df   <- read_csv(file =t)
+```
+
+Define other functions
+
+```{r}
+t <- "/50__GraphFunctions.qmd"
+print(paste("opening source file ", t))
+rmarkdown::render(paste0(getwd(),t))
+```
+
+## Parameters
+
+From YAML header, where all of the definitions should be
+
+```{r }
+#| include: FALSE 
+# Print pretty table of parameters
+parameters <- as.data.frame.list(params) 
+paramsT <- data.table::transpose(parameters, keep.names = "type_title"  )
+# paramsT <- paramsT |> filter(V1 != FALSE)
+descr <- full_join(paramsT,description_df) 
+descr <- descr |> relocate("type", "title") |> filter(V1 != FALSE | type_title=="generic_plot")
+```
+
+Import titles etc from description file
+
+```{r}
+#| include: FALSE 
+categoryTitleShort  <- as.character(filter(descr, type == "category")["title_short"])
+leverTitleShort     <-  as.character(filter(descr, type == "lever")["title_short"])
+categoryTitleLong  <- as.character(filter(descr, type == "category")["title"])
+leverTitleLong     <-  as.character(filter(descr, type == "lever")["title"])
+year     <-  as.character(filter(descr, type == "year")["title"])
+place     <-  as.character(filter(descr, type == "place")["title"])
+placeTitleShort <-  gsub(" ", "", as.character(filter(descr, type == "place")["title_short"]))
+placeFilename     <-   placeTitleShort
+saveGraphsTF <- params$saveGraphsTF
+category <- categoryTitleShort
+lever <- leverTitleShort
+leverLevels <- (as.character(filter(descr, type == "lever")["leverLevels"][1]))
+
+print(glue("Scenario: {categoryTitleLong} ({categoryTitleShort}), 
+           levers: {leverTitleLong} ({leverTitleShort})
+           Levels: {leverLevels}"))
+```
+:::
+
+## Scenario: **`r categoryTitleLong`** -- **`r leverTitleLong`**
+
+### `r year`, `r place`
+
+::: {#overv .panel-tabset}
+## Scenario
+
+Category: **`r categoryTitleLong`** (`r categoryTitleShort`), Levers : **`r leverTitleLong`** (`r leverTitleShort`)
+
+```{r}
+knitr::kable(
+descr |> select("type", "title") |> 
+  filter(type != "yvar" & type != "hetvar") 
+)
+```
+
+**Outcomes (Y variables)**
+
+```{r , define_yvars}
+knitr::kable(
+  descr |> select("type", "title", "variable") |> 
+  filter(type == "yvar") 
+)
+
+listY <- descr |> filter(type == "yvar")
+listY <- as.list(listY$variable) 
+# glimpse(listY)
+```
+
+**Heterogeneity variables**
+
+```{r}
+knitr::kable(
+  descr |> select("type", "title", "variable") |> 
+  filter(type == "hetvar") 
+)
+
+listHet  <- descr |> filter(type == "hetvar")
+listHet <- as.list(listHet$variable) 
+# glimpse(listHet)
+```
+
+## parameters
+
+```{r}
+knitr::kable(
+descr |> select("type", "title", "variable", "V1", "title_short") 
+)
+```
+
+## YAML det
+
+```{r}
+# kable(params, glimpse
+glimpse(params)
+```
+:::
+
+```{r .}
+# knitr::knit_exit()
+```
+
+## Dataset
+
+```{r}
+print("Reading and writing from AWS? ")
+print(params$useAWStoReadWrite)
+print("do we have to read it in totally from raw (rather than cleaned version)?")
+print(params$RERUNopenCleanAWSdataYN)
+```
+
+### List the files we want
+
+First, decide if we want AWS or local. Then make a List of all files -- either from AWS or locally, then (put into a dataset):
+
+```{r List_Files}
+if(params$useAWStoReadWrite==TRUE) {
+    library(aws.s3)
+    library(dbplyr) # to get from aws
+    aws_prefix <- "deepDive/CleanData/SanFrancisco"
+    Sys.setenv("AWS_DEFAULT_REGION"="us-east-2", TZ='GMT')
+    awsDF <- get_bucket_df("beam-core-act", prefix = aws_prefix) # dataframe with all of the AWS files
+    dataframe_of_files <- awsDF
+} else if (params$hardcodeFileName != "none") {
+    dataframe_of_files <- as_tibble(params$hardcodeFileName)
+} else {
+  dataframe_of_files <- as_tibble(list.files(path = data_dir_on_this_machine)) |> 
+    rename(Key = value)
+}
+    print(dataframe_of_files)
+```
+
+List of files for this city (either locally or on AWS), and the stacked ones, that are not the previous files
+
+```{r __ofCity}
+data_file_list_paths <- dataframe_of_files |> select(Key)
+data_file_list_paths <- data_file_list_paths |> 
+          filter(grepl(pattern = "*.tacked*.",x = Key, ignore.case = TRUE))
+data_file_list_paths <- data_file_list_paths |> 
+          filter(!grepl(pattern = "*.revious*.",x = Key, ignore.case = TRUE))
+print(data_file_list_paths)
+data_file_list_paths <- data_file_list_paths |> 
+          filter(grepl(pattern = paste0("*",placeFilename,"_","*."),
+                       x = Key, ignore.case = TRUE))
+print(data_file_list_paths)
+```
+
+Of those, the smaller List of files for this specific scenario (defined in YAML) (either locally or on AWS) . Hopefully there will be one cleaned, one cleaned subset, and one raw: , and cleaned stacked if there is one: wantSUBSETofTheVARSinsteadofAll
+
+```{r __ofScenario}
+        data_file_list_paths <- data_file_list_paths |> 
+          filter(grepl(pattern = paste0("*.",categoryTitleShort,
+                                        "_",leverTitleShort),
+                       x = Key, ignore.case = TRUE))
+        print(data_file_list_paths)
+```
+
+The cleaned, cleaned subset, and raw files
+
+```{r __cleaned}
+# print("raw files")
+        data_file_list_paths_RAW <- data_file_list_paths |> 
+          filter(!grepl(pattern = "*.raphclean*",x = Key, ignore.case = TRUE))
+        data_file_list_paths_RAW <- data_file_list_paths_RAW$Key
+# print("cleaned files")    
+        data_file_list_paths_CLEANED <- data_file_list_paths |> 
+          filter( grepl(pattern = "*.raphclean*",x = Key, ignore.case = TRUE)) |> 
+          filter(!grepl(pattern = "*.ubset*",x = Key, ignore.case = TRUE))
+        data_file_list_paths_CLEANED <- data_file_list_paths_CLEANED$Key
+        print(data_file_list_paths_CLEANED)
+# print("cleaned files Subset")    
+        data_file_list_paths_CLEANED_SUBSET <- data_file_list_paths |> 
+          filter( grepl(pattern = "*.raphclean*",x = Key, ignore.case = TRUE)) |> 
+          filter( grepl(pattern = "*.ubset*",x = Key, ignore.case = TRUE)) |> 
+          filter( grepl(pattern = "*.hort*",x = Key, ignore.case = TRUE))
+# print("cleaned files and MANDATORY Subset") 
+# not including the words old or previous
+        data_file_list_paths_CLEANED_SUBSET_MAND <- data_file_list_paths |> 
+          filter( grepl(pattern = "*.raphclean*",x = Key, ignore.case = TRUE)) |> 
+          filter( grepl(pattern = "*.ubset*",x = Key, ignore.case = TRUE)) |> 
+          filter( grepl(pattern = "*.hort*",x = Key, ignore.case = TRUE)) |> 
+          filter( grepl(pattern = "*.mand*",x = Key, ignore.case = TRUE)) |> 
+          filter(!grepl(pattern = "*.old*",x = Key, ignore.case = TRUE)) |> 
+          filter(!grepl(pattern = "*.previous*",x = Key, ignore.case = TRUE))
+         
+        data_file_list_paths_CLEANED_SUBSET_MAND <- data_file_list_paths_CLEANED_SUBSET_MAND$Key
+        print(data_file_list_paths_CLEANED_SUBSET)
+# print("cleaned,man)
+```
+
+### Open
+
+Do we have to re-run the raw data? `r params$RERUNopenCleanAWSdataYN` Do we have to re-run the subset data? `r params$RERUNsubsetofTheVARSinsteadofAll`
+
+```{r redo_raw_and_subset}
+if(params$RERUNopenCleanAWSdataYN==TRUE) {
+        print("re-running raw, subset, createnewvars")
+        rmarkdown::render("4__OpenRawAWSdata.qmd")
+} else if(params$RERUNsubsetofTheVARSinsteadofAll==TRUE) {
+        print("re-running raw")
+        rmarkdown::render("5__Subset_SelectVariables.qmd")
+} else if(params$RERUNsubsetofVerySmallVars==TRUE) {
+        print("re-running new vars")
+       rmarkdown::render("6__CreateNewVariables")
+} else {
+  print("using same dataset as last time")
+}
+```
+
+```{r open_cleaned_subsetted}
+#| collapse: true
+if(params$useAWStoReadWrite==TRUE) {
+  df_temp <- aws.s3::s3read_using(vroom,
+                             object = data_file_list_paths_CLEANED_SUBSET,
+                             bucket = "beam-core-act")
+                          print("Using data from AWS!")
+} else {
+  df_temp <- read_rds(file = paste0(data_dir_on_this_machine,
+                             data_file_list_paths_CLEANED_SUBSET_MAND) )
+                          print("Using local data")
+}
+```
+
+:::
+
+::: panel-tabset
+## .
+
+```{r}
+```
+
+## Describe Scenarios
+
+```{r}
+# str(df_temp)
+# 
+# skimr::skim(df_temp) # takes a while
+# Hmisc::contents(df_temp) # is very short
+# Hmisc::describe(df_temp) # takes a really long time
+# dlookr::  # no
+  # DataExplorer::
+  # summarytools::
+# summarytools::dfSummary(df_temp, 
+#           plain.ascii  = FALSE, 
+#           style        = "grid", 
+#           graph.magnif = 0.75, 
+#           valid.col    = FALSE,
+#           tmp.img.dir  = "/tmp") # takes a really long time
+  # overviewR::
+  # DescTools
+# str(df_temp)
+# knitr::kable(
+#   Hmisc::contents(df_temp) # is very short
+# )
+
+# knitr::kable(
+#   Hmisc::describe(df_temp) # is too long
+# )
+```
+
+```{r}
+# library(summarytools)
+# print(dfSummary(df_temp,
+#           plain.ascii  = FALSE,
+#           style        = "grid",
+#           graph.magnif = 0.75,
+#           valid.col    = FALSE,
+#           graph.col = TRUE,
+#           file="testsummarytools.html"))
+# print(dfSummary(df_temp,
+#                 varnumbers   = FALSE,
+#                 valid.col    = FALSE,
+#                 graph.col = TRUE))
+```
+
+```{r}
+library(Hmisc)
+# testdf <- contents(df_temp,
+#                    id = df_temp$IDMerged,
+#                    maxlevels = 1 , prlevels=TRUE, levelType='table',
+#                    nshow = TRUE)
+
+# html(testdf)
+# testdf
+  html(contents(df_temp),  levelType='table'
+            )
+# lever_position
+
+```
+
+```{r ListThe_scenarios}
+# unique(df_temp$category)
+
+unique(df_temp$lever)
+unique(df_temp$lever_position)
+
+
+listleverLevels <- as.list(
+                      levels(as_factor(df_temp$lever_position)))
+listleverLevels <- as.list(as.numeric(
+                      levels(as_factor(df_temp$lever_position))))
+  as.character(listleverLevels)
+  as.numeric(listleverLevels)
+  
+knitr::kable(list(
+  category,
+  lever,
+  as.character(listleverLevels)))
+```
+
+## Subset into Mandatory?
+
+```{r mand}
+knitr::kable(df_temp |> 
+               count(mandatoryCat))
+
+```
+
+## Tables
+
+```{r}
+listleverLevels <- as.list(levels(as_factor(df_temp$lever_position)))
+as.character(listleverLevels)
+  knitr::kable(levels(as_factor(df_temp$lever_position)))
+
+  knitr::kable(df_temp  |> count(auto_ownership, ownCarYNLabel))
+
+  
+  knitr::kable(df_temp  |> group_by(lever_position) |> 
+          count(ownCarYNLabel))
+  knitr::kable(df_temp  |>
+          filter(lever_position==1) |> 
+          group_by(lever_position,l_inc_HiLo10) |> 
+          count(ownCarYNLabel, mode_4categories))
+                
+  knitr::kable(
+    df_temp  |>
+          filter(lever_position==1) |> 
+          group_by(income10levels) |> 
+          summarise(pot = mean(Potential_INEXUS_in_dollar),
+                  timeDtoD = mean(duration_door_to_door),
+                  time = mean(duration),
+                  modecar = mean(mode_4categories=="Car"),
+          modePub = mean(mode_4categories=="Transit"),
+          modeRH = mean(mode_4categories=="Ride Hail"),
+          modeWalkB = mean(mode_4categories=="Walk or Bike")
+          ))
+  knitr::kable(df_temp  |> group_by(lever_position) |> 
+          count(ownCarYNLabel))
+  
+  
+  # print(levels(df_temp$mandatoryType))
+  # print(levels(df_temp$mandatoryCat))
+  
+
+```
+
+### descr?
+
+```{r}
+# print(levels(df_temp$mandatoryType))
+#   print(levels(df_temp$mandatoryCat))
+#   print(df_temp |> count(mandatoryCat))
+  print(levels(as_factor(df_temp$income10levels)))
+  print(df_temp |> count(income10levels))
+  print(levels(as_factor(df_temp$ownCarYNLabel)))
+  print(df_temp |> count(ownCarYNLabel))
+  print(df_temp |> count(auto_ownership))
+  print(levels(df_temp$l_inc_HiLo10))
+  print(df_temp |> count(mode_choice_actual_6))
+  print(levels(df_temp$incomeXcar))
+  print(df_temp |> count(mode_choice_actual_6))
+  print(levels(df_temp$mode_4categories))
+  print(df_temp |> count(mode_4categories))
+  print(levels(df_temp$mode_choice_actual_6))
+  print(df_temp |> count(mode_choice_actual_6))
+  print(levels(df_temp$scenario))
+  
+  
+  # print(levels(df_temp$category))
+```
+:::
+
+```{r ..}
+# knitr::knit_exit()
+```
+
+# Setup Graphs
+
+-   for Graphs
+
+::: panel-tabset
+## Permanent
+
+Permanently ChANGE Titles, and colors, in the descriptive excel table
+
+Change -- for EVERY GRAPH this and other files, into the csv
+
+```{r colors}
+color_baseline <- "#EAECCC"
+color_transitFreq50p <- "#FDB366"
+color_lower_than_baseline <- "#ee3377" # magenta
+color_higher_than_baseline <- "#33bbee" # cyan opposite of magenta
+color_higher_than_baseline <- "#0077bb" # darker blue
+```
+
+```{r titles}
+description_df <- description_df |>
+  mutate(title =
+# Only add ones that are new, the others will be saved           
+      case_when(
+        variable == "Potential_INEXUS_in_dollar" ~ "Potential INEXUS",
+        TRUE ~ title
+      ))
+# leverLevels <- (as.character(filter(descr, type == "lever")["leverLevels"][1]))
+```
+
+```{r save_descr}
+write_excel_csv(description_df, file ="ScenarioTitlesColorsEtc2.csv")
+```
+
+## Temporary
+
+```{r scale_limits}
+
+scaleNexusLow <- min(median_hilow(df_temp$Potential_INEXUS_in_dollar,
+                      conf.int = .75)[["ymin"]],
+                     median_hilow(df_temp$Realized_INEXUS_in_dollar,
+                      conf.int = .75)[["ymin"]],
+                     median_hilow(df_temp$Social_INEXUS,
+                      conf.int = .75)[["ymin"]])
+
+scaleNexusHigh <- max(median_hilow(df_temp$Potential_INEXUS_in_dollar,
+                      conf.int = .9)[["ymax"]],
+                     median_hilow(df_temp$Realized_INEXUS_in_dollar,
+                      conf.int = .9)[["ymax"]],
+                     median_hilow(df_temp$Social_INEXUS,
+                      conf.int = .9)[["ymax"]])
+scaleTimeLow <- 0.01
+scaleCostLow <- 0
+scaleTimeHigh <- median_hilow(df_temp$duration_door_to_door,
+                      conf.int = .8)[["ymax"]]
+                     
+scaleCostHigh <- -.5*scaleNexusLow 
+
+descr <- descr |>
+  mutate(scaleLow = case_when(
+      str_detect(variable, "(?i)NEXU") ~ scaleNexusLow,
+      str_detect(variable, "(?i)dur") ~ scaleTimeLow,
+      str_detect(variable, "(?i)cost|price") ~ scaleCostLow,
+    TRUE ~ scaleLow   )) |> 
+  mutate(scaleHigh = case_when(
+      str_detect(variable, "(?i)NEXU") ~ scaleNexusHigh,
+      str_detect(variable, "(?i)dur") ~ scaleTimeHigh,
+      str_detect(variable, "(?i)cost|price") ~ scaleCostHigh,
+    TRUE ~ scaleHigh   ))
+```
+
+```{r color_scheme}
+# color_scheme_df <- names(df_in_a_list)
+
+# description_df <- description_df  %>% 
+#   mutate(colorOfScenario = case_when(
+#     # str_detect(type_title,"base") ~ color_baseline ,
+#     # str_detect(type_title,"rh") ~ "#ee7733",
+#     # str_detect(type_title,"fq") ~ "#009988",
+#     # str_detect(type_title,"rh") ~ "#0077bb",
+#     str_detect(type_title,"fq") ~ "#009988",
+#      TRUE ~ colorOfScenario
+#     
+#     ) ) 
+# 
+# |> 
+#   mutate(alphaOfScenario = lever_position)
+# print(description_df)
+
+```
+
+```{r Theme}
+theme_set(theme_light(base_size = 11)) # make ALL font based on this
+theme_update(
+  plot.title =
+            element_text(
+              face = "bold",
+              margin = margin(0, 0, -100, 0),
+              # size = 26,
+              # family = "KyivType Sans",
+              vjust = 0,
+              color = "grey25"
+        ))
+theme_update(
+  legend.justification = "center",
+             legend.position = "bottom",
+             legend.title = element_blank(),
+             # legend.text  = element_text(face = "green"),
+             # +
+             #   scale_color_vibrant() +
+             #   scale_fill_vibrant()
+             # Top-right position)
+             legend.direction = "vertical", # Elements within a guide are placed one on top of other in the same column
+             legend.box = "horizontal" # Different guides-legends are stacked horizontally
+             )
+theme_update(# Light background color
+    # plot.background = element_rect(fill = "#F5F4EF", color = NA),
+    # plot.margin = margin(20, 30, 20, 30),
+    # Customize the title. Note the new font family and its larger size.
+    plot.caption = element_text(size = 11),
+    # Remove titles for x and y axes.
+    # axis.title = element_blank(),
+    # Specify color for the tick labels along both axes 
+    axis.text = element_text(color = "grey40"),
+    # Specify face and color for the text on top of each panel/facet
+    strip.text = element_text(face = "bold", color = "grey20")
+)
+```
+:::
+
+```{r }
+# fx_SUMMARY_STATS <- function(df) {
+#   print(levels(as_factor(df_temp$lever_position)))
+#   print(fct_unique(as_factor(df_temp$lever_position)))
+#   print(levels(df_temp$scenShort))
+#   print(fct_unique(df_temp$Short))
+#   sssumm <- df %>%
+#     group_by(lever_position) |> 
+#     summarise(
+#       avLS = mean(.data[["Potential_INEXUS_in_dollar"]]),
+#       avY = mean(.data[["Potential_INEXUS_in_dollar"]]), 
+#       n=n()
+#     )
+#   print(sssumm)
+#   sssummQuantiles <- df %>%
+#     group_by(lever_position) |> 
+#     summarise(
+#       avLS = mean(.data[["Potential_INEXUS_in_dollar"]]),
+#       avY = mean(.data[["Potential_INEXUS_in_dollar"]]), 
+#       qsLS=quantile(.data[["Potential_INEXUS_in_dollar"]]),
+#       qsTIV=quantile(.data[["Potential_INEXUS_in_dollar"]], na.rm = TRUE),
+#       n=n()
+#     )
+#   print(sssummQuantiles)
+#   return(c(sssumm, sssummQuantiles))
+# }
+# 
+# fx_SUMMARY_STATS(df_temp)
+```
+
+```{r }
+# df_temp |> 
+#   filter(lever_position == 1) |> 
+#   group_by(income10levels) |> 
+#   summarise(potential = mean(Potential_INEXUS_in_dollar),
+#             inc = mean(income_in_thousands),
+#             n = n(),
+#             lever = mean(lever_position)
+#     )
+```
+
+:::
+
+```{r ....}
+knitr::knit_exit()
+```
+
+# ------------------
+
+# GRAPHS!!
+
+finally do the actual graphs.
+
+# .
+
+# Density curves
+
+## With 1 y_var
+
+The titles overlap! Gah.
+
+```{r}
+# | eval: false
+# | echo: false
+g1meta <- 
+  map(.x = listY, 
+      ~ map2(.x = .x, .y = listHet,
+             ~ fx_META_graph_choose(df = df_temp , y_var = .x, het = .y ,
+                                     totalGr=TRUE,
+                                     hetGr = FALSE,
+                                     saveGraph = TRUE     )))
+print(g1meta)
+```
+
+```{r}
+
+```
+
+## Layer S,P,R INEXUS
+
+### WHY is this scale off
+
+```{r }
+dfmmmmm <- df_temp |> 
+  filter(lever_position == "1") 
+  yvarShortName <- "PRSinexus"
+# BASE BLANK plot
+  plotttaaaa0 <- fx_get_TitlesLevels_createBaseGraph_g0(
+            y_var = "Potential_INEXUS_in_dollar") + 
+        coord_cartesian(xlim = c(scaleNexusLow,scaleNexusHigh)) +
+    #   filter(descr, variable == "Potential_INEXUS_in_dollar")[["scaleLow"]],
+    #   filter(descr, variable == "Potential_INEXUS_in_dollar")[["scaleHigh"]])) +
+    #   # THE TITLE OF THE GRAPH
+    #     labs(title = str_glue("{year} {category} {lever} {yvarTitle}"),
+    #     subtitle = str_glue("{lever}")) +
+        xlab("Potential, Realized, and Social INEXUS") 
+        # +
+        # ylab(" density ") 
+      print(plotttaaaa0)
+     
+  plottttta1 <- plotttaaaa0 +
+    geom_density( data = dfmmmmm,
+        aes(x = Potential_INEXUS_in_dollar),
+        alpha = .3,
+        fill = "grey")
+  
+  
+  plotttaaaa0 +
+    geom_density( data = dfmmmmm,
+        aes(x = Realized_INEXUS_in_dollar),
+        alpha = .3,
+        color = "blue") 
+  
+  plotttaaaa0 +
+  
+    geom_density( data = dfmmmmm,
+        aes(x = Social_INEXUS),
+        alpha = .3,
+        color = "green")
+
+    if(saveGraphsTF == TRUE) {
+         # ggsave(str_glue("figures/{Sys.Date()}_{categoryTitleShort}_{leverTitleShort}___Y-PRS.png"))
+         # ggsave(str_glue("figures/{Sys.Date()}_{categoryTitleShort}_{leverTitleShort}___Y-PRS.pdf"))
+    }
+    print(plottttta1)
+```
+
+## ADD: who wins
+
+# .
+
+# For fleet size X price
+
+## OLD line graphs
+
+```{r echo=TRUE}
+het <- "mode_rh"
+p1 <- ggplot(data = df_temp  |> drop_na(paste0(het)),
+             mapping = aes(x = (lever_position))) + 
+  geom_point(stat = "count",
+    aes(group = mode_rh,
+        color = mode_rh ))  +
+    geom_point(stat = "count",
+               aes(),
+        color = "black" )  +
+  geom_point(stat="count",
+             aes(group = mode_4categories))  + 
+  xlab("lever")
+print(p1)
+```
+
+## to RUN with options
+
+<!-- rmarkdown::render("C:/githubATB/beam-core-analysis/Users/Annika/2022_08_10graphs.qmd" -->
+
+<!-- , params = "ask") \ -->
+
+```{r ......start_here...}
+# knitr::knit_exit()
+```
+
+## NEW - line between
+
+https://r-graph-gallery.com/web-time-series-and-facetting.html
+
+## Change over levers
+
+```{r}
+library(geofacet)
+library(ggh4x)
+```
+
+```{r area}
+df_graph_temp <- df_temp |> 
+  group_by(lever_position) |> 
+  rename(`Lever Position` = lever_position) |> 
+  count(mode_5catPooled)
+df_graph_tempTotal <- df_graph_temp |> 
+  mutate(`Total Trips` = sum(n)) |> 
+  mutate(`Percent of Total Trips` = n /`Total Trips` ,
+         n = NULL)
+df_graph_tempTotal <- df_graph_tempTotal |> 
+  pivot_wider(names_from = mode_5catPooled, values_from = `Percent of Total Trips`) 
+
+```
+
+```{r area8}
+count(mode_5catPooled) |> 
+  mutate(`Total Trips` = sum(n)) 
+
+  count(mode_5catPooled, mode_planned_5) |> 
+  
+|> 
+  count(mode_planned_5, mode_planned_at_baseline) 
+
+|> 
+  count(mode_5catPooled, mode_planned_5) |> 
+  mutate(`Total Trips` = sum(n)) 
+# Percentages instead
+df_graph_temp <- df_graph_temp |> 
+  mutate(`Percent of Total Trips` = n /`Total Trips` ,
+         n = NULL) 
+# Pivot for graphing
+df_graph_temp <- df_graph_temp |> 
+  pivot_wider(names_from = mode_5catPooled, values_from = `Percent of Total Trips`) 
+print(df_graph_temp)
+```
+
+```{r}
+
+
+df_temp |>
+  group_by(mode_planned_5,mode_planned_at_baseline) |> 
+  summarize(n_planned = n())
+  
+```
+
+```{r area2}
+df_graph_temp <- df_graph_tempTotal
+relative_lever <- min(df_graph_temp$`Lever Position`)
+p1 <- ggplot(df_graph_temp, aes(x = `Lever Position`))
+p1 <- p1 + 
+  geom_line(aes(y = `Ride Hail Not-Pooled`  - df_graph_temp$`Ride Hail Not-Pooled`[`Lever Position`==relative_lever], color = "Ride Hail Not-Pooled")) +
+  geom_line(aes(y = `Ride Hail Pooled`  - df_graph_temp$`Ride Hail Pooled`[`Lever Position`==relative_lever],     color = "Ride Hail Pooled")) +
+  geom_line(aes(y = `Ride Hail Pooled` + `Ride Hail Not-Pooled`  - df_graph_temp$`Ride Hail Pooled`[`Lever Position`==relative_lever]  - df_graph_temp$`Ride Hail Not-Pooled`[`Lever Position`==relative_lever],     
+                         color = "All Ride Hail"))
+print(p1)
+
+p5 <- p1 + geom_line(aes(y = `Walk or Bike` - df_graph_temp$`Walk or Bike`[`Lever Position`==relative_lever], color = "Walk or Bike")) +
+           geom_line(aes(y = `Transit` - df_graph_temp$`Transit`[`Lever Position`==relative_lever] , color = "Transit"))
+p5 <- p5 + geom_line(aes(y = `Car`- df_graph_temp$Car[`Lever Position`==relative_lever] , color = "Car"))
+p5 <- p5 +
+  theme(legend.position = "right") +
+  ylab("Percentage of trips, relative to lowest lever")
+  
+print(p5) 
+
+# a vector of COLORS for legend
+# cols <- c("Car MINUS 3000000" = "red", 
+#           "Walk or Bike" = "blue", 
+#           "Transit" = "darkgreen", 
+#           "Ride Hail Pooled" = "orange",
+#           "Ride Hail Not-Pooled" = "green")
+# p5 + scale_colour_manual(values = cols)
+```
+
+```{r area22}
+
+p6 <- p5 + stat_difference(aes(ymin = `Ride Hail Pooled`, 
+                               ymax = `Ride Hail Not-Pooled`), alpha = 0.3)
+print(p6)
+my_layout <- c(area(t=1,l=1),
+               area(t=1, l=3, b=3),
+               area(t=3, l=1, b=3, r=2),
+               area(t=2,b=2,l=4,r=4))
+plot(my_layout) # Show the layout to make sure it looks as it should
+
+
+```
+
+```{r}
+# g_het_loop_across[[1]][[1]]
+# g_het_loop_across[[1]][[1]] +
+# g_het_loop_across[[1]][[1]]
+```
+
+### ridge
+
+```{r}
+y_var <- "Potential_INEXUS_in_dollar"
+hetShortName <- "incomeCar"
+  ridge0000 <- 
+  ggplot(data = df_temp      |> 
+           drop_na(incomeXcar) |>
+         filter(1==1 
+                & (lever_position == 0.25 |                   lever_position == 1 |
+                  lever_position == 1.75)
+                ),
+       aes(x = Potential_INEXUS_in_dollar,
+           y = as_factor(lever_position),
+           fill = incomeXcar,
+           color = incomeXcar),
+       alpha = .3)  +
+    coord_cartesian(xlim = c(
+      filter(description_df, variable == y_var)[["scaleLow"]],
+      filter(description_df, variable == y_var)[["scaleHigh"]]  )) +
+    geom_density_ridges( alpha = .3    ) +
+     scale_y_discrete(expand = c(.01,.2))
+ 
+    # geom_ridgeline()
+# if(saveGraphsTF == TRUE) {
+#   ggsave(str_glue("figures/{Sys.Date()}_{categoryTitleShort}__ridge{hetvarTitleShort}.png"))
+#   ggsave(str_glue("figures/{Sys.Date()}_{categoryTitleShort}__ridge{hetvarTitleShort}.pdf"))
+#  }
+  print(ridge0000)
+```
+
+```{r .END..start_here...}
+knitr::knit_exit()
+```
+
+### directions for the wavy plot
+
+```{r include = FALSE}
+# the same figure with colors, and using the ggplot2 density stat
+gtest1 <- ggplot(diamonds, aes(x = price, y = cut, fill = cut, height = ..density..)) +
+  geom_density_ridges(scale = 4, stat = "density") +
+  scale_y_discrete(expand = c(0.01, 0)) +
+  scale_x_continuous(expand = c(0.01, 0)) +
+  scale_fill_brewer(palette = 4) +
+  theme_ridges() + theme(legend.position = "none") 
+
+gtest2 <- gtest1 +
+  scale_y_discrete(expand = c(0.8, 0))  +
+  scale_x_continuous(expand = c(0.01, 0))
+gtest3 <- gtest1 +
+  scale_y_discrete(expand = c(0.1, 0))  +
+  scale_x_continuous(expand = c(0.8, 0))
+gtest4 <-  gtest1 + 
+    scale_y_discrete(expand = c(0.01, 0)) +
+  scale_x_continuous(expand = c(0.01, 0)) 
+
+print(gtest1)
+print(gtest2)
+print(gtest3)
+
+ggplot(diamonds, aes(x = price, y = cut)) +
+  geom_density_ridges(scale = 4) +
+  scale_y_discrete(expand = c(0.01, 0)) +
+  scale_x_continuous(expand = c(0.01, 0)) +
+  theme_ridges()
+```
+
+```{r}
+  y_var <- "Potential_INEXUS_in_dollar"
+  ridge0000 <- 
+  ggplot(data = df_temp,
+       aes(x = Potential_INEXUS_in_dollar,
+           y = as_factor(lever_position),
+           fill = ownCarYNLabel,
+           color = ownCarYNLabel),
+       alpha = .3) +
+        coord_cartesian(xlim = c(
+      filter(descr, variable == y_var)[["scaleLow"]],
+      filter(descr, variable == y_var)[["scaleHigh"]]  )) + 
+
+    geom_density_ridges( alpha = .3    ) 
+    # geom_ridgeline()
+  
+  print(ridge0000)
+```
+
+```{r}
+
+```
+
+# .
+
+# Winners Losers
+
+```{r}
+
+
+```

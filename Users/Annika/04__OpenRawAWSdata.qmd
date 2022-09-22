@@ -1,0 +1,125 @@
+---
+title: "Open data file, preliminary cleaning"
+author: "atb"
+format: html
+---
+
+# TO DO: change this to save_object?
+
+```{r}
+library(readr)
+library(dplyr)
+library(forcats)
+library(glue)
+```
+
+## TODO change to csv_fread data.table::fread()
+
+```{r}
+if(params$useAWStoReadWrite==TRUE) {
+    # AWS
+    df_temp <- aws.s3::s3read_using(read_csv,
+                             object = data_file_list_paths_AWS_RAW,
+                             bucket = "beam-core-act")
+                          print("Re-cleaning data from AWS!")
+} else {
+
+# "{placeFilename}_{year}_stacked_{categoryTitleShort}_{leverTitleShort}_22.rds")))
+# df_temp <- read_rds(paste0(data_dir_on_this_machine,
+#                                "San Francisco_2018_stacked_rh_flsz_22.rds" )  )
+}                          
+```
+
+## TODO change to either
+
+1.  csv read from csv csv_fread data.table::fread()
+2.  fst::read_fst, but that ONLY reads a lookup table not the actual data? So not faster if you have to do something with it
+3.  arrow::read_feather write to feather? write_feather arrow::read_feather,
+4.  maybe data.table::fread ONLY reads writes csvs but does it fast
+
+\# arrow::read_feather \# fst::read_fst
+
+5.  OR qs::qread(file_qs), qs::qsave(test_df, file_qs),? Testing: https://github.com/tomaztk/Benchmarking-file-formats-for-cloud#using-r
+
+6.  for EC2 -- feather -- https://community.rstudio.com/t/reading-feather-files-from-s3-from-ec2-instance-on-connect/38683/13
+
+7.  Or FROM HADLEY AND JENNY: https://vroom.r-lib.org/ OH THIS MIGHT BE REALLY GOOD -- for AWS specificalky:
+
+8.  Arrow feather https://ursalabs.org/arrow-r-nightly/articles/dataset.html arrow::arrow_with_s3() https://ursalabs.org/arrow-r-nightly/articles/dataset.html https://ursalabs.org/blog/2021-r-benchmarks-part-1/ library(arrow, warn.conflicts = FALSE) library(dplyr, warn.conflicts = FALSE) ds \<- open_dataset("nyc-taxi", partitioning = c("year", "month")) https://ursalabs.org/blog/2019-10-columnar-perf/ \## TODO save to aws?
+
+OKAY OBVIOUSLY THIS IS THE BEST: HADLEY AND EC2: https://vroom.r-lib.org/articles/benchmarks.html
+
+https://vroom.r-lib.org/articles/vroom.html#reading-remote-files
+
+Read from EC2
+
+https://vroom.r-lib.org/articles/vroom.html#reading-remote-files
+
+https://github.com/tidyverse/vroom/tree/main/inst/bench
+
+https://github.com/tidyverse/vroom/tree/main/inst/bench
+
+VROOM_SHOW_PROGRESS
+
+OH USE THIS REALLY
+
+https://usethis.r-lib.org/articles/git-credentials.html
+
+```{r save_rds_temp0}
+# | eval: false
+# | echo: false
+names(df_temp)
+if(params$useAWStoReadWrite==TRUE) {
+    
+} else {
+    readr::(df_temp, file = paste0(data_dir_on_this_machine,
+                   glue("{placeFilename}_{year}_",
+                        "stacked_",
+                        "{categoryTitleShort}_{leverTitleShort}",
+                        "_0")),
+                   VROOM_SHOW_PROGRESS)
+}    
+```
+
+# Make factors for everything
+
+```{r}
+df_temp <-   df_temp |> 
+  mutate(across(where(is.character), as_factor))
+```
+
+# Save as \_1
+
+, using vroom, which is basically readr
+
+```{r}
+vroom::vroom_write(df_temp, file = paste0(data_dir_on_this_machine,
+                   glue("{placeFilename}_{year}_",
+                        "stacked_",
+                        "{categoryTitleShort}_{leverTitleShort}_",
+                        "GraphClean",
+                        "_1",   ""  )),
+                progress = TRUE)
+# readr::write_rds        ".rds")))
+```
+
+# list of variables, before subsetting:
+
+```{r}
+list_of_variables_before_subset <- as_tibble(names(df_temp))
+readr::write_csv(list_of_variables_before_subset, 
+                 file = paste0(data_dir_on_this_machine,
+                               figures_folder,
+                   glue("list_of_vars_",
+                        "{categoryTitleShort}_{leverTitleShort}_",
+                        "as_of",
+                        Sys.Date(),
+                        ".csv")))
+```
+
+Do next steps: subset, and then clean and create new vars
+
+```{r}
+rmarkdown::render("5__Subset_SelectVariables.qmd")
+        rmarkdown::render("6__CreateNewVariables")
+```
