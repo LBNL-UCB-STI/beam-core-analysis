@@ -1,0 +1,456 @@
+---
+title: "Untitled"
+format: html
+---
+
+<!-- ::: -->
+
+<!-- ::: panel-tabset -->
+
+## .
+
+```{r}
+```
+
+## Describe Scenarios
+
+```{r}
+# str(df_temp)
+# 
+# skimr::skim(df_temp) # takes a while
+# Hmisc::contents(df_temp) # is very short
+# Hmisc::describe(df_temp) # takes a really long time
+# dlookr::  # no
+  # DataExplorer::
+  # summarytools::
+# summarytools::dfSummary(df_temp, 
+#           plain.ascii  = FALSE, 
+#           style        = "grid", 
+#           graph.magnif = 0.75, 
+#           valid.col    = FALSE,
+#           tmp.img.dir  = "/tmp") # takes a really long time
+  # overviewR::
+  # DescTools
+# str(df_temp)
+# knitr::kable(
+#   Hmisc::contents(df_temp) # is very short
+# )
+
+# knitr::kable(
+#   Hmisc::describe(df_temp) # is too long
+# )
+```
+
+```{r}
+# library(summarytools)
+# print(dfSummary(df_temp,
+#           plain.ascii  = FALSE,
+#           style        = "grid",
+#           graph.magnif = 0.75,
+#           valid.col    = FALSE,
+#           graph.col = TRUE,
+#           file="testsummarytools.html"))
+# print(dfSummary(df_temp,
+#                 varnumbers   = FALSE,
+#                 valid.col    = FALSE,
+#                 graph.col = TRUE))
+```
+
+```{r color_scheme}
+# color_scheme_df <- names(df_in_a_list)
+
+# description_df <- description_df  %>% 
+#   mutate(colorOfScenario = case_when(
+#     # str_detect(type_title,"base") ~ color_baseline ,
+#     # str_detect(type_title,"rh") ~ "#ee7733",
+#     # str_detect(type_title,"fq") ~ "#009988",
+#     # str_detect(type_title,"rh") ~ "#0077bb",
+#     str_detect(type_title,"fq") ~ "#009988",
+#      TRUE ~ colorOfScenario
+#     
+#     ) ) 
+# 
+# |> 
+#   mutate(alphaOfScenario = lever_position)
+# print(description_df)
+
+```
+
+<!-- ::: -->
+
+```{r }
+# fx_SUMMARY_STATS <- function(df) {
+#   print(levels(as_factor(df_temp$lever_position)))
+#   print(fct_unique(as_factor(df_temp$lever_position)))
+#   print(levels(df_temp$scenShort))
+#   print(fct_unique(df_temp$Short))
+#   sssumm <- df %>%
+#     group_by(lever_position) |> 
+#     summarise(
+#       avLS = mean(.data[["Potential_INEXUS_in_dollar"]]),
+#       avY = mean(.data[["Potential_INEXUS_in_dollar"]]), 
+#       n=n()
+#     )
+#   print(sssumm)
+#   sssummQuantiles <- df %>%
+#     group_by(lever_position) |> 
+#     summarise(
+#       avLS = mean(.data[["Potential_INEXUS_in_dollar"]]),
+#       avY = mean(.data[["Potential_INEXUS_in_dollar"]]), 
+#       qsLS=quantile(.data[["Potential_INEXUS_in_dollar"]]),
+#       qsTIV=quantile(.data[["Potential_INEXUS_in_dollar"]], na.rm = TRUE),
+#       n=n()
+#     )
+#   print(sssummQuantiles)
+#   return(c(sssumm, sssummQuantiles))
+# }
+# 
+# fx_SUMMARY_STATS(df_temp)
+```
+
+```{r }
+# df_temp |> 
+#   filter(lever_position == 1) |> 
+#   group_by(income10levels) |> 
+#   summarise(potential = mean(Potential_INEXUS_in_dollar),
+#             inc = mean(income_in_thousands),
+#             n = n(),
+#             lever = mean(lever_position)
+#     )
+```
+
+<!-- ::: -->
+
+```{r ....}
+knitr::knit_exit()
+```
+
+# ------------------
+
+# GRAPHS!!
+
+finally do the actual graphs.
+
+# .
+
+# Density curves
+
+## With 1 y_var
+
+The titles overlap! Gah.
+
+```{r}
+# | eval: false
+# | echo: false
+g1meta <- 
+  map(.x = listY, 
+      ~ map2(.x = .x, .y = listHet,
+             ~ fx_META_graph_choose(df = df_temp , y_var = .x, het = .y ,
+                                     totalGr=TRUE,
+                                     hetGr = FALSE,
+                                     saveGraph = TRUE     )))
+print(g1meta)
+```
+
+```{r}
+
+```
+
+## Layer S,P,R INEXUS
+
+### WHY is this scale off
+
+```{r }
+dfmmmmm <- df_temp |> 
+  filter(lever_position == "1") 
+  yvarShortName <- "PRSinexus"
+# BASE BLANK plot
+  plotttaaaa0 <- fx_get_TitlesLevels_createBaseGraph_g0(
+            y_var = "Potential_INEXUS_in_dollar") + 
+        coord_cartesian(xlim = c(scaleNexusLow,scaleNexusHigh)) +
+    #   filter(descr, variable == "Potential_INEXUS_in_dollar")[["scaleLow"]],
+    #   filter(descr, variable == "Potential_INEXUS_in_dollar")[["scaleHigh"]])) +
+    #   # THE TITLE OF THE GRAPH
+    #     labs(title = str_glue("{year} {category} {lever} {yvarTitle}"),
+    #     subtitle = str_glue("{lever}")) +
+        xlab("Potential, Realized, and Social INEXUS") 
+        # +
+        # ylab(" density ") 
+      print(plotttaaaa0)
+     
+  plottttta1 <- plotttaaaa0 +
+    geom_density( data = dfmmmmm,
+        aes(x = Potential_INEXUS_in_dollar),
+        alpha = .3,
+        fill = "grey")
+  
+  
+  plotttaaaa0 +
+    geom_density( data = dfmmmmm,
+        aes(x = Realized_INEXUS_in_dollar),
+        alpha = .3,
+        color = "blue") 
+  
+  plotttaaaa0 +
+  
+    geom_density( data = dfmmmmm,
+        aes(x = Social_INEXUS),
+        alpha = .3,
+        color = "green")
+
+    if(saveGraphsTF == TRUE) {
+         # ggsave(str_glue("figures/{Sys.Date()}_{categoryTitleShort}_{leverTitleShort}___Y-PRS.png"))
+         # ggsave(str_glue("figures/{Sys.Date()}_{categoryTitleShort}_{leverTitleShort}___Y-PRS.pdf"))
+    }
+    print(plottttta1)
+```
+
+## ADD: who wins
+
+# .
+
+# For fleet size X price
+
+## OLD line graphs
+
+```{r echo=TRUE}
+het <- "mode_rh"
+p1 <- ggplot(data = df_temp  |> drop_na(paste0(het)),
+             mapping = aes(x = (lever_position))) + 
+  geom_point(stat = "count",
+    aes(group = mode_rh,
+        color = mode_rh ))  +
+    geom_point(stat = "count",
+               aes(),
+        color = "black" )  +
+  geom_point(stat="count",
+             aes(group = mode_4categories))  + 
+  xlab("lever")
+print(p1)
+```
+
+## to RUN with options
+
+<!-- rmarkdown::render("C:/githubATB/beam-core-analysis/Users/Annika/2022_08_10graphs.qmd" -->
+
+<!-- , params = "ask") \ -->
+
+```{r ......start_here...}
+# knitr::knit_exit()
+```
+
+## NEW - line between
+
+https://r-graph-gallery.com/web-time-series-and-facetting.html
+
+## Change over levers
+
+```{r}
+library(geofacet)
+library(ggh4x)
+```
+
+```{r area}
+df_graph_temp <- df_temp |> 
+  group_by(lever_position) |> 
+  rename(`Lever Position` = lever_position) |> 
+  count(mode_5catPooled)
+df_graph_tempTotal <- df_graph_temp |> 
+  mutate(`Total Trips` = sum(n)) |> 
+  mutate(`Percent of Total Trips` = n /`Total Trips` ,
+         n = NULL)
+df_graph_tempTotal <- df_graph_tempTotal |> 
+  pivot_wider(names_from = mode_5catPooled, values_from = `Percent of Total Trips`) 
+print(df_graph_tempTotal)
+```
+
+```{r}
+df_graph_temp <- df_temp |> 
+  group_by(lever_position) |> 
+  rename(`Lever Position` = lever_position) |> 
+  count(mode_planned_5, mode_planned_at_baseline)
+df_graph_tempTotal <- df_graph_temp |> 
+  mutate(`Total Trips` = sum(n)) |> 
+  mutate(`Percent of Total Trips` = n /`Total Trips` ,
+         n = NULL)
+
+```
+
+```{r area8}
+count(mode_5catPooled) |> 
+  mutate(`Total Trips` = sum(n)) 
+
+  count(mode_5catPooled, mode_planned_5) |> 
+  
+|> 
+  count(mode_planned_5, mode_planned_at_baseline) 
+
+|> 
+  count(mode_5catPooled, mode_planned_5) |> 
+  mutate(`Total Trips` = sum(n)) 
+# Percentages instead
+df_graph_temp <- df_graph_temp |> 
+  mutate(`Percent of Total Trips` = n /`Total Trips` ,
+         n = NULL) 
+# Pivot for graphing
+df_graph_temp <- df_graph_temp |> 
+  pivot_wider(names_from = mode_5catPooled, values_from = `Percent of Total Trips`) 
+print(df_graph_temp)
+```
+
+```{r}
+
+
+df_temp |>
+  group_by(mode_planned_5,mode_planned_at_baseline) |> 
+  summarize(n_planned = n())
+  
+```
+
+```{r area2}
+df_graph_temp <- df_graph_tempTotal
+relative_lever <- min(df_graph_temp$`Lever Position`)
+p1 <- ggplot(df_graph_temp, aes(x = `Lever Position`))
+p1 <- p1 + 
+  geom_line(aes(y = `Ride Hail Not-Pooled`  - df_graph_temp$`Ride Hail Not-Pooled`[`Lever Position`==relative_lever], color = "Ride Hail Not-Pooled")) +
+  geom_line(aes(y = `Ride Hail Pooled`  - df_graph_temp$`Ride Hail Pooled`[`Lever Position`==relative_lever],     color = "Ride Hail Pooled")) +
+  geom_line(aes(y = `Ride Hail Pooled` + `Ride Hail Not-Pooled`  - df_graph_temp$`Ride Hail Pooled`[`Lever Position`==relative_lever]  - df_graph_temp$`Ride Hail Not-Pooled`[`Lever Position`==relative_lever],     
+                         color = "All Ride Hail"))
+print(p1)
+
+p5 <- p1 + geom_line(aes(y = `Walk or Bike` - df_graph_temp$`Walk or Bike`[`Lever Position`==relative_lever], color = "Walk or Bike")) +
+           geom_line(aes(y = `Transit` - df_graph_temp$`Transit`[`Lever Position`==relative_lever] , color = "Transit"))
+p5 <- p5 + geom_line(aes(y = `Car`- df_graph_temp$Car[`Lever Position`==relative_lever] , color = "Car"))
+p5 <- p5 +
+  theme(legend.position = "right") +
+  ylab("Percentage of trips, relative to lowest lever")
+  
+print(p5) 
+
+# a vector of COLORS for legend
+# cols <- c("Car MINUS 3000000" = "red", 
+#           "Walk or Bike" = "blue", 
+#           "Transit" = "darkgreen", 
+#           "Ride Hail Pooled" = "orange",
+#           "Ride Hail Not-Pooled" = "green")
+# p5 + scale_colour_manual(values = cols)
+```
+
+```{r area22}
+
+p6 <- p5 + stat_difference(aes(ymin = `Ride Hail Pooled`, 
+                               ymax = `Ride Hail Not-Pooled`), alpha = 0.3)
+print(p6)
+my_layout <- c(area(t=1,l=1),
+               area(t=1, l=3, b=3),
+               area(t=3, l=1, b=3, r=2),
+               area(t=2,b=2,l=4,r=4))
+plot(my_layout) # Show the layout to make sure it looks as it should
+
+
+```
+
+```{r}
+# g_het_loop_across[[1]][[1]]
+# g_het_loop_across[[1]][[1]] +
+# g_het_loop_across[[1]][[1]]
+```
+
+### ridge
+
+```{r}
+y_var <- "Potential_INEXUS_in_dollar"
+hetShortName <- "incomeCar"
+  ridge0000 <- 
+  ggplot(data = df_temp      |> 
+           drop_na(incomeXcar) |>
+         filter(1==1 
+                & (lever_position == 0.25 |                   lever_position == 1 |
+                  lever_position == 1.75)
+                ),
+       aes(x = Potential_INEXUS_in_dollar,
+           y = as_factor(lever_position),
+           fill = incomeXcar,
+           color = incomeXcar),
+       alpha = .3)  +
+    coord_cartesian(xlim = c(
+      filter(description_df, variable == y_var)[["scaleLow"]],
+      filter(description_df, variable == y_var)[["scaleHigh"]]  )) +
+    geom_density_ridges( alpha = .3    ) +
+     scale_y_discrete(expand = c(.01,.2))
+ 
+    # geom_ridgeline()
+# if(saveGraphsTF == TRUE) {
+#   ggsave(str_glue("figures/{Sys.Date()}_{categoryTitleShort}__ridge{hetvarTitleShort}.png"))
+#   ggsave(str_glue("figures/{Sys.Date()}_{categoryTitleShort}__ridge{hetvarTitleShort}.pdf"))
+#  }
+  print(ridge0000)
+```
+
+```{r .END..start_here...}
+knitr::knit_exit()
+```
+
+### directions for the wavy plot
+
+```{r include = FALSE}
+# the same figure with colors, and using the ggplot2 density stat
+gtest1 <- ggplot(diamonds, aes(x = price, y = cut, fill = cut, height = ..density..)) +
+  geom_density_ridges(scale = 4, stat = "density") +
+  scale_y_discrete(expand = c(0.01, 0)) +
+  scale_x_continuous(expand = c(0.01, 0)) +
+  scale_fill_brewer(palette = 4) +
+  theme_ridges() + theme(legend.position = "none") 
+
+gtest2 <- gtest1 +
+  scale_y_discrete(expand = c(0.8, 0))  +
+  scale_x_continuous(expand = c(0.01, 0))
+gtest3 <- gtest1 +
+  scale_y_discrete(expand = c(0.1, 0))  +
+  scale_x_continuous(expand = c(0.8, 0))
+gtest4 <-  gtest1 + 
+    scale_y_discrete(expand = c(0.01, 0)) +
+  scale_x_continuous(expand = c(0.01, 0)) 
+
+print(gtest1)
+print(gtest2)
+print(gtest3)
+
+ggplot(diamonds, aes(x = price, y = cut)) +
+  geom_density_ridges(scale = 4) +
+  scale_y_discrete(expand = c(0.01, 0)) +
+  scale_x_continuous(expand = c(0.01, 0)) +
+  theme_ridges()
+```
+
+```{r}
+  y_var <- "Potential_INEXUS_in_dollar"
+  ridge0000 <- 
+  ggplot(data = df_temp,
+       aes(x = Potential_INEXUS_in_dollar,
+           y = as_factor(lever_position),
+           fill = ownCarYNLabel,
+           color = ownCarYNLabel),
+       alpha = .3) +
+        coord_cartesian(xlim = c(
+      filter(descr, variable == y_var)[["scaleLow"]],
+      filter(descr, variable == y_var)[["scaleHigh"]]  )) + 
+
+    geom_density_ridges( alpha = .3    ) 
+    # geom_ridgeline()
+  
+  print(ridge0000)
+```
+
+```{r}
+
+```
+
+# .
+
+# Winners Losers
+
+```{r}
+
+
+```

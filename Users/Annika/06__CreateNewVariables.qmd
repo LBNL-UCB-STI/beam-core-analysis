@@ -1,0 +1,423 @@
+---
+title: "Untitled"
+format: html
+editor_options: 
+  chunk_output_type: console
+---
+
+## Define file pathways for data and output
+
+```{r }
+t <- "/00__global_file_directories.R"
+print(paste("opening source file ", t))
+source( paste0(getwd(),t) ) # returns:
+figures_folder <- paste0(output_dir_on_this_machine,"figures")
+print(paste("defining file location ",figures_folder))
+# data_file_list_paths_local <- awsDF$Key[grep(pattern = "*.deep*", awsDF$Key)]
+```
+
+## Read AND subset
+
+```{r}
+library(vroom) # progress = TRUE
+library(glue)
+df_temp <- vroom::vroom(file = paste0(data_dir_on_this_machine,
+                   glue("{placeFilename}_{year}_",
+                        "stacked_",
+                        "{categoryTitleShort}_{leverTitleShort}_",
+                        "GraphClean_",
+                        "Subset_",
+                        "Mand",
+                        "_2",   ""  )) )
+```
+
+### variable type
+
+```{r lever_as_number_factor}
+#| echo: fenced
+df_temp <- df_temp |>
+  mutate(lever_position =
+           case_when(lever_position == "base" ~ 1,
+                     TRUE ~ lever_position))
+df_temp <- df_temp |>
+  mutate(lever_positionFactor =as_factor(lever_position)) 
+  # mutate(lever_positionFactor = NULL)
+```
+
+```{r change_to_numbers_or_factors}
+df_temp <-   df_temp |> 
+  mutate(across(where(is.character), as_factor))
+```
+
+```{r DELETE_RENAME_butDeleteLater}
+# df_stacked_from_list <-   df_stacked_from_list |>
+#   rename("lever_position"=scen1,
+#          "lever"=scen2,
+#          "category"=scen3)
+# df_stacked_from_list <-   df_stacked_from_list |>
+#   mutate("Potential_INEXUS_in_dollar"=logsum_trip_mode_AS_trips*10)
+
+# df_stacked_from_list <-   df_stacked_from_list |>
+#   mutate(mode_choice_actual_6 = mode_6categories)
+
+# df_stacked_from_list <- df_stacked_from_list |>
+#   mutate(Realized_INEXUS_in_dollar = Potential_INEXUS_in_dollar,
+#     socialCarbonCost =1,
+#     Social_INEXUS = Realized_INEXUS_in_dollar - socialCarbonCost,
+#     )
+```
+
+### Save intermediate
+
+```{r save_6a}
+# | eval: false
+# | echo: false
+names(df_temp)
+write_rds(df_temp, file =paste0(data_dir_on_this_machine,
+                   glue("{placeFilename}_{year}_stacked_{categoryTitleShort}_{leverTitleShort}_6a.rds")))
+```
+
+<!-- # ```{r keep_only} -->
+
+<!-- # df_stacked_from_list <- df_stacked_from_list |> -->
+
+<!-- #   select(IDMerged, -->
+
+<!-- #          person_id, -->
+
+<!-- #          trip_id, -->
+
+<!-- #          # mode_5categories, -->
+
+<!-- #          # mode_6categories, -->
+
+<!-- #            # tripIndex, -->
+
+<!-- #          lever, -->
+
+<!-- #          lever_position, -->
+
+<!-- #          # logsum_trip_Potential_INEXUS, -->
+
+<!-- #          # Realized_INEXUS, -->
+
+<!-- #          contains("INEXUS"), -->
+
+<!-- #          contains("logsum"), -->
+
+<!-- #          # Social_INEXUS, -->
+
+<!-- #          # Potential_INEXUS_in_dollar, -->
+
+<!-- #          # Realized_INEXUS_in_dollar, -->
+
+<!-- #          # logsum_relative_to_baseline, -->
+
+<!-- #          contains("relative"), -->
+
+<!-- #          # door_to_door_time_relative_to_baseline, -->
+
+<!-- #          income, -->
+
+<!-- #          actPurpose, -->
+
+<!-- #          # mode_choice_actual_6,      -->
+
+<!-- #          contains("mode"), -->
+
+<!-- #          home_is_urban, -->
+
+<!-- #          auto_ownership, -->
+
+<!-- #          income_in_thousands, -->
+
+<!-- #          # earning, -->
+
+<!-- #          # contains("value_of_time"), -->
+
+<!-- #          # hh_value_of_time, -->
+
+<!-- #          # median_value_of_time, -->
+
+<!-- #          # value_of_time, -->
+
+<!-- #          actEndTime, -->
+
+<!-- #          actStartTime, -->
+
+<!-- #          # travelTime, -->
+
+<!-- #          waitTime, -->
+
+<!-- #          # roundtrip_auto_time_to_school, -->
+
+<!-- #          # roundtrip_auto_time_to_work, -->
+
+<!-- #          starts_with("duration"), -->
+
+<!-- #          # actPurpose, -->
+
+<!-- #          contains("mandatory"), -->
+
+<!-- #          income10levels, -->
+
+<!-- #          mode_choice_actual_BEAM -->
+
+<!-- #          # auto_ownership, -->
+
+<!-- #          # incomeLow30Label, -->
+
+<!-- #          # incomeLoHi10Lab, -->
+
+<!-- #          # ownCarYNLabel, -->
+
+<!-- #          # scenShort, -->
+
+<!-- #          # scenYear, -->
+
+<!-- #          # lever_position, -->
+
+<!-- #          # category, -->
+
+<!-- #          # lever, -->
+
+<!-- #          # scenYr, -->
+
+<!-- #          # scenPl, -->
+
+<!-- #          # scenBind, -->
+
+<!-- #          # num_young_children, -->
+
+<!-- #          # logsum_trip_mode_AS_trips -->
+
+<!-- #   ) -->
+
+<!-- # names(df_stacked_from_list) -->
+
+<!-- # ``` -->
+
+<!-- ```{r save_rds3} -->
+
+<!-- # | eval: false -->
+
+<!-- # | echo: false -->
+
+<!-- names(df_stacked_from_list) -->
+
+<!-- write_rds(df_stacked_from_list, file =paste0(data_dir_on_this_machine, -->
+
+<!--                    glue("{placeFilename}_{year}_stacked_{categoryTitleShort}_{leverTitleShort}_3.rds"))) -->
+
+<!-- ``` -->
+
+```{r income}
+df_temp <- df_temp |> 
+    mutate(income10levels = as_factor(ntile(income_in_thousands,10)))
+df_temp <- df_temp  %>%
+    mutate(l_inc_HiLo10 = as_factor(
+        case_when(
+          income10levels == 1 ~ "Bottom 10% Income ",
+          income10levels == 10 ~ "Top 10% Income"
+          # TRUE ~ NA
+        )))
+
+```
+
+```{r cars}
+df_temp <- df_temp |> 
+    mutate(ownCarYNLabel = as_factor(
+           case_when(auto_ownership >= 1 ~ "Owns Car",
+                     auto_ownership == 0 ~ "Does not own Car"
+           )))
+
+
+df_temp <- df_temp  %>%
+    mutate(incomeXcar = as_factor(
+      case_when(
+        auto_ownership ==0 &  income10levels == 1  ~ "Bottom 10%, no car ",
+        auto_ownership ==0 &  income10levels == 10 ~ "Top 10%, no car",
+        auto_ownership ==1 &  income10levels == 1  ~ "Bottom 10%, owns car",
+        auto_ownership ==1 &  income10levels == 10 ~ "Top 10%, owns car"
+        # TRUE ~ NA
+        )))
+```
+
+```{r mode_choice}
+levels(df_temp$mode_choice_actual_BEAM)
+
+# df_temp <- df_temp  %>%
+#     mutate(      mode_rh_pooled = case_when(
+#           mode_choice_actual_BEAM == "ride_hail_pooled" ~ TRUE,
+#           TRUE ~ FALSE))
+# df_temp <- df_temp  %>%
+#     mutate(      mode_rh_total = case_when(
+#           mode_choice_actual_BEAM == "ride_hail_pooled" | 
+#             mode_choice_actual_BEAM == "ride_hail"  | 
+#             mode_choice_actual_BEAM == "ride_hail_transit" ~ TRUE,
+#           TRUE ~ FALSE))
+df_temp <- df_temp  %>%
+    mutate(      mode_rh = as_factor(case_when(
+          mode_choice_actual_BEAM == "ride_hail_pooled" ~ "Ride Hail Pooled",
+          mode_choice_actual_BEAM == "ride_hail" ~ "Ride Hail Not-Pooled",
+          mode_choice_actual_BEAM == "ride_hail_transit" ~ "Ride Hail Transit"
+          )))
+# With the small one?
+knitr::kable(df_temp  |> count(mode_choice_actual_6,mode_choice_actual_BEAM))
+df_temp <- df_temp  %>%
+    mutate(
+      mode_4categories = as_factor(
+        case_when(
+          mode_choice_actual_6 == "bike" ~ "Walk or Bike",
+          mode_choice_actual_6 == "walk" ~ "Walk or Bike",
+          mode_choice_actual_6 == "ride_hail" ~ "Ride Hail",
+          mode_choice_actual_6 == "ride_hail_transit" ~ "Transit",
+          mode_choice_actual_6 == "car" ~ "Car",
+          mode_choice_actual_6 == "transit" ~ "Transit",
+          TRUE ~ as.character(mode_choice_actual_6)
+        )))
+df_temp <- df_temp  %>%
+    mutate(
+      mode_planned_5 = as_factor(
+        case_when(
+          mode_choice_planned_BEAM == "bike"              ~ "Walk or Bike",
+          mode_choice_planned_BEAM == "walk"              ~ "Walk or Bike",
+          mode_choice_planned_BEAM == "ride_hail"         ~ "Ride Hail Solo",
+          mode_choice_planned_BEAM == "ride_hail_pooled"  ~ "Ride Hail Pooled",
+          mode_choice_planned_BEAM == "ride_hail_transit" ~ "Transit",
+          mode_choice_planned_BEAM == "drive_transit"     ~ "Transit",
+          mode_choice_planned_BEAM == "bike_transit"      ~ "Transit",
+          mode_choice_planned_BEAM == "walk_transit"      ~ "Transit",
+          mode_choice_planned_BEAM == "transit"           ~ "Transit",
+          mode_choice_planned_BEAM == "car"                ~ "Car",
+          mode_choice_planned_BEAM == "car_hov2"           ~ "Car",
+          mode_choice_planned_BEAM == "car_hov3"           ~ "Car",
+          mode_choice_planned_BEAM == "hov2_teleportation" ~ "Car",
+          mode_choice_planned_BEAM == "hov3_teleportation" ~ "Car",
+          TRUE ~ as.character(mode_choice_planned_BEAM)
+        )))
+df_temp |> count(mode_planned_5)
+
+
+
+df_temp <- df_temp  %>%
+    mutate(
+      mode_5catPooled = 
+        case_when(
+          mode_choice_actual_BEAM == "ride_hail_pooled" ~ "Ride Hail Pooled",
+          mode_choice_actual_BEAM == "ride_hail_transit" ~ "Transit",
+          mode_choice_actual_BEAM == "ride_hail" ~ "Ride Hail Not-Pooled",
+          TRUE ~ as.character(mode_4categories)
+        ))
+knitr::kable(df_temp  |> count(mode_choice_actual_BEAM,
+                               mode_choice_actual_6,
+                               mode_5catPooled,
+                               mode_4categories))
+```
+
+# Save subsetted data
+
+```{r make_factors_again}
+df_temp <-   df_temp |> 
+  mutate(across(where(is.character), as_factor))
+
+df_temp <- df_temp |> 
+    mutate(auto_ownership = as_factor(auto_ownership))
+df_temp <- df_temp |> 
+    mutate(ride_hail_pooled = as_factor(ride_hail_pooled))
+
+```
+
+```{r save_7}
+# Save as RDS
+readr::write_rds(df_temp, file = paste0(data_dir_on_this_machine,
+                                          
+                   glue("{placeFilename}_{year}_",
+                        "stacked_",
+                        "{categoryTitleShort}_{leverTitleShort}_",
+                        "GraphClean_",
+                        "Subset_",
+                        "Short_",
+                        "Mand",
+                        "_7",   
+                        ".rds"  )))
+```
+
+## More changes
+
+### Reopen
+
+```{r}
+  # df_temp <- read_rds(file = paste0(data_dir_on_this_machine,
+  #                                         
+  #                  glue("{placeFilename}_{year}_",
+  #                       "stacked_",
+  #                       "{categoryTitleShort}_{leverTitleShort}_",
+  #                       "GraphClean_",
+  #                       "Subset_",
+  #                       "Short_",
+  #                       "Mand",
+  #                       "_7",   
+  #                       ".rds"  )))
+```
+
+#### Change from baseline
+
+## TODO
+
+filter out all trips that don't have a full set of levers
+
+```{r}
+names(df_temp)
+# df_temp |>  count(mode_planned_5)
+
+df_temp <- df_temp |> 
+  group_by(IDMerged, tripIndex ) |>
+  mutate(mode_planned_at_baseline = first(mode_planned_5[lever_position==1]))
+ungroup(df_temp)
+
+df_temp <- df_temp |> 
+  filter(!is.na(mode_planned_at_baseline)) 
+```
+
+#### save again
+
+```{r make_factors_again}
+df_temp <-   df_temp |> 
+  mutate(across(where(is.character), as_factor))
+
+df_temp <- df_temp |> 
+    mutate(auto_ownership = as_factor(auto_ownership))
+df_temp <- df_temp |> 
+    mutate(ride_hail_pooled = as_factor(ride_hail_pooled))
+
+```
+
+```{r order variables}
+names(df_temp)
+df_temp <- df_temp |> 
+  relocate(IDMerged, tripIndex, 
+           scenario, lever, 
+           contains("lever_"),
+           contains("mode") ,
+           contains("inexus"), contains("logsum"),
+           contains("relative_to_"),
+           contains("duration")
+  )
+names(df_temp)
+```
+
+```{r save_7}
+# vroom::vroom_write(df_temp, file = paste0(data_dir_on_this_machine,
+readr::write_rds(df_temp, file = paste0(data_dir_on_this_machine,
+                                          
+                   glue("{placeFilename}_{year}_",
+                        "stacked_",
+                        "{categoryTitleShort}_{leverTitleShort}_",
+                        "GraphClean_",
+                        "Subset_",
+                        "Short_",
+                        "Mand",
+                        "_71",   
+                        ".rds"  )))
+```
