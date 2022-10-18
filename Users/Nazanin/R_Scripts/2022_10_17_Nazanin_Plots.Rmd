@@ -1,0 +1,377 @@
+---
+title: "2021_12_5_Nazanin_ActSim_INEXUS_Plots"
+author: "Nazanin"
+output:
+  html_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+ifelse(packageVersion("dplyr") > 1, "The installed version of dplyr package is greater than or equal to 1.0.0", update.packages("dplyr"))
+```
+
+
+```{r}
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(
+  tidyverse, # for the tidyverse framework
+  viridis,
+  scales, 
+  forcats,
+  aws.s3, 
+  furrr,
+  tictoc,
+  stringr,
+  caTools,
+  ggthemes,
+  SciViews,
+  yaml,
+  janitor
+  )
+```
+
+
+## Parallelize using: furrr (using multiple cores to speed up)
+```{r}
+n_cores <- availableCores() - 1
+plan(multisession, # multicore, if supported, otherwise multisession
+     workers = n_cores) # the maximum number of workers
+```
+
+
+## Import Data
+```{r}
+#AWS info - set environment variables
+Sys.setenv("AWS_DEFAULT_REGION"="us-east-2")
+awsDF <- get_bucket_df("beam-core-act", prefix = "deepDive/CleanData/SanFrancisco/Stacked") # getting bucket   
+data <- list() # creating list 
+data <- awsDF$Key[grep("*.csv$", awsDF$Key)] #specify austin data objects
+for (i in data) 
+  {x <- aws.s3::s3read_using(read_csv, object=i, bucket="beam-core-act")
+   j <- substr(i,1,nchar(i)-2)
+   assign(j, x)
+   remove(x)
+}
+
+```
+
+
+```{r}
+#Joining households and persons
+households <- households[order(households$household_id),]
+persons <- persons[order(persons$household_id),]
+
+ActSimPerhh <- left_join(persons, households, by = c("household_id"), copy = FALSE, suffix = c(".x", ".y"))
+```
+
+```{r}
+#Joining tours, households and persons
+tour <- tour[order(tour$person_id, tour$tour_id),]
+ActSimTourPerhh <- left_join(tour, ActSimPerhh, by = c("person_id"), copy = FALSE, suffix = c(".x", ".y"))
+```
+
+```{r eval=FALSE, include=FALSE}
+#Export the file
+#write.csv(x=ActSimTourPerhh, file="/Shared-Work/Data/CleanData/ActSimInexusPlots.csv", row.names = F)
+```
+
+## INEXUS Plots
+
+
+# ModeChoice Logsum - CarOwnership
+```{r - boxplot}
+ActSimTourPerhh %>%
+    ggplot(aes(x = reorder(auto_ownership,-mode_choice_logsum), y = mode_choice_logsum)) +
+    geom_boxplot()+
+    xlab("Car Ownership") + 
+    ylab("Mode Choice LogSum")+
+    theme_bw()+
+    theme(axis.text.x = element_text(angle = 0, vjust = 0.5))
+```
+
+# Destination Logsum - CarOwnership
+```{r - boxplot}
+ActSimTourPerhh %>%
+    ggplot(aes(x = reorder(auto_ownership,-destination_logsum), y = destination_logsum)) +
+    geom_boxplot()+
+    xlab("Car Ownership") + 
+    ylab("Destination LogSum")+
+    theme_bw()+
+    theme(axis.text.x = element_text(angle = 0, vjust = 0.5))
+```
+
+
+# ModeChoice Logsum - Income - Mode
+
+```{r - scatterplot - income_in_thousands}
+ggplot(data = ActSimTourPerhh, aes(x = income_in_thousands, y = mode_choice_logsum))+
+    geom_point(aes(color = tour_mode), size=1, stat = 'identity')+ 
+    xlab("Income (thousand dollars)") + 
+    ylab("Mode Choice LogSum")+
+    scale_x_continuous(labels=scales::dollar_format())+
+    scale_color_viridis(discrete = TRUE)+
+    #scale_color_gdocs()+ 
+    #scale_color_calc()+
+    #scale_colour_economist()+
+    theme_bw()
+```
+
+
+```{r - scatterplot - income - all 21 modes}
+ggplot(data = ActSimTourPerhh, aes(x = income, y = mode_choice_logsum))+
+    geom_point(aes(color = tour_mode), size=1, stat = 'identity')+ 
+    xlab("Income (dollars)") + 
+    ylab("Mode Choice LogSum")+
+    scale_x_continuous(labels=scales::dollar_format())+
+    scale_color_viridis(discrete = TRUE)+
+    #scale_color_gdocs()+ 
+    #scale_color_calc()+
+    #scale_colour_economist()+
+    theme_bw()
+```
+
+```{r - all 21 modes}
+ggplot(data = ActSimTourPerhh, aes(x = income, y = mode_choice_logsum))+
+    geom_point(aes(color = tour_mode), size=1, stat = 'identity')+ 
+    xlab("Income (dollars)") + 
+    ylab("Mode Choice LogSum")+
+    scale_x_continuous(labels=scales::dollar_format())+
+    scale_color_viridis(discrete = TRUE)+
+    #scale_color_gdocs()+ 
+    #scale_color_calc()+
+    #scale_colour_economist()+
+    theme_bw()
+```
+
+# Categorize tour_mode to 4 groups
+```{r}
+ActSimTourPerhh <- ActSimTourPerhh %>% 
+  mutate(tourMode = case_when(tour_mode == "DRIVEALONEFREE" | tour_mode == "DRIVEALONEPAY" | tour_mode == "SHARED2FREE" | tour_mode ==   "SHARED2PAY" | tour_mode == "SHARED3FREE" | tour_mode == "SHARED3PAY"  ~ "CAR",
+      tour_mode == "TNC_SHARED" | tour_mode ==   "TNC_SINGLE"| tour_mode == "TAXI" ~ "RIDE HAIL",
+      tour_mode == "WALK" | tour_mode ==   "BIKE"  ~ "WALK/BIKE", 
+      tour_mode == "WALK_COM" | tour_mode == "WALK_LRF" | tour_mode == "WALK_LOC" ~ "PUBLIC TRANSIT"))
+```
+
+```{r - 4 groups of modes}
+ggplot(data = ActSimTourPerhh, aes(x = income, y = mode_choice_logsum))+
+    geom_point(aes(color = tourMode), size=3, stat = 'identity')+ 
+    xlab("Income (dollars)") + 
+    ylab("Mode Choice LogSum")+
+    scale_x_continuous(labels=scales::dollar_format())+
+    scale_color_viridis(discrete = TRUE)+
+    #scale_color_gdocs()+ 
+    scale_color_calc()+
+    #scale_colour_economist()+
+    theme_bw()
+```
+
+# Urban-Rural
+```{r}
+ggplot(data = ActSimTourPerhh, aes(x = income, y = mode_choice_logsum, color = home_is_urban))+
+    geom_point(size=3, stat = 'identity')+ 
+    geom_smooth(method = "lm", se = FALSE)+
+    xlab("Income (dollars)") + 
+    ylab("INEXUS relative to average")+
+    scale_x_continuous(labels=scales::dollar_format())+
+    labs(title="Potential INEXUS", color='Residential Tract')+
+  scale_color_manual(labels = c("non-urban", "urban"), values = c("green", "brown")) +
+  #scale_color_viridis(discrete = TRUE)+
+    #scale_color_gdocs()+ 
+    #scale_color_calc()+
+    #scale_colour_economist()+
+    theme_bw()
+    
+
+```
+
+#cut-off
+```{r}
+#income below 500k
+ActSimTourPerhh <- ActSimTourPerhh  %>% 
+    filter(income < 500000)
+#logsum below 10
+ActSimTourPerhh <- ActSimTourPerhh  %>% 
+    filter(mode_choice_logsum < 10)
+```
+
+```{r}
+ggplot(data = ActSimTourPerhh, aes(x = income, y = mode_choice_logsum))+
+    geom_point(aes(color = tourMode), size=3, stat = 'identity')+ 
+    xlab("Income (dollars)") + 
+    ylab("Mode Choice LogSum")+
+    scale_x_continuous(labels=scales::dollar_format())+
+    #scale_color_viridis(discrete = TRUE)+
+    #scale_color_gdocs()+ 
+    scale_color_calc()+
+    #scale_colour_economist()+
+    theme_bw()
+```
+
+```{r}
+ggplot(data = ActSimTourPerhh, aes(x = income, y = mode_choice_logsum))+
+    geom_point(aes(color = home_is_urban), size=3, stat = 'identity')+ 
+    xlab("Income (dollars)") + 
+    ylab("Mode Choice LogSum")+
+    scale_x_continuous(labels=scales::dollar_format())+
+    #scale_color_viridis(discrete = TRUE)+
+    scale_color_gdocs()+ 
+    #scale_color_calc()+
+    #scale_colour_economist()+
+    theme_bw()
+```
+
+# Histogram of logsum
+```{r, echo=FALSE, fig.height=7, fig.width=7}
+ggplot(ActSimTourPerhh, aes(x=mode_choice_logsum)) +
+  geom_histogram(fill="#5ec962", color="black")+
+  #geom_vline(aes(xintercept=mean(legTravelTime)), color="blue", linetype="dashed")+
+  labs(title="Histogram for Mode Choice LogSum", x="mode_choice_logsum", y = "Frequency")+
+  xlim(c(0,700))+
+  ylim(c(0,500000))+
+  scale_y_continuous(labels = scales::comma)+  
+  theme_bw()
+```
+
+# Mode Choice LogSum Frequency colored by Mode
+```{r}
+ggplot(ActSimTourPerhh, aes(x=mode_choice_logsum, color = tourMode)) +
+  geom_density(size=1)+
+  #scale_color_viridis(discrete = TRUE, option = "viridis", begin = 0.2)+
+  labs(x="Mode Choice LogSum", y = "Frequency")+
+  #scale_colour_brewer(type = "div") +
+  scale_color_gdocs()+ 
+   theme_bw()
+```
+
+```{r}
+ggplot(ActSimTourPerhh, aes(x=mode_choice_logsum, color = income)) +
+  geom_density() 
+```
+
+#divide income to 3 levels
+```{r}
+ActSimTourPerhh <- ActSimTourPerhh %>%
+    mutate(incomeQuantile1 = ntile(income, 3))
+
+ActSimTourPerhh$incomeQuantile[ActSimTourPerhh$incomeQuantile1 == "1"] <- "Low"
+
+ActSimTourPerhh$incomeQuantile[ActSimTourPerhh$incomeQuantile1 == "2"] <- "Medium"
+
+ActSimTourPerhh$incomeQuantile[ActSimTourPerhh$incomeQuantile1 == "3"] <- "High"
+```
+
+#Divide income in 2 groups
+```{r}
+median(ActSimTourPerhh$income, na.rm = TRUE)
+ActSimTourPerhh$incomeLevel <- ifelse((ActSimTourPerhh$income < 106650), "Low","High")
+```
+
+# Mode Choice LogSum Frequency colored by Income Level
+```{r}
+ggplot(ActSimTourPerhh, aes(x=mode_choice_logsum, color = incomeLevel)) +
+  geom_density(size=1)+
+  #scale_color_viridis(discrete = TRUE, option = "viridis", begin = 0.2)+
+  labs(x="Mode Choice LogSum", y = "Frequency")+
+  #scale_colour_brewer(type = "div") +
+  scale_color_gdocs()+ 
+   theme_bw()
+```
+
+# Mode Choice LogSum Frequency colored by Income Quantile
+```{r}
+ggplot(ActSimTourPerhh, aes(x=mode_choice_logsum, color = incomeQuantile)) +
+  geom_density(size=1)+
+  #scale_color_viridis(discrete = TRUE, option = "viridis", begin = 0.2)+
+  labs(title = "Potential INEXUS", x="INEXUS relative to average", y = "Frequency", color = "Household Income")+
+  #scale_colour_brewer(type = "div") +
+  #scale_color_discrete(breaks=c("High","Medium","Low"))+
+  scale_color_gdocs(breaks=c("High","Medium","Low"))+ 
+  theme_bw()
+```
+
+
+# Mode Choice LogSum Frequency colored by urban/rural
+```{r}
+ggplot(ActSimTourPerhh, aes(x=mode_choice_logsum, color = home_is_urban)) +
+  geom_density(size=1)+
+  #scale_color_viridis(discrete = TRUE, option = "turbo", begin = 0.2)+
+  labs(title = "Potential INEXUS", x="INEXUS relative to average", y = "Frequency", color='Residential Tract')+
+  scale_color_manual(labels = c("non-urban", "urban"), values = c("green", "brown")) +
+  #scale_colour_brewer(type = "div") +
+  #scale_color_gdocs()+ 
+   theme_bw()
+```
+
+#car ownership into two groups
+```{r}
+ActSimTourPerhh$car_ownership_status <- ifelse((ActSimTourPerhh$hh_cars == "none"), "no_car","at_least_one_car")
+```
+
+
+# Mode Choice LogSum Frequency colored by car/no car
+```{r}
+ggplot(ActSimTourPerhh, aes(x=mode_choice_logsum, color = car_ownership_status)) +
+  geom_density(size=1)+
+  #scale_color_viridis(discrete = TRUE, option = "turbo", begin = 0.2)+
+  labs(x="Mode Choice LogSum", y = "Frequency")+
+  #scale_colour_brewer(type = "div") +
+  scale_color_gdocs()+ 
+  theme_bw()
+```
+
+
+# ModeChoice Logsum - CarOwnership
+```{r - boxplot}
+ActSimTourPerhh %>%
+    ggplot(aes(x = reorder(car_ownership_status,-mode_choice_logsum), y = mode_choice_logsum)) +
+    geom_boxplot()+
+    xlab("Car Ownership") + 
+    ylab("Mode Choice LogSum")+
+    theme_bw()+
+    theme(axis.text.x = element_text(angle = 0, vjust = 0.5))
+```
+
+# ModeChoice Logsum - CarOwnership
+```{r - boxplot}
+ActSimTourPerhh %>%
+    ggplot(aes(x = reorder(hh_cars,-mode_choice_logsum), y = mode_choice_logsum)) +
+    geom_boxplot()+
+    xlab("Car Ownership") + 
+    ylab("Mode Choice LogSum")+
+    theme_bw()+
+    theme(axis.text.x = element_text(angle = 0, vjust = 0.5))
+```
+
+
+# Mode Choice LogSum Frequency colored by car/no car
+```{r}
+ggplot(ActSimTourPerhh, aes(x=mode_choice_logsum, color = hh_cars)) +
+  geom_density(size=1)+
+  ggtitle("Potential INEXUS") +
+  theme(plot.title = element_text(hjust = 0.5))+
+  #scale_color_viridis(discrete = TRUE, option = "turbo", begin = 0.2)+
+  labs(x="INEXUS relative to average", y = "Frequency", color='Household Cars')+
+  #scale_colour_brewer(type = "div") +
+  scale_color_gdocs()+ 
+  theme_bw()
+```
+
+
+```{r}
+ActSimTourPerhh <- ActSimTourPerhh %>% 
+  mutate(residentialTract = case_when(home_is_urban == "TRUE"  & home_is_rural == "FALSE" ~ "URBAN",
+      home_is_rural == "TRUE" & home_is_urban == "FALSE"~ "RURAL",
+      home_is_urban == "FALSE" & home_is_rural ==   "FALSE"   ~ "NEITHER"))
+```
+
+```{r}
+#Export the file
+#write.csv(x=ActSimTourPerhh, file="/Shared-Work/Data/CleanData/ActSimInexusFinal.csv", row.names = F)
+```
