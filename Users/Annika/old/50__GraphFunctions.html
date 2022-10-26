@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.0.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>graphfunctions</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+<script src="50__GraphFunctions_files/libs/clipboard/clipboard.min.js"></script>
+<script src="50__GraphFunctions_files/libs/quarto-html/quarto.js"></script>
+<script src="50__GraphFunctions_files/libs/quarto-html/popper.min.js"></script>
+<script src="50__GraphFunctions_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="50__GraphFunctions_files/libs/quarto-html/anchor.min.js"></script>
+<link href="50__GraphFunctions_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="50__GraphFunctions_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="50__GraphFunctions_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="50__GraphFunctions_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="50__GraphFunctions_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+
+
+<section id="section" class="level1">
+<h1>—</h1>
+</section>
+<section id="title-graph-functions" class="level1">
+<h1>title: “Graph Functions”</h1>
+</section>
+<section id="format-html" class="level1">
+<h1>format: html</h1>
+</section>
+<section id="section-1" class="level1">
+<h1>—</h1>
+</section>
+<section id="graph-functions" class="level1">
+<h1>Graph functions</h1>
+</section>
+<section id="to-do-functions-we-setup-a-blank-df-maybe-df_temp" class="level1">
+<h1>To do functions we setup a blank df, maybe df_temp</h1>
+<section id="functions-then-test" class="level3">
+<h3 class="anchored" data-anchor-id="functions-then-test">functions then test</h3>
+</section>
+</section>
+<section id="get-titles-for-any-graph" class="level1">
+<h1>Get titles for any graph</h1>
+</section>
+<section id="r-fx_g0_titles-echotrue" class="level1">
+<h1>```{r fx_g0_titles, echo=TRUE}</h1>
+<p>fx_get_TitlesLevels_createBaseGraph_g0 &lt;- function(df=“none”,y_var=“generic”,het=“none”,tit=“none”) { tmp_yvarTitleLong &lt;&lt;- filter(descr,variable == y_var)[[“title”]] tmp_yvarTitleShort &lt;&lt;- filter(descr,variable == y_var)[[“title_short”]] tmp_hetvarTitleLong &lt;&lt;- filter(descr,variable == het)[[“title”]] tmp_hetvarTitleShort &lt;&lt;- filter(descr,variable == het)[[“title_short”]] tmp_yvarLOW &lt;&lt;- filter(descr, variable == y_var)[[“scaleLow”]] tmp_yvarHI &lt;&lt;- filter(descr, variable == y_var)[[“scaleHigh”]] print(tmp_yvarLOW) print(tmp_yvarHI)</p>
+</section>
+<section id="title" class="level1">
+<h1>TITLE</h1>
+<p>tmp_graphTitle &lt;&lt;- str_glue(“{year} {categoryTitleLong} {leverTitleLong}; Outcome: {tmp_yvarTitleLong}”) print(paste(“y:”,tmp_yvarTitleLong,tmp_yvarTitleShort,“het:”, tmp_hetvarTitleLong,tmp_hetvarTitleShort)) # BASE BLANK plot. Use coordinate limits (scales) set by the 95% tmp_g0 &lt;- ggplot() + coord_cartesian(xlim = c(tmp_yvarLOW,tmp_yvarHI)) + labs(title = tmp_graphTitle) + labs(subtitle = str_glue(“Heterogeneity: {tmp_hetvarTitleLong}”)) + xlab(tmp_yvarTitleLong) + ylab(” density “) theme(aspect.ratio=.9) # makes most of the graphs a little more than square return(tmp_g0) } print(”Defining Titles from Description File…“) print(”………………………………….fx_g0_titles”) # ```</p>
+<section id="test" class="level3">
+<h3 class="anchored" data-anchor-id="test">test</h3>
+</section>
+</section>
+<section id="r-test_a-evalfalse-includefalse-testing-fx_get_titleslevels_createbasegraph_g0-y_var-potential_inexus_in_dollar-g0tmp---fx_get_titleslevels_createbasegraph_g0-y_var-potential_inexus_in_dollar-printg0tmp" class="level1">
+<h1><code>{r TEST_a, eval=FALSE, include=FALSE} # Testing fx_get_TitlesLevels_createBaseGraph_g0 # y_var = "Potential_INEXUS_in_dollar" #           g0tmp &lt;- fx_get_TitlesLevels_createBaseGraph_g0( #             y_var = "Potential_INEXUS_in_dollar") # print(g0tmp) #</code></h1>
+</section>
+<section id="distribution-curves" class="level1">
+<h1>Distribution curves</h1>
+<section id="distribution-sub-graph" class="level2">
+<h2 class="anchored" data-anchor-id="distribution-sub-graph">Distribution: Sub-graph</h2>
+</section>
+</section>
+<section id="r-fx_total-fx_graph_the_totaldistribution---functiondf-y_varhet-nonenm-ntit-notitle-...-drop-missing-if-het-none-df---df-drop_napaste0het-captiontext---gluenote-dropping-missing-values-for-het-drop-obs-that-are-missing-the-het-var-base-graph----get-titles-etc-g0---fx_get_titleslevels_createbasegraph_g0y_vary_vardfdfhethettittit-graph-gseparate---maplistleverlevels-function.x-g0-labssubtitle-str_gluelevertitlelong-.x-geom_densitydata-df-filterlever_position.x-mapping-aesx-.datay_var-fill-greycolor-greyalpha-.6-gwrapped---wrap_plotsgseparate-plot_annotation-title-tmp_graphtitlecaption-captiontext-tag_levels-a-tag_prefix-tag_suffix-themeplot.tag.position-c0-1-plot.tag-element_textsize-8-hjust-0-vjust-0-labstitle-return-returnlistgwrapped-gwrappedgseparate-gseparate-printgwrapped-printgraph-the-total-distribution...-print...............................-fx_graph_the_totaldistribution" class="level1">
+<h1><code>{r fx_Total} fx_graph_the_TotalDistribution &lt;-   function(df, y_var,het = "none",nm = "n",tit = "noTitle",           ...) { # Drop missing     if (het != "none") { df &lt;- df |&gt; drop_na(paste0(het))                   captionText &lt;- glue("Note: dropping missing values for {het}") }     # drop obs that are missing the het var # Base graph -- get titles etc       g0 &lt;- fx_get_TitlesLevels_createBaseGraph_g0(y_var=y_var,df=df,het=het,tit=tit) # Graph     gseparate &lt;- map(listleverLevels, function(.x) {             g0 + labs(subtitle = str_glue("{leverTitleLong} {.x}")) +             geom_density(data = df |&gt; filter(lever_position==.x),             mapping = aes(x = .data[[y_var]]),             fill = "grey",color = "grey",alpha = .6    )  }  )     gwrapped &lt;- wrap_plots(gseparate) + plot_annotation(             title = tmp_graphTitle,caption = captionText,             tag_levels = 'a', tag_prefix = '   (', tag_suffix = ')') &amp;             theme(plot.tag.position = c(0, 1), plot.tag = element_text(size = 8, hjust = 0, vjust = 0)) &amp;             labs(title = "") # Return         return(list(gwrapped = gwrapped,gseparate = gseparate))     print(gwrapped) } print("Graph the total distribution...") print("............................... fx_graph_the_TotalDistribution") #</code></h1>
+<section id="test-1" class="level4">
+<h4 class="anchored" data-anchor-id="test-1">test</h4>
+</section>
+</section>
+<section id="r-test_b-evalfalse-includefalse-testing-fx_graph_the_totaldistribution-g3---fx_graph_the_totaldistribution-dfdf_temp-y_var-potential_inexus_in_dollar-het-l_inc_hilo10-printg3-printg3gwrapped" class="level1">
+<h1><code>{r TEST_b, eval=FALSE, include=FALSE} # testing fx_graph_the_TotalDistribution # g3 &lt;- fx_graph_the_TotalDistribution( #   df=df_temp, #   y_var = "Potential_INEXUS_in_dollar", #   het = "l_inc_HiLo10") # print(g3) # print(g3[["gwrapped"]]) #</code></h1>
+<section id="distribution-sub-graph-1" class="level2">
+<h2 class="anchored" data-anchor-id="distribution-sub-graph-1">Distribution: Sub-graph</h2>
+</section>
+</section>
+<section id="r-fx_het_dist" class="level1">
+<h1>```{r fx_het_dist}</h1>
+<p>fx_graph_Distn_Internal_Heterogeneity &lt;- function(df, y_var,het = “none”,nm = “n”,tit = “noTitle”, …) { # Drop missing if (het != “none”) { df &lt;- df |&gt; tidyr::drop_na(paste0(het))<br>
+captionText &lt;- glue(“Note: dropping missing values for {het}”) } # drop obs that are missing the het var g0 &lt;- fx_get_TitlesLevels_createBaseGraph_g0(y_var=y_var,df=df,het=het,tit=tit) # Graph gseparate &lt;- map(listleverLevels, function(.x) {g0 + labs( title = str_glue(“{tmp_graphTitle}, Heterogeneity: {tmp_hetvarTitleLong}”), caption = captionText, subtitle = str_glue(“{leverTitleLong} at {.x}”)) + geom_density(data = df |&gt; filter(lever_position==.x), mapping = aes(x = .data[[y_var]], fill = .data[[het]], color = .data[[het]], group = .data[[het]] ), alpha = .3 ) } ) gwrapped &lt;- wrap_plots(gseparate) + plot_annotation( title = tmp_graphTitle,caption = captionText, tag_levels = ‘a’, tag_prefix = ’ (‘, tag_suffix =’)’) &amp; theme(plot.tag.position = c(0, 1), plot.tag = element_text(size = 8, hjust = 0, vjust = 0)) &amp; labs(title = ““,caption =”“) gseparate_L &lt;- map(listleverLevels, function(.x) {g0 + labs( title = str_glue(”{tmp_graphTitle}, Heterogeneity: {tmp_hetvarTitleLong} “), caption = captionText, subtitle = str_glue(”{leverTitleLong} at {.x}“)) + geom_density(data = df |&gt; filter(lever_position==.x), mapping = aes(x = .data[[y_var]], fill = .data[[”lever_position”]], color = .data[[”lever_position”]], group = .data[[”lever_position”]] ), alpha = .1 ) } ) #scale_fill_binned(guide = guide_colorsteps()) + gwrapped_L &lt;- wrap_plots(gseparate_L) + plot_annotation( title = tmp_graphTitle,caption = captionText, tag_levels = ‘a’, tag_prefix = ’ (‘, tag_suffix =’)’) &amp; theme(plot.tag.position = c(0, 1), plot.tag = element_text(size = 8, hjust = 0, vjust = 0)) &amp; labs(title =”“,caption =”“)</p>
+<pre><code>return(list(gwrapped = gwrapped,gseparate = gseparate,gseparate_L,gwrapped_L))
+print(c(gwrapped,gseparate,gseparate_L,gwrapped_L))</code></pre>
+<p>} print(“Heterogeneity Within One scenario…”) print(“……………………………… fx_graph_Distn_Internal_Heterogeneity”) # ```</p>
+<section id="test-2" class="level4">
+<h4 class="anchored" data-anchor-id="test-2">test</h4>
+</section>
+</section>
+<section id="r-c-eval-false-echo-false-testing-fx_graph_distn_internal_heterogeneity-g3---fx_graph_distn_internal_heterogeneity-dfdf_temp-y_var-potential_inexus_in_dollar-het-incomexcar-printg3gwrapped" class="level1">
+<h1><code>{r c } # | eval: false # | echo: false # testing fx_graph_Distn_Internal_Heterogeneity                                   # g3 &lt;- fx_graph_Distn_Internal_Heterogeneity(                                   #   df=df_temp,                                   #   y_var = "Potential_INEXUS_in_dollar",                                   #   het = "incomeXcar")                                   # print(g3[["gwrapped"]]) #</code></h1>
+<section id="distribution-meta-function" class="level2">
+<h2 class="anchored" data-anchor-id="distribution-meta-function">Distribution: Meta function</h2>
+</section>
+</section>
+<section id="r-fx_meta_graph_choose" class="level1">
+<h1>```{r fx_META_graph_choose}</h1>
+<p>fx_META_graph_choose &lt;- function(df, y_var, het=“none”,nm=“n”,tit=“noTitle”, totalGr=TRUE, hetGr=TRUE, saveGraph=TRUE) { listofgraphs &lt;- list(graphlist = “initialize”) # Print total Desnity graph? if(totalGr==TRUE) { mgTot &lt;- fx_graph_the_TotalDistribution(df=df,y_var=y_var,het=het,tit=tit) print(mgTot) listofgraphs &lt;- list_merge(listofgraphs, mgTot) } if(hetGr==TRUE) { mgHet &lt;- fx_graph_Distn_Internal_Heterogeneity(df=df,y_var=y_var,het=het,tit=tit) print(mgHet) listofgraphs &lt;- list_merge(listofgraphs,mgHet=mgHet) } if(saveGraph==TRUE) {<br>
+# ggsave(filename = paste0(“test.svg”), path = figures_folder, width = dev.size(“in”)[1], height = dev.size(“in”)[2]) # ggsave(filename = paste0(“test.png”), path = figures_folder, width = dev.size(“in”)[1], height = dev.size(“in”)[2]) # ggsave(filename = paste0(“test.pdf”), path = figures_folder, width = dev.size(“in”)[1], height = dev.size(“in”)[2]) } return(listofgraphs) }</p>
+<p>print(“Print all of the graphs you choose, Meta function…”) print(“……………………………… fx_META_graph_choose”)</p>
+</section>
+<section id="section-2" class="level1">
+<h1>```</h1>
+<section id="test-3" class="level4">
+<h4 class="anchored" data-anchor-id="test-3">test</h4>
+</section>
+</section>
+<section id="r-d-evalfalse-includefalse-eval-false-echo-false-testing-the-meta-graph-metag1---fx_meta_graph_choosedfdf_temp-y_var-potential_inexus_in_dollar-het-incomexcar-totalgr-true-hetgrtrue-printmetag1-printmetag1gwrapped" class="level1">
+<h1><code>{r d, eval=FALSE, include=FALSE} # | eval: false # | echo: false # testing the meta graph                             metag1 &lt;- fx_META_graph_choose(df=df_temp,                                                   y_var = "Potential_INEXUS_in_dollar",                                                   het = "incomeXcar",                                                   totalGr = TRUE,                                                   hetGr=TRUE)                             print(metag1)                             print(metag1$gwrapped) #</code></h1>
+</section>
+<section id="graph-over-levers" class="level1">
+<h1>Graph over levers</h1>
+</section>
+<section id="r-area-df_graph_temp---df_temp-group_bylever_position-renamelever-position-lever_position-countmode_5catpooled-df_graph_temptotal---df_graph_temp-mutatetotal-trips-sumn-mutatepercent-of-total-trips-n-total-trips-n-null-df_graph_temptotal---df_graph_temptotal-pivot_widernames_from-mode_5catpooled-values_from-percent-of-total-trips-printdf_graph_temptotal" class="level1">
+<h1><code>{r area} # df_graph_temp &lt;- df_temp |&gt;  #   group_by(lever_position) |&gt;  #   rename(`Lever Position` = lever_position) |&gt;  #   count(mode_5catPooled) # df_graph_tempTotal &lt;- df_graph_temp |&gt;  #   mutate(`Total Trips` = sum(n)) |&gt;  #   mutate(`Percent of Total Trips` = n /`Total Trips` , #          n = NULL) # df_graph_tempTotal &lt;- df_graph_tempTotal |&gt;  #   pivot_wider(names_from = mode_5catPooled, values_from = `Percent of Total Trips`)  # print(df_graph_tempTotal)</code></h1>
+</section>
+<section id="r-area2-fx_graph_mode---functiondf-df_summary1-df_graph_temp---df-relative_lever---mindf_graph_templever-position-p1---ggplotdf_graph_temp-aesx-lever-position-p1---p1-geom_lineaesy-ride-hail-not-pooled--df_graph_tempride-hail-not-pooledlever-positionrelative_lever-color-ride-hail-not-pooled-geom_lineaesy-ride-hail-pooled--df_graph_tempride-hail-pooledlever-positionrelative_lever-color-ride-hail-pooled-geom_lineaesy-ride-hail-pooledride-hail-not-pooled--df_graph_tempride-hail-pooledlever-positionrelative_lever---df_graph_tempride-hail-not-pooledlever-positionrelative_lever-color-all-ride-hail-printp1-p5---p1-geom_lineaesy-walk-or-bike--df_graph_tempwalk-or-bikelever-positionrelative_lever-color-walk-or-bike-geom_lineaesy-transit--df_graph_temptransitlever-positionrelative_lever-color-transit-p5---p5-geom_lineaesy-car--df_graph_tempcarlever-positionrelative_lever-color-car" class="level1">
+<h1>``<code>{r area2} fx_graph_mode &lt;- function(df = df_summary1) {     df_graph_temp &lt;- df     relative_lever &lt;- min(df_graph_temp$</code>Lever Position<code>)     p1 &lt;- ggplot(df_graph_temp, aes(x =</code>Lever Position<code>))     p1 &lt;- p1 +        geom_line(aes(y =</code>Ride Hail Not-Pooled<code>- df_graph_temp$</code>Ride Hail Not-Pooled<code>[</code>Lever Position<code>==relative_lever], color = "Ride Hail Not-Pooled")) +       geom_line(aes(y =</code>Ride Hail Pooled<code>- df_graph_temp$</code>Ride Hail Pooled<code>[</code>Lever Position<code>==relative_lever],     color = "Ride Hail Pooled")) +       geom_line(aes(y =</code>Ride Hail Pooled<code>+</code>Ride Hail Not-Pooled<code>- df_graph_temp$</code>Ride Hail Pooled<code>[</code>Lever Position<code>==relative_lever]  - df_graph_temp$</code>Ride Hail Not-Pooled<code>[</code>Lever Position<code>==relative_lever],                                   color = "All Ride Hail"))     print(p1)     p5 &lt;- p1 + geom_line(aes(y =</code>Walk or Bike<code>- df_graph_temp$</code>Walk or Bike<code>[</code>Lever Position<code>==relative_lever], color = "Walk or Bike")) +                geom_line(aes(y =</code>Transit<code>- df_graph_temp$</code>Transit<code>[</code>Lever Position<code>==relative_lever] , color = "Transit"))     p5 &lt;- p5 + geom_line(aes(y =</code>Car<code>- df_graph_temp$Car[</code>Lever Position`==relative_lever] , color = “Car”))</h1>
+<pre><code>p5 &lt;- p5 +
+  theme(legend.position = "right") +
+  ylab("Percentage of trips, relative to lowest lever")
+print(p5) </code></pre>
+</section>
+<section id="a-vector-of-colors-for-legend" class="level1">
+<h1>a vector of COLORS for legend</h1>
+</section>
+<section id="cols---ccar-minus-3000000-red" class="level1">
+<h1>cols &lt;- c(“Car MINUS 3000000” = “red”,</h1>
+</section>
+<section id="walk-or-bike-blue" class="level1">
+<h1>“Walk or Bike” = “blue”,</h1>
+</section>
+<section id="transit-darkgreen" class="level1">
+<h1>“Transit” = “darkgreen”,</h1>
+</section>
+<section id="ride-hail-pooled-orange" class="level1">
+<h1>“Ride Hail Pooled” = “orange”,</h1>
+</section>
+<section id="ride-hail-not-pooled-green" class="level1">
+<h1>“Ride Hail Not-Pooled” = “green”)</h1>
+</section>
+<section id="p5-scale_colour_manualvalues-cols" class="level1">
+<h1>p5 + scale_colour_manual(values = cols)</h1>
+<p>} # ```</p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    setTimeout(function() {
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      let href = ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
+      });
+      return popup.innerHTML;
+    });
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

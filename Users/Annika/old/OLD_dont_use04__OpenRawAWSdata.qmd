@@ -4,6 +4,16 @@ author: "atb"
 format: html
 ---
 
+```{r}
+placeTitleShort <- "sf"
+categoryTitleShort <- "rh"
+leverTitleShort <- "price_fleetsz_0p125"
+year <- "2018"
+# leverTitleShort <- "price_fleetsz_0p25"
+# leverTitleShort <- "price_fleetsz_0p5"
+# leverTitleShort <- "price_fleetsz_2p25"
+```
+
 # TO DO: change this to save_object?
 
 ```{r}
@@ -13,21 +23,67 @@ library(forcats)
 library(glue)
 ```
 
+```{r}
+source(paste0            (getwd(),    "/00__global_file_directories.R"))
+```
+
 ## TODO change to csv_fread data.table::fread()
 
 ```{r}
-if(params$useAWStoReadWrite==TRUE) {
-    # AWS
-    df_temp <- aws.s3::s3read_using(read_csv,
-                             object = data_file_list_paths_AWS_RAW,
+        library(aws.s3)
+        library(dbplyr) # to get from aws
+        aws_prefix <- "deepDive/CleanData/SanFrancisco"
+        Sys.setenv("AWS_DEFAULT_REGION"="us-east-2", TZ='GMT')
+        awsDF <- get_bucket_df("beam-core-act", prefix = aws_prefix) # dataframe with all of the AWS files
+        dataframe_of_files <- awsDF
+```
+
+```{r}
+#List of files for this city (either locally or on AWS), and the stacked ones, that are not the previous files
+
+    data_file_list_paths <- dataframe_of_files |> select(Key)
+    data_file_list_paths <- data_file_list_paths |> 
+              filter(grepl(pattern = "*.tacked*.",x = Key, ignore.case = TRUE))
+    data_file_list_paths <- data_file_list_paths |> 
+              filter(!grepl(pattern = "*.revious*.",x = Key, ignore.case = TRUE))
+    # print(data_file_list_paths)
+    data_file_list_paths <- data_file_list_paths |> 
+              filter(grepl(pattern = paste0("*",placeTitleShort,"_","*."),
+                           x = Key, ignore.case = TRUE))
+    print(data_file_list_paths)
+    
+# Of those, the smaller List of files for this specific scenario (defined in YAML) (either locally or on AWS) . Hopefully there will be one cleaned, one cleaned subset, and one raw: , and cleaned stacked if there is one: wantSUBSETofTheVARSinsteadofAll
+      data_file_list_paths <- data_file_list_paths |> 
+          filter(grepl(pattern = paste0("*.",categoryTitleShort,
+                                        "_",leverTitleShort),
+                       x = Key, ignore.case = TRUE))
+        print(data_file_list_paths)
+```
+
+```{r}
+# Of those, the smaller List of files for this specific scenario (defined in YAML) (either locally or on AWS) . Hopefully there will be one cleaned, one cleaned subset, and one raw: , and cleaned stacked if there is one: wantSUBSETofTheVARSinsteadofAll
+      data_file_list_paths <- data_file_list_paths |> 
+          filter(grepl(pattern = paste0("*.",categoryTitleShort,
+                                        "_",leverTitleShort),
+                       x = Key, ignore.case = TRUE))
+        print(data_file_list_paths)
+```
+
+```{r}
+# not including the words old or previous
+        data_file_list_tmp <- data_file_list_paths |> 
+          filter(!grepl(pattern = "*.old*",x = Key, ignore.case = TRUE)) |>
+          filter(!grepl(pattern = "*.previous*",x = Key, ignore.case = TRUE)) 
+        data_file_list_tmp <- data_file_list_tmp$Key
+        print(data_file_list_tmp)
+```
+
+```{r}
+df_temp <- aws.s3::s3read_using(read_csv,
+                             object = data_file_list_tmp,
                              bucket = "beam-core-act")
                           print("Re-cleaning data from AWS!")
-} else {
-
-# "{placeFilename}_{year}_stacked_{categoryTitleShort}_{leverTitleShort}_22.rds")))
-# df_temp <- read_rds(paste0(data_dir_on_this_machine,
-#                                "San Francisco_2018_stacked_rh_flsz_22.rds" )  )
-}                          
+                          
 ```
 
 ## TODO change to either
@@ -69,16 +125,12 @@ https://usethis.r-lib.org/articles/git-credentials.html
 # | eval: false
 # | echo: false
 names(df_temp)
-if(params$useAWStoReadWrite==TRUE) {
-    
-} else {
-    readr::(df_temp, file = paste0(data_dir_on_this_machine,
-                   glue("{placeFilename}_{year}_",
+
+    vroom::vroom_write(df_temp, file = paste0(data_dir_on_this_machine,
+                   glue("{placeTitleShort}_{year}_",
                         "stacked_",
                         "{categoryTitleShort}_{leverTitleShort}",
-                        "_0")),
-                   VROOM_SHOW_PROGRESS)
-}    
+                        "_0")))
 ```
 
 # Make factors for everything
@@ -94,7 +146,7 @@ df_temp <-   df_temp |>
 
 ```{r}
 vroom::vroom_write(df_temp, file = paste0(data_dir_on_this_machine,
-                   glue("{placeFilename}_{year}_",
+                   glue("{placeTitleShort}_{year}_",
                         "stacked_",
                         "{categoryTitleShort}_{leverTitleShort}_",
                         "GraphClean",

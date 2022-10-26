@@ -1,0 +1,824 @@
+---
+title: "Open data file, preliminary cleaning"
+author: "atb"
+format: html
+---
+
+# Setup
+
+Define what scenario you want to clean here
+
+```{r scenario}
+placeTitleShort <- "sf"
+year <- "2018"
+categoryTitleShort <- "rh"
+# leverTitleShort <- "priceOnly"  # to save it
+# key_word1 <- "price" # necessary to include when searching
+# key_word2 <- "_" # necessary to include when searching
+# key_exclude_word1 <- "_fl" # necessary to exclude when searching. o/w put "NOTHIN"
+# key_exclude_word2 <- "ReadyForAnalysis" # necessary to exclude when searching
+# leverTitleShort <- "price_fleetsz_0p125"
+# leverTitleShort <- "price_fleetsz_0p25"
+# leverTitleShort <- "price_fleetsz_0p5"
+# leverTitleShort <- "price_fleetsz_2p25"
+```
+
+```{r library}
+library(readr)
+library(dplyr)
+library(forcats)
+library(glue)
+```
+
+```{r set_directory}
+source(paste0            (getwd(),    "/00__global_file_directories.R"))
+```
+
+# Get data from AWS
+
+```{r}
+        library(aws.s3)
+        library(dbplyr) # to get from aws
+        aws_prefix <- "deepDive/CleanData/SanFrancisco"
+        Sys.setenv("AWS_DEFAULT_REGION"="us-east-2", TZ='GMT')
+        awsDF <- get_bucket_df("beam-core-act", prefix = aws_prefix) # dataframe with all of the AWS files
+        dataframe_of_files <- awsDF
+```
+
+## List AWS files
+
+List the files for this city (either locally or on AWS), and the stacked ones, that are not the previous files
+
+```{r}
+data_file_list_paths <- dataframe_of_files |> select(Key)
+    data_file_list_paths <- data_file_list_paths |> 
+              filter(grepl(pattern = "*.tacked*.",x = Key, ignore.case = TRUE))
+    data_file_list_paths <- data_file_list_paths |> 
+              filter(grepl(pattern = paste0("*",placeTitleShort,"_","*."),
+                           x = Key, ignore.case = TRUE))
+# Not including old or previous
+        data_file_list_paths <- data_file_list_paths |> 
+          filter(!grepl(pattern = "*.old*",x = Key, ignore.case = TRUE)) |>
+          filter(!grepl(pattern = "*.previous*",x = Key, ignore.case = TRUE)) 
+print(data_file_list_paths)        
+```
+
+Of those, the smaller List of files for this key word
+
+```{r}
+        data_file_list_paths <- data_file_list_paths |> 
+          filter(grepl(pattern = paste0("*.",key_word1,""),x = Key, ignore.case = TRUE))
+        data_file_list_paths <- data_file_list_paths |> 
+          filter(grepl(pattern = paste0("*.",key_word2,""),x = Key, ignore.case = TRUE))
+        data_file_list_paths <- data_file_list_paths |> 
+          filter( !grepl(pattern = paste0("*.",key_exclude_word1,"*"),x = Key, ignore.case = TRUE))
+        data_file_list_paths <- data_file_list_paths |> 
+          filter( !grepl(pattern = paste0("*.",key_exclude_word2,"*"),x = Key, ignore.case = TRUE))
+        print(data_file_list_paths)
+#make it a character vector
+        data_file_list_tmp <- data_file_list_paths$Key
+        print(data_file_list_tmp)
+```
+
+## Open
+
+```{r}
+df_temp <- aws.s3::s3read_using(read_csv,
+                             object = data_file_list_tmp,
+                             bucket = "beam-core-act")
+```
+
+Save to csv , using vroom, which is basically readr
+
+```{r save_interim0}
+# | eval: false
+# | echo: false
+names(df_temp)
+    vroom::vroom_write(df_temp, file = paste0(data_dir_on_this_machine,
+                   glue("{placeTitleShort}_{year}_",
+                        "stacked_",
+                        "{categoryTitleShort}_{leverTitleShort}",
+                        "_0",
+                        ".csv")))
+# READ
+    # df_temp <- vroom::vroom(file = paste0(data_dir_on_this_machine,
+#                    glue("{placeFilename}_{year}_",
+#                         "stacked_",
+#                         "{categoryTitleShort}_{leverTitleShort}_",
+#                         "GraphClean",
+#                         "_1")) 
+# )
+    
+   # df_temp <- vroom::vroom(file =  "C:/Users/annik/tmpOnATBcomputer/data/sf_2018_stacked_rh_flsz_GraphClean_Subset_Mand_2.csv")
+```
+
+```{r}
+list_of_variables_before_subset <- as_tibble(names(df_temp))
+library(glue)
+readr::write_csv(list_of_variables_before_subset,
+                 file = paste0("list_vars_",
+                               Sys.Date(),
+                        ".csv"))
+```
+
+Read Intermediate
+
+# Subset - Vars
+
+```{r subset}
+df_temp <- df_temp |> 
+    select(c(
+IDMerged,
+tripIndex,
+scenario,
+contains("lever"),
+# Realized_INEXUS,
+Social_INEXUS,
+Potential_INEXUS_in_dollar,
+Realized_INEXUS_in_dollar,
+logsum_relative_to_baseline,
+door_to_door_time_relative_to_baseline,
+# income,
+# actPurpose,
+# logsum_trip_Potential_INEXUS,
+mode_choice_actual_BEAM,
+mandatoryCat,
+# actEndTime,
+# actEndType,
+# actStartTime,
+# actStartType,
+# cost_BEAM,
+# distance_bike,
+# distance_mode_choice,
+# distance_privateCar,
+# distance_ridehail,
+# distance_transit,
+# distance_travelling,
+# distance_walking,
+# duration_in_privateCar,
+# duration_in_ridehail,
+# duration_in_transit,
+# duration_on_bike,
+# duration_travelling,
+# duration_walking,
+# emissionBiodiesel,
+# emissionDiesel,
+# emissionElectricity,
+# emissionFood,
+# emissionGasoline,
+# emission_marginal,
+# fuelBiodiesel,
+# fuelDiesel,
+# fuelElectricity,
+# fuelFood,
+# fuelGasoline,
+# fuel_marginal,
+# fuel_not_Food,
+mode_choice_planned_BEAM,
+# numPassengers,
+# parkingType,
+# reason,
+# replanning_status,
+ride_hail_pooled,
+# transit_bus,
+# transit_cable_car,
+# transit_rail,
+# transit_subway,
+# transit_tram,
+# vehicleIds,
+# year,
+duration_door_to_door,
+waitTime,
+mode_choice_actual_5,
+mode_choice_actual_6,
+# trip_id,
+# person_id,
+# household_id,
+# tour_id,
+# primary_purpose_x,
+# trip_count,
+# purpose,
+trip_mode_AS_trips,
+# tour_type,
+# tour_category,
+# start,
+# end,
+duration,
+# tour_mode_AS_tours,
+# earning,
+# person_sex,
+# sex,
+# edu,
+# race,
+# work_at_home,
+# age,
+# value_of_time,
+# free_parking_at_work,
+# num_mand,
+# lcm_county_id,
+# tenure_mover,
+# hh_size,
+# tenure,
+# hh_cars,
+# hh_income,
+# hhsize,
+income_in_thousands,
+# median_value_of_time,
+# hh_value_of_time,
+# home_is_urban,
+# home_is_rural,
+auto_ownership,
+# DRIVEALONEFREE,
+# DRIVEALONEPAY,
+# SHARED2FREE,
+# SHARED2PAY,
+# SHARED3FREE,
+# SHARED3PAY,
+# WALK,
+# BIKE,
+# WALK_LOC,
+# WALK_LRF,
+# WALK_EXP,
+# WALK_HVY,
+# WALK_COM,
+# DRIVE_LOC,
+# DRIVE_LRF,
+# DRIVE_EXP,
+# DRIVE_HVY,
+# DRIVE_COM,
+# TAXI,
+# TNC_SINGLE,
+# TNC_SHARED,
+# income_quartiles,
+# MedianQuartiles,
+# alpha,
+socialCarbonCost,
+contains("ownCarYN")
+))
+```
+
+```{r order_variables}
+names(df_temp)
+df_temp <- df_temp |> 
+  relocate(IDMerged, tripIndex, 
+           scenario, lever, 
+           contains("lever_"),
+           contains("mode") ,
+           contains("inexus"), contains("logsum"),
+           contains("relative_to_"),
+           contains("duration")
+  )
+names(df_temp)
+```
+
+# Subset - obs
+
+```{r mandatory}
+## Mandatory trips only? Keep all for now
+```
+
+```{r}
+names(df_temp)
+```
+
+intermediate save
+
+```{r inter_save}
+vroom::vroom_write(df_temp, file = paste0(data_dir_on_this_machine,
+                   glue("{placeTitleShort}_{year}_",
+                        "stacked_",
+                        "{categoryTitleShort}_{leverTitleShort}_",
+                        "GraphClean_",
+                        "Subset_",
+                        "Mand",
+                        "_2",   
+                        ".csv"  )),
+                progress = TRUE)
+# readr::write_rds        ".rds")))
+```
+
+# Change Types (characters to factors)
+
+```{r characters_to_factors}
+df_temp <-   df_temp |> 
+  mutate(across(where(is.character), as_factor))
+```
+
+```{r}
+df_temp <- df_temp |> 
+    mutate(auto_ownership = as.integer(auto_ownership))
+levels(as.factor(df_temp$auto_ownership))
+```
+
+# Levers
+
+# WARNING - LEVERS
+
+Need to do this on a case by case basis
+
+```{r  }
+levels(as.factor(df_temp$lever_position))
+# df_temp <- df_temp |>
+#   mutate(lever_position_fleetsize = 1)
+# df_temp <- df_temp |>
+#   mutate(lever_position_price = lever_position)
+```
+
+```{r inter_save_6a}
+# | eval: false
+# | echo: false
+names(df_temp)
+write_rds(df_temp, file =paste0(data_dir_on_this_machine,
+                   glue("{placeTitleShort}_{year}_stacked_{categoryTitleShort}_{leverTitleShort}_6a.rds")))
+```
+
+# New vars
+
+```{r}
+# fx_incomeVars()
+# fx_car_ownership()
+# fx_mode_choice()
+```
+
+```{r mode_Planned}
+ungroup(df_temp)
+df_temp <- df_temp  %>%
+  mutate(
+    mode_5planned = 
+      case_when(
+        mode_choice_planned_BEAM == "bike"              ~ "Walk or Bike",
+        mode_choice_planned_BEAM == "walk"              ~ "Walk or Bike",
+        mode_choice_planned_BEAM == "ride_hail"         ~ "Ride Hail Solo",
+        mode_choice_planned_BEAM == "ride_hail_pooled"  ~ "Ride Hail Pooled",
+        mode_choice_planned_BEAM == "ride_hail_transit" ~ "Transit",
+        mode_choice_planned_BEAM == "drive_transit"     ~ "Transit",
+        mode_choice_planned_BEAM == "bike_transit"      ~ "Transit",
+        mode_choice_planned_BEAM == "walk_transit"      ~ "Transit",
+        mode_choice_planned_BEAM == "transit"           ~ "Transit",
+        mode_choice_planned_BEAM == "car"                ~ "Car",
+        mode_choice_planned_BEAM == "car_hov2"           ~ "Car",
+        mode_choice_planned_BEAM == "car_hov3"           ~ "Car",
+        mode_choice_planned_BEAM == "hov2_teleportation" ~ "Car",
+        mode_choice_planned_BEAM == "hov3_teleportation" ~ "Car",
+        TRUE ~ as.character(mode_choice_planned_BEAM)
+      ))
+# df_temp |> count(mode_5planned)
+```
+
+```{r mode_actual}
+ungroup(df_temp)
+df_temp <- df_temp  %>%
+  mutate(
+    mode_5actual = 
+      case_when(
+        mode_choice_actual_BEAM == "ride_hail_pooled" ~ "Ride Hail Pooled",
+        mode_choice_actual_BEAM == "ride_hail_transit" ~ "Transit",
+        mode_choice_actual_BEAM == "ride_hail" ~ "Ride Hail Not-Pooled",
+        mode_choice_actual_BEAM == "bike"              ~ "Walk or Bike",
+        mode_choice_actual_BEAM == "walk"              ~ "Walk or Bike",
+        mode_choice_actual_BEAM == "ride_hail"         ~ "Ride Hail Solo",
+        mode_choice_actual_BEAM == "ride_hail_pooled"  ~ "Ride Hail Pooled",
+        mode_choice_actual_BEAM == "ride_hail_transit" ~ "Transit",
+        mode_choice_actual_BEAM == "drive_transit"     ~ "Transit",
+        mode_choice_actual_BEAM == "bike_transit"      ~ "Transit",
+        mode_choice_actual_BEAM == "walk_transit"      ~ "Transit",
+        mode_choice_actual_BEAM == "transit"           ~ "Transit",
+        mode_choice_actual_BEAM == "car"                ~ "Car",
+        mode_choice_actual_BEAM == "car_hov2"           ~ "Car",
+        mode_choice_actual_BEAM == "car_hov3"           ~ "Car",
+        mode_choice_actual_BEAM == "hov2_teleportation" ~ "Car",
+        mode_choice_actual_BEAM == "hov3_teleportation" ~ "Car",
+        TRUE ~ as.character(mode_choice_actual_BEAM)
+      ))
+```
+
+```{r mode_base}
+df_temp <- df_temp |>
+  group_by(IDMerged, tripIndex ) |>
+  mutate(mode_5plannedAtBaseline = 
+           first(mode_5planned[lever_position_price==1 &
+                                lever_position_fleetsize==1]))
+```
+
+```{r misc fixes}
+# df_temp <- df_temp |>
+#   rename(mode_5planned = mode_planned_5) 
+df_temp <- df_temp |> 
+  select(!c(
+    # mode_rh,
+    # mode_4categories,mode_5catPooled,
+            # mode_choice_actual_5,mode_choice_actual_6,
+    # income10levels,l_inc_HiLo10,ownCarYN,
+    # mode_5planned,
+    # income100levels,
+    # ride_hail_pooled
+    # socialCarbonCost,
+    # mode_planned_at_baseline,
+    # not_full_set,
+    # mode_5plannedAtBaseline,
+    # scenario, lever
+    dropthese
+    
+    # contains("relative")
+   # lever_position_priceFactor, lever_position_fleetsizeFactor
+        ## lever_position,
+            ))
+ 
+# df_temp <- df_temp |>
+#   rename(mode_5planned = mode_planned_5)
+
+```
+
+```{r order}
+names(df_temp)
+df_temp <- df_temp |> 
+  relocate(contains("scenario"), 
+           contains("lever"), 
+           IDMerged, tripIndex, 
+           contains("mandatoryCat"),
+           contains("mode") ,
+           contains("inexus"), contains("logsum"),
+           contains("duration"), contains("time"),
+           contains("relative_to_"),
+           contains("income"),
+           contains("auto"), contains("car")
+           
+  )
+names(df_temp)
+```
+
+```{r save}
+readr::write_rds(df_temp, file = paste0(data_dir_on_this_machine,
+                                          
+                   glue("{placeTitleShort}_{year}_",
+                        "stacked_",
+                        "{categoryTitleShort}_{leverTitleShort}_",
+                        "Subset_",
+                        "_8",   
+                        ".rds"  )))
+```
+
+## label missings?
+
+```{r}
+# sum(is.na(df_temp$door_to_door_time_relative_to_baseline))
+# sum(is.na(df_temp$logsum_relative_to_baseline))
+# sum(is.na(df_temp$mode_planned_at_baseline))
+# # count(df_temp, mode_planned_5)
+# df_temp |> 
+#   group_by(lever_position_fleetsize, lever_position_price) |> 
+#   summarise(
+#     # across(where(is.numeric),~mean(.x)),
+#     across(contains("nexus"),~mean(.x),.names = "{.col}_avg"),
+#     # across(where(is.factor ),~n_distinct(.x),.names = "{.col}_Ndistinct")),
+#     # na1 = sum(is.na(lever_position_fleetsize)),
+#     # na2 = sum(is.na(lever_position_price)),
+#     across(contains("relative") ,~sum(is.na(.x)),.names = "{.col}_Nnas"),
+#     across(contains("lever")    ,~sum(is.na(.x)),.names = "{.col}_Nnas"),
+#     across(contains("mode")     ,~sum(is.na(.x)),.names = "{.col}_Nnas"),
+#     count = n())
+# ungroup(df_temp)
+```
+
+```{r}
+df_temp <- df_temp |>
+  mutate(not_full_set = is.na(mode_planned_at_baseline))
+sum(is.na(df_temp$mode_planned_at_baseline))
+sum(df_temp$not_full_set)
+```
+
+# Save
+
+```{r }
+df_temp <- ungroup(df_temp)
+readr::write_rds(df_temp, file = paste0(data_dir_on_this_machine,
+                                        
+                        "ReadyForAnalysis/",
+                                          
+                   glue("{placeTitleShort}_{year}_",
+                        "stacked_",
+                        "{categoryTitleShort}_{leverTitleShort}_",
+                        "Subset_",
+                        "_77",   
+                        ".rds"  )))
+```
+
+Save to AWS
+
+```{r}
+# Sys.setenv("AWS_ACCESS_KEY_ID" = "AKIAU6K4GPPNFZFZNJWD",
+#            "AWS_SECRET_ACCESS_KEY" = "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",
+#            "AWS_DEFAULT_REGION" = "us-east-1"
+#            # ,
+#            # "AWS_SESSION_TOKEN" = "mytoken"
+#            )
+# df_temp <- aws.s3::s3saveRDS(df_temp,
+#                              bucket = "beam-core-act",
+#                              object = paste0(
+#                    glue("deepDive/CleanData/SanFrancisco/Stacked/",
+#                         "ReadyForAnalysis/",
+#                      "{placeTitleShort}_{year}_",
+#                         "{categoryTitleShort}_{leverTitleShort}_",
+#                         "Short_",
+#                         "Mand",
+#                         ".rds"  ))
+                   # )
+```
+
+See if it's there
+
+```{r}
+# https://s3.console.aws.amazon.com/s3/buckets/beam-core-act?prefix=deepDive%2FCleanData%2FSanFrancisco%2FStacked%2F&region=us-east-2
+                          
+```
+
+# .
+
+# Only for merge
+
+Append together the price-fleetsize Reopen and Rowbind (append, stacked) and save
+
+```{r stack}
+library(purrr)
+library(dplyr)
+library(glue)
+library(readr)
+source(paste0            (getwd(),    "/00__global_file_directories.R"))
+placeTitleShort <- "sf"
+year <- "2018"
+categoryTitleShort <- "rh"
+
+tl <- tibble::lst(
+  "price_fleetsz_0p125",
+  "price_fleetsz_0p25",
+  "price_fleetsz_0p5",
+  "price_fleetsz_2p25",
+           "flsz"
+  )
+df_temp <- tl %>%
+  map_dfr(~read_rds(file = paste0(data_dir_on_this_machine,
+                                      "ReadyForAnalysis/",
+
+                   glue("{placeTitleShort}_{year}_",
+                        "stacked_",
+                        "{categoryTitleShort}_",
+                        .x,
+                        "_Subset_",
+                        "_77",
+                        ".rds"  ))),.id="originalDataset")
+df_temp <- df_temp |> 
+  mutate(originalDataset = as_factor(originalDataset))
+```
+
+```{r duplicates remove}
+ungroup(df_temp)
+df_temp <- df_temp |> 
+  distinct(across(!contains("originalDataset")),  .keep_all = TRUE)
+df_temp <- df_temp |> 
+  relocate(contains("originalDataset"))
+```
+
+```{r remove not full sets}
+usual <- df_temp |> 
+  group_by(IDMerged,tripIndex) |> 
+  summarise(nobs = n(),
+            sumleverprice = sum(lever_position_price),
+            sumleversize  = sum(lever_position_fleetsize),
+            .groups = "drop")
+usual |> 
+  group_by(nobs, sumleverprice, sumleversize) |> 
+  summarise(mostly = n(),
+            .groups = "drop")
+
+df_temp <- df_temp |> 
+  group_by(IDMerged,tripIndex) |> 
+  mutate(nobsPerPerson = n())
+
+df_temp <- df_temp |> 
+  filter(nobsPerPerson==18)
+df_temp <- df_temp |> 
+  group_by(IDMerged,tripIndex) |> 
+  filter(sum(lever_position_fleetsize)==20.125)
+df_temp <- df_temp |> 
+  select(!c(nobsPerPerson))
+
+
+# ntile(income_in_thousands,100)
+```
+
+```{r SAVE merged}
+leverTitleShort <- "priceXfleetsz"
+ungroup(df_temp)
+readr::write_rds(df_temp,
+                 file = paste0(data_dir_on_this_machine,
+                             "ReadyForAnalysis/", 
+                             glue("{placeTitleShort}_{year}_",                        "stacked_",
+                                  "{categoryTitleShort}_{leverTitleShort}_",
+                                  "Subset_",
+                                  "_84",
+                                  ".rds"  )))
+```
+
+# .
+
+# Balance
+
+```{r open merged}
+source(paste0 (getwd(),    "/00__global_file_directories.R"))
+library(purrr)
+library(dplyr)
+library(glue)
+library(readr)
+library(forcats)
+placeTitleShort <- "sf"
+year <- "2018"
+leverTitleShort <- "priceXfleetsz"
+categoryTitleShort <- "rh"
+
+df_temp <- readr::read_rds( file = paste0(data_dir_on_this_machine,
+                             "ReadyForAnalysis/",
+                             glue("{placeTitleShort}_{year}_",                        "stacked_",
+                                  "{categoryTitleShort}_{leverTitleShort}_",
+                                  "Subset_",
+                                  "_84",
+                                  ".rds"  )))
+```
+
+```{r mode_at_baseline}
+ungroup(df_temp)
+df_temp <- df_temp |>
+  group_by(IDMerged, tripIndex ) |>
+  mutate(mode_5plannedAtBaseline = 
+           first(mode_5planned[lever_position_price==1 &
+                                lever_position_fleetsize==1]))
+df_temp <- df_temp |>
+  group_by(IDMerged, tripIndex ) |>
+  mutate(PotInex_atBaseline = 
+           mean(Potential_INEXUS_in_dollar[lever_position_price==1 &
+                                lever_position_fleetsize==1]))
+df_temp <- df_temp |>
+  group_by(IDMerged, tripIndex ) |>
+  mutate(reaInex_atBaseline = 
+           mean(Realized_INEXUS_in_dollar[lever_position_price==1 &
+                                lever_position_fleetsize==1]))
+```
+
+```{r drop non-balanced}
+ungroup(df_temp)
+readr::write_rds(df_temp,
+                 file = paste0(data_dir_on_this_machine,
+                             "ReadyForAnalysis/", 
+                             glue("{placeTitleShort}_{year}_",                        "stacked_",
+                                  "{categoryTitleShort}_{leverTitleShort}_",
+                                  "Subset_",
+                                  "_85",
+                                  ".rds"  )))
+
+```
+
+```{r summary}
+problems  <-   df_temp |> 
+  group_by(lever_position_fleetsize,lever_position_price,originalDataset) |>
+    # income100levels, ownCarYN) |> 
+  summarise(
+          across(where(is.numeric),~mean(.x),.names = "{.col}_avg"),
+            across(where(is.factor ),~n_distinct(.x),.names = "{.col}_Ndis"),
+            naPlannedBase = sum(is.na(mode_5plannedAtBaseline)),
+            count = n()
+            , .groups = "drop")
+problems
+```
+
+# ...
+
+# Make Small Dataset
+
+```{r open balanced}
+source(paste0 (getwd(),    "/00__global_file_directories.R"))
+library(purrr)
+library(dplyr)
+library(glue)
+library(readr)
+library(forcats)
+placeTitleShort <- "sf"
+year <- "2018"
+leverTitleShort <- "priceXfleetsz"
+categoryTitleShort <- "rh"
+
+df_temp <- readr::read_rds( file = paste0(data_dir_on_this_machine,
+                             "ReadyForAnalysis/",
+                             glue("{placeTitleShort}_{year}_",                        "stacked_",
+                                  "{categoryTitleShort}_{leverTitleShort}_",
+                                  "Subset_",
+                                  "_85",
+                                  ".rds"  )))
+```
+
+```{r}
+df_temp <- df_temp |> 
+    mutate(income100levels = ntile(income_in_thousands,100))
+df_temp <- df_temp |> 
+    mutate(PotAtBase100levels = ntile(PotInex_atBaseline,100))
+df_temp <- df_temp |> 
+    mutate(RealAtBase100levels = ntile(reaInex_atBaseline,100))
+df_temp <- df_temp |> 
+    mutate(duration100levels = ntile(duration,100))
+df_temp <- df_temp |> 
+    mutate(durationdtd100levels = ntile(duration_door_to_door,100))
+
+placeTitleShort <- "sf"
+year <- "2018"
+leverTitleShort <- "priceXfleetsz"
+categoryTitleShort <- "rh"
+
+readr::write_rds(df_small, file = paste0(data_dir_on_this_machine,
+                             "ReadyForAnalysis/",
+                             glue("{placeTitleShort}_{year}_",                        "stacked_",
+                                  "{categoryTitleShort}_{leverTitleShort}_",
+                                  "Small",
+                                  "_86",
+                                  ".rds"  )))
+
+```
+
+```{r}
+ungroup(df_temp)
+df_small <- df_temp |>
+  group_by(lever_position_fleetsize,lever_position_price,originalDataset,
+           mandatoryCat,
+           mode_5actual,mode_5planned,mode_5plannedAtBaseline,
+           auto_ownership,income100levels,PotAtBase100levels,
+           RealAtBase100levels,duration100levels,durationdtd100levels) |>
+  summarise(
+          across(where(is.numeric),~mean(.x),.names = "{.col}_avg"),
+            across(where(is.factor ),~n_distinct(.x),.names = "{.col}_Ndis"),    
+    NpersonTripObs = n(),
+             .groups = "drop")
+```
+
+```{r examine}
+df_temp <- ungroup(df_temp)
+df_tiny <- df_temp |>
+  group_by(lever_position_fleetsize,
+           ntile(duration_door_to_door,4)
+           # lever_position_price,
+           # originalDataset,
+           # mandatoryCat,
+           # mode_5actual,
+           # mode_5planned,
+           # mode_5plannedAtBaseline,
+           # auto_ownership
+           # ,income100levels
+           ) |>
+  summarise(
+          across(where(is.numeric),~mean(.x),.names = "{.col}_avg"),
+            across(where(is.factor ),~n_distinct(.x),.names = "{.col}_Ndis"),
+    NpersonTripObs = n(),
+             .groups = "drop")
+```
+
+```{r}
+ungroup(df_temp)
+df_tiny <- df_temp |>
+  group_by(lever_position_fleetsize,lever_position_price,originalDataset,
+           mandatoryCat,
+           mode_5actual,mode_5planned,mode_5plannedAtBaseline,
+           auto_ownership
+           ,income100levels
+           ) |>
+  summarise(
+          across(where(is.numeric),~mean(.x),.names = "{.col}_avg"),
+            across(where(is.factor ),~n_distinct(.x),.names = "{.col}_Ndis"),    
+    NpersonTripObs = n(),
+             .groups = "drop")
+df_tiny
+
+leverTitleShort <- "priceXfleetsz"
+ungroup(df_temp)
+readr::write_rds(df_temp,
+                 file = paste0(data_dir_on_this_machine,
+                             "ReadyForAnalysis/", 
+                             glue("{placeTitleShort}_{year}_",                        "stacked_",
+                                  "{categoryTitleShort}_{leverTitleShort}_",
+                                  "TINY",
+                                  "_1",
+                                  ".rds"  )))
+
+
+```
+
+Notes
+
+Read from EC2
+
+https://vroom.r-lib.org/articles/vroom.html#reading-remote-files
+
+https://github.com/tidyverse/vroom/tree/main/inst/bench
+
+https://github.com/tidyverse/vroom/tree/main/inst/bench
+
+VROOM_SHOW_PROGRESS
+
+OH USE THIS REALLY
+
+https://usethis.r-lib.org/articles/git-credentials.html

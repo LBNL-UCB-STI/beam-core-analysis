@@ -55,30 +55,31 @@ editor_options:
 
 # BEGIN STARTUP BOILERPLATE. DO NOT DELETE.
 
-```{r }
-TEMP_PARAMS <- params
-save(TEMP_PARAMS, file = "TEMP_PARAMS.RData")
-```
+Libraries and functions, and define a directory if one exists on this machine. Open the csv file that lists all of the titles and colors etc
 
-```{r }
-rmarkdown::render(paste0(getwd(),"/100_MasterSetupStartEverythingAfterRunningThis.qmd"))
-html(contentsOfData,  levelType='table' )
-print(descr |> filter(type == "yvar"))
+```{r}
+source(paste0            (getwd(),    "/00__global_file_directories.R"))
+source(paste0            (getwd(),    "/02__SetupLibrary.R"))
+source(paste0            (getwd(),    "/30__MisceFunctions.R"))
+quarto::quarto_render(paste0(getwd(), "/40__TableFunctions.qmd"))
+quarto::quarto_render(paste0(getwd(), "/50__GraphFunctions.qmd"))
+description_CSV <- read_csv(file =     "03__MasterTitlesNamesColorsEtc.csv")
+          descr <- fx_proper_Names()
+## Open data
+df_temp <- fx_open_data()
+#Description
+html(contents(df_temp),  levelType='table')
 print(glue("
                Scenario: {categoryTitleLong} ({categoryTitleShort}),
                   lever: {leverTitleLong} ({leverTitleShort}),
-           lever Levels: {leverlevelsStr}"))
+           lever Levels: {leverlevelsStr}
+          Het variables: {listHetnames}
+            Y variables: {listYnames}"))
 ```
 
-### ----END STARTUP
+# ----END STARTUP
 
-# Now start graphs
-
-# Density curves
-
-## With 1 y_var
-
-The titles overlap! Gah.
+# Now start doing analysis
 
 ```{r}
 # | echo: false
@@ -91,4 +92,3 @@ g1meta <-
                                      saveGraph = TRUE     )))
 print(g1meta)
 ```
-

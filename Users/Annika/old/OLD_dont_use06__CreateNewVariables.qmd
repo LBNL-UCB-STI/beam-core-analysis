@@ -22,7 +22,7 @@ print(paste("defining file location ",figures_folder))
 library(vroom) # progress = TRUE
 library(glue)
 df_temp <- vroom::vroom(file = paste0(data_dir_on_this_machine,
-                   glue("{placeFilename}_{year}_",
+                   glue("{placeTitleShort}_{year}_",
                         "stacked_",
                         "{categoryTitleShort}_{leverTitleShort}_",
                         "GraphClean_",
@@ -36,11 +36,17 @@ df_temp <- vroom::vroom(file = paste0(data_dir_on_this_machine,
 ```{r lever_as_number_factor}
 #| echo: fenced
 df_temp <- df_temp |>
-  mutate(lever_position =
-           case_when(lever_position == "base" ~ 1,
-                     TRUE ~ lever_position))
+  mutate(lever_position_fleetsize =
+           case_when(lever_position_fleetsize == "base" ~ 1,
+                     TRUE ~ lever_position_fleetsize))
 df_temp <- df_temp |>
-  mutate(lever_positionFactor =as_factor(lever_position)) 
+  mutate(lever_position_price =
+           case_when(lever_position_price == "base" ~ 1,
+                     TRUE ~ lever_position_price))
+df_temp <- df_temp |>
+    mutate(lever_position_priceFactor =as_factor(lever_position_price)) |> 
+    mutate(lever_position_fleetsizeFactor =as_factor(lever_position_fleetsize)) 
+
   # mutate(lever_positionFactor = NULL)
 ```
 
@@ -74,7 +80,7 @@ df_temp <-   df_temp |>
 # | echo: false
 names(df_temp)
 write_rds(df_temp, file =paste0(data_dir_on_this_machine,
-                   glue("{placeFilename}_{year}_stacked_{categoryTitleShort}_{leverTitleShort}_6a.rds")))
+                   glue("{placeTitleShort}_{year}_stacked_{categoryTitleShort}_{leverTitleShort}_6a.rds")))
 ```
 
 <!-- # ```{r keep_only} -->
@@ -207,7 +213,7 @@ write_rds(df_temp, file =paste0(data_dir_on_this_machine,
 
 <!-- write_rds(df_stacked_from_list, file =paste0(data_dir_on_this_machine, -->
 
-<!--                    glue("{placeFilename}_{year}_stacked_{categoryTitleShort}_{leverTitleShort}_3.rds"))) -->
+<!--                    glue("{placeTitleShort}_{year}_stacked_{categoryTitleShort}_{leverTitleShort}_3.rds"))) -->
 
 <!-- ``` -->
 
@@ -232,15 +238,15 @@ df_temp <- df_temp |>
            )))
 
 
-df_temp <- df_temp  %>%
-    mutate(incomeXcar = as_factor(
-      case_when(
-        auto_ownership ==0 &  income10levels == 1  ~ "Bottom 10%, no car ",
-        auto_ownership ==0 &  income10levels == 10 ~ "Top 10%, no car",
-        auto_ownership ==1 &  income10levels == 1  ~ "Bottom 10%, owns car",
-        auto_ownership ==1 &  income10levels == 10 ~ "Top 10%, owns car"
-        # TRUE ~ NA
-        )))
+# df_temp <- df_temp  %>%
+#     mutate(incomeXcar = as_factor(
+#       case_when(
+#         auto_ownership ==0 &  income10levels == 1  ~ "Bottom 10%, no car ",
+#         auto_ownership ==0 &  income10levels == 10 ~ "Top 10%, no car",
+#         auto_ownership ==1 &  income10levels == 1  ~ "Bottom 10%, owns car",
+#         auto_ownership ==1 &  income10levels == 10 ~ "Top 10%, owns car"
+#         # TRUE ~ NA
+#         )))
 ```
 
 ```{r mode_choice}
@@ -332,14 +338,14 @@ df_temp <- df_temp |>
 # Save as RDS
 readr::write_rds(df_temp, file = paste0(data_dir_on_this_machine,
                                           
-                   glue("{placeFilename}_{year}_",
+                   glue("{placeTitleShort}_{year}_",
                         "stacked_",
                         "{categoryTitleShort}_{leverTitleShort}_",
                         "GraphClean_",
                         "Subset_",
                         "Short_",
                         "Mand",
-                        "_7",   
+                        "_8",   
                         ".rds"  )))
 ```
 
@@ -350,7 +356,7 @@ readr::write_rds(df_temp, file = paste0(data_dir_on_this_machine,
 ```{r}
   # df_temp <- read_rds(file = paste0(data_dir_on_this_machine,
   #                                         
-  #                  glue("{placeFilename}_{year}_",
+  #                  glue("{placeTitleShort}_{year}_",
   #                       "stacked_",
   #                       "{categoryTitleShort}_{leverTitleShort}_",
   #                       "GraphClean_",
@@ -371,13 +377,14 @@ filter out all trips that don't have a full set of levers
 names(df_temp)
 # df_temp |>  count(mode_planned_5)
 
-df_temp <- df_temp |> 
-  group_by(IDMerged, tripIndex ) |>
-  mutate(mode_planned_at_baseline = first(mode_planned_5[lever_position==1]))
-ungroup(df_temp)
-
-df_temp <- df_temp |> 
-  filter(!is.na(mode_planned_at_baseline)) 
+# df_temp <- df_temp |> 
+#   group_by(IDMerged, tripIndex ) |>
+#   mutate(mode_planned_at_baseline = first(mode_planned_5[lever_position_price==1 &
+#                                                            lever_position_fleetsize==1]))
+# ungroup(df_temp)
+# 
+# df_temp <- df_temp |> 
+#   filter(!is.na(mode_planned_at_baseline)) 
 ```
 
 #### save again
@@ -410,14 +417,45 @@ names(df_temp)
 ```{r save_7}
 # vroom::vroom_write(df_temp, file = paste0(data_dir_on_this_machine,
 readr::write_rds(df_temp, file = paste0(data_dir_on_this_machine,
+                                        
+                        "ReadyForAnalysis/",
                                           
-                   glue("{placeFilename}_{year}_",
+                   glue("{placeTitleShort}_{year}_",
                         "stacked_",
                         "{categoryTitleShort}_{leverTitleShort}_",
                         "GraphClean_",
                         "Subset_",
                         "Short_",
                         "Mand",
-                        "_71",   
+                        "_72",   
                         ".rds"  )))
+```
+
+## Save to AWS
+
+```{r}
+# Sys.setenv("AWS_ACCESS_KEY_ID" = "AKIAU6K4GPPNFZFZNJWD",
+#            "AWS_SECRET_ACCESS_KEY" = "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",
+#            "AWS_DEFAULT_REGION" = "us-east-1"
+#            # ,
+#            # "AWS_SESSION_TOKEN" = "mytoken"
+#            )
+# df_temp <- aws.s3::s3saveRDS(df_temp,
+#                              bucket = "beam-core-act",
+#                              object = paste0(
+#                    glue("deepDive/CleanData/SanFrancisco/Stacked/",
+#                         "ReadyForAnalysis/",
+#                      "{placeTitleShort}_{year}_",
+#                         "{categoryTitleShort}_{leverTitleShort}_",
+#                         "Short_",
+#                         "Mand",
+#                         ".rds"  ))
+                   # )
+```
+
+# See if it's there
+
+```{r}
+# https://s3.console.aws.amazon.com/s3/buckets/beam-core-act?prefix=deepDive%2FCleanData%2FSanFrancisco%2FStacked%2F&region=us-east-2
+                          
 ```
