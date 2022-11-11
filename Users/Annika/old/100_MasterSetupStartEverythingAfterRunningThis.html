@@ -426,24 +426,24 @@ print(paste(&quot;opening source file &quot;, t))</code></pre>
   |                                                                            
   |                                                                      |   0%
   |                                                                            
-  |....                                                                  |   6%
+  |...                                                                   |   4%
 ##   ordinary text without R code
 ## 
 ## 
   |                                                                            
-  |........                                                              |  12%
+  |......                                                                |   9%
 ## label: fx_g0_titles (with options) 
 ## List of 1
 ##  $ echo: logi TRUE
 ## 
 ## 
   |                                                                            
-  |............                                                          |  18%
+  |.........                                                             |  13%
 ##   ordinary text without R code
 ## 
 ## 
   |                                                                            
-  |................                                                      |  24%
+  |............                                                          |  17%
 ## label: TEST_a (with options) 
 ## List of 2
 ##  $ eval   : logi FALSE
@@ -451,21 +451,21 @@ print(paste(&quot;opening source file &quot;, t))</code></pre>
 ## 
 ## 
   |                                                                            
-  |.....................                                                 |  29%
+  |...............                                                       |  22%
 ##   ordinary text without R code
 ## 
 ## 
   |                                                                            
-  |.........................                                             |  35%
+  |..................                                                    |  26%
 ## label: fx_Total
 ## 
   |                                                                            
-  |.............................                                         |  41%
+  |.....................                                                 |  30%
 ##   ordinary text without R code
 ## 
 ## 
   |                                                                            
-  |.................................                                     |  47%
+  |........................                                              |  35%
 ## label: TEST_b (with options) 
 ## List of 2
 ##  $ eval   : logi FALSE
@@ -473,39 +473,39 @@ print(paste(&quot;opening source file &quot;, t))</code></pre>
 ## 
 ## 
   |                                                                            
-  |.....................................                                 |  53%
+  |...........................                                           |  39%
 ##   ordinary text without R code
 ## 
 ## 
   |                                                                            
-  |.........................................                             |  59%
+  |..............................                                        |  43%
 ## label: fx_het_dist
 ## 
   |                                                                            
-  |.............................................                         |  65%
+  |.................................                                     |  48%
 ##   ordinary text without R code
 ## 
 ## 
   |                                                                            
-  |.................................................                     |  71%
+  |.....................................                                 |  52%
 ## label: c
 ## 
   |                                                                            
-  |......................................................                |  76%
+  |........................................                              |  57%
 ##   ordinary text without R code
 ## 
 ## 
   |                                                                            
-  |..........................................................            |  82%
+  |...........................................                           |  61%
 ## label: fx_META_graph_choose
 ## 
   |                                                                            
-  |..............................................................        |  88%
+  |..............................................                        |  65%
 ##   ordinary text without R code
 ## 
 ## 
   |                                                                            
-  |..................................................................    |  94%
+  |.................................................                     |  70%
 ## label: d (with options) 
 ## List of 2
 ##  $ eval   : logi FALSE
@@ -513,29 +513,20 @@ print(paste(&quot;opening source file &quot;, t))</code></pre>
 ## 
 ## 
   |                                                                            
-  |......................................................................| 100%
+  |....................................................                  |  74%
 ##   ordinary text without R code
 ## 
 ## 
-## [31moutput file: 50__GraphFunctions.knit.md
-## 
-## [39m[1mpandoc [22m
-##   to: html
-##   output-file: 50__GraphFunctions.html
-##   standalone: true
-##   section-divs: true
-##   html-math-method: mathjax
-##   wrap: none
-##   default-image-extension: png
-##   
-## [1mmetadata[22m
-##   document-css: false
-##   link-citations: true
-##   date-format: long
-##   lang: en
-##   title: Graph Functions
-##   
-## Output created: 50__GraphFunctions.html</code></pre>
+  |                                                                            
+  |.......................................................               |  78%
+## label: area
+## [31mQuitting from lines 199-210 (50__GraphFunctions.qmd) 
+## [39m[31mError in count(rename(group_by(df_temp, lever_position), `Lever Position` = lever_position),  : 
+##   could not find function &quot;count&quot;
+## Calls: .main ... withVisible -&gt; eval_with_user_handlers -&gt; eval -&gt; eval
+## [39m
+## [31mExecution halted
+## [39m</code></pre>
 </div>
 <div id="parameters" class="section level2">
 <h2>Parameters</h2>
@@ -934,6 +925,7 @@ glimpse(params100)</code></pre>
 <h3>List the files we want</h3>
 <p>First, decide if we want AWS or local. Then make a List of all files
 – either from AWS or locally, then (put into a dataset):</p>
+<pre class="r"><code>useAWStoReadWrite &lt;-TRUE</code></pre>
 <pre class="r"><code>if(params100$useAWStoReadWrite==TRUE) {
     library(aws.s3)
     library(dbplyr) # to get from aws
@@ -997,11 +989,13 @@ there is one: wantSUBSETofTheVARSinsteadofAll</p>
           filter(!grepl(pattern = &quot;*.previous*&quot;,x = Key, ignore.case = TRUE))
          
         data_file_list_paths_CLEANED_SUBSET_MAND &lt;- data_file_list_paths_CLEANED_SUBSET_MAND$Key
-        print(data_file_list_paths_CLEANED_SUBSET)
-# print(&quot;cleaned,man)</code></pre>
+        print(data_file_list_paths_CLEANED_SUBSET_MAND)</code></pre>
+<pre><code>## [1] &quot;sf_2018_stacked_rh_flsz_GraphClean_Subset_Short_Mand_71.rds&quot;</code></pre>
+<pre class="r"><code># print(&quot;cleaned,man)</code></pre>
 </div>
-<div id="open" class="section level3">
-<h3>Open</h3>
+</div>
+<div id="open" class="section level2">
+<h2>Open</h2>
 <p>Do we have to re-run the raw data? FALSE Do we have to re-run the
 subset data? FALSE</p>
 <pre class="r"><code>if(params100$RERUNopenCleanAWSdataYN==TRUE) {
@@ -1034,6 +1028,8 @@ if(params100$useAWStoReadWrite==TRUE) {
 ## [1] &quot;Using local data&quot;
 print(&quot;opened&quot;)
 ## [1] &quot;opened&quot;</code></pre>
+<div id="section" class="section level3">
+<h3>.</h3>
 </div>
 </div>
 <div id="describe-scenario" class="section level2">
@@ -1124,8 +1120,8 @@ print(glue(&quot; Scenario: {categoryTitleLong} ({categoryTitleShort}),
 <pre><code>## Scenario: Ride Hail (rh), 
 ##        lever: Fleet Size (flsz),
 ## lever Levels: 0.125  0.25  0.5  1  1.75  2.25  3</code></pre>
-<div id="fix-type_title-to-match-whatever" class="section level3">
-<h3>FIX type_title to match whatever</h3>
+<div id="fix-type_title-to-match-whatever" class="section level4">
+<h4>FIX type_title to match whatever</h4>
 </div>
 </div>
 <div id="modify-master-output" class="section level2">
@@ -1141,80 +1137,103 @@ print(glue(&quot; Scenario: {categoryTitleLong} ({categoryTitleShort}),
 <pre class="r"><code># knitr::kable(df_temp |&gt; 
 #                count(mandatoryCat))</code></pre>
 </div>
-<div id="setup-graphs" class="section level1">
-<h1>Setup Graphs</h1>
+<div id="summary-tables" class="section level2">
+<h2>Summary Tables</h2>
+<pre class="r"><code>df_summary &lt;- df_temp |&gt;
+  group_by(lever_position) |&gt;
+  rename(`Lever Position` = lever_position) |&gt;
+  count(mode_5catPooled)
+df_summary &lt;- df_summary |&gt;
+  mutate(`Total Trips` = sum(n)) |&gt;
+  mutate(`Percent of Total Trips` = n /`Total Trips` ,
+         n = NULL)
+df_summary1 &lt;- df_summary |&gt;
+  pivot_wider(names_from = mode_5catPooled, values_from = `Percent of Total Trips`)
+print(df_summary1)</code></pre>
+<pre class="r"><code># df_summary2 &lt;- df_temp |&gt; 
+#   group_by(lever_position) |&gt; 
+#   rename(`Lever Position` = lever_position) |&gt; 
+#   count(mode_planned_5, mode_planned_at_baseline)
+# df_summary2 &lt;- df_summary2 |&gt; 
+#   mutate(`Total Trips` = sum(n)) |&gt; 
+#   mutate(`Percent of Total Trips` = n /`Total Trips` ,
+#          n = NULL)
+# print(df_summary2)</code></pre>
+</div>
+<div id="setup-graphs" class="section level2">
+<h2>Setup Graphs</h2>
 <ul>
 <li>for Graphs</li>
 </ul>
 <!-- ::: panel-tabset -->
-<div id="temporary" class="section level2">
-<h2>Temporary</h2>
-<pre class="r"><code>scaleNexusLow &lt;- min(median_hilow(df_temp$Potential_INEXUS_in_dollar,
-                      conf.int = .75)[[&quot;ymin&quot;]],
-                     median_hilow(df_temp$Realized_INEXUS_in_dollar,
-                      conf.int = .75)[[&quot;ymin&quot;]],
-                     median_hilow(df_temp$Social_INEXUS,
-                      conf.int = .75)[[&quot;ymin&quot;]])
-
-scaleNexusHigh &lt;- max(median_hilow(df_temp$Potential_INEXUS_in_dollar,
-                      conf.int = .9)[[&quot;ymax&quot;]],
-                     median_hilow(df_temp$Realized_INEXUS_in_dollar,
-                      conf.int = .9)[[&quot;ymax&quot;]],
-                     median_hilow(df_temp$Social_INEXUS,
-                      conf.int = .9)[[&quot;ymax&quot;]])
-scaleTimeLow &lt;- 0.01
-scaleCostLow &lt;- 0
-scaleTimeHigh &lt;- median_hilow(df_temp$duration_door_to_door,
-                      conf.int = .8)[[&quot;ymax&quot;]]
-                     
-scaleCostHigh &lt;- -.5*scaleNexusLow 
-
-descr &lt;- descr |&gt;
-  mutate(scaleLow = case_when(
-      str_detect(variable, &quot;(?i)NEXU&quot;) ~ scaleNexusLow,
-      str_detect(variable, &quot;(?i)dur&quot;) ~ scaleTimeLow,
-      str_detect(variable, &quot;(?i)cost|price&quot;) ~ scaleCostLow,
-    TRUE ~ scaleLow   )) |&gt; 
-  mutate(scaleHigh = case_when(
-      str_detect(variable, &quot;(?i)NEXU&quot;) ~ scaleNexusHigh,
-      str_detect(variable, &quot;(?i)dur&quot;) ~ scaleTimeHigh,
-      str_detect(variable, &quot;(?i)cost|price&quot;) ~ scaleCostHigh,
-    TRUE ~ scaleHigh   ))</code></pre>
-<pre class="r"><code>theme_set(theme_light(base_size = 11)) # make ALL font based on this
-theme_update(
-  plot.title =
-            element_text(
-              face = &quot;bold&quot;,
-              margin = margin(0, 0, -100, 0),
-              # size = 26,
-              # family = &quot;KyivType Sans&quot;,
-              vjust = 0,
-              color = &quot;grey25&quot;
-        ))
-theme_update(
-  legend.justification = &quot;center&quot;,
-             legend.position = &quot;bottom&quot;,
-             legend.title = element_blank(),
-             # legend.text  = element_text(face = &quot;green&quot;),
-             # +
-             #   scale_color_vibrant() +
-             #   scale_fill_vibrant()
-             # Top-right position)
-             legend.direction = &quot;vertical&quot;, # Elements within a guide are placed one on top of other in the same column
-             legend.box = &quot;horizontal&quot; # Different guides-legends are stacked horizontally
-             )
-theme_update(# Light background color
-    # plot.background = element_rect(fill = &quot;#F5F4EF&quot;, color = NA),
-    # plot.margin = margin(20, 30, 20, 30),
-    # Customize the title. Note the new font family and its larger size.
-    plot.caption = element_text(size = 11),
-    # Remove titles for x and y axes.
-    # axis.title = element_blank(),
-    # Specify color for the tick labels along both axes 
-    axis.text = element_text(color = &quot;grey40&quot;),
-    # Specify face and color for the text on top of each panel/facet
-    strip.text = element_text(face = &quot;bold&quot;, color = &quot;grey20&quot;)
-)</code></pre>
+<div id="temporary" class="section level3">
+<h3>Temporary</h3>
+<pre class="r"><code># scaleNexusLow &lt;- min(median_hilow(df_temp$Potential_INEXUS_in_dollar,
+#                       conf.int = .75)[[&quot;ymin&quot;]],
+#                      median_hilow(df_temp$Realized_INEXUS_in_dollar,
+#                       conf.int = .75)[[&quot;ymin&quot;]],
+#                      median_hilow(df_temp$Social_INEXUS,
+#                       conf.int = .75)[[&quot;ymin&quot;]])
+# 
+# scaleNexusHigh &lt;- max(median_hilow(df_temp$Potential_INEXUS_in_dollar,
+#                       conf.int = .9)[[&quot;ymax&quot;]],
+#                      median_hilow(df_temp$Realized_INEXUS_in_dollar,
+#                       conf.int = .9)[[&quot;ymax&quot;]],
+#                      median_hilow(df_temp$Social_INEXUS,
+#                       conf.int = .9)[[&quot;ymax&quot;]])
+# scaleTimeLow &lt;- 0.01
+# scaleCostLow &lt;- 0
+# scaleTimeHigh &lt;- median_hilow(df_temp$duration_door_to_door,
+#                       conf.int = .8)[[&quot;ymax&quot;]]
+#                      
+# scaleCostHigh &lt;- -.5*scaleNexusLow 
+# 
+# descr &lt;- descr |&gt;
+#   mutate(scaleLow = case_when(
+#       str_detect(variable, &quot;(?i)NEXU&quot;) ~ scaleNexusLow,
+#       str_detect(variable, &quot;(?i)dur&quot;) ~ scaleTimeLow,
+#       str_detect(variable, &quot;(?i)cost|price&quot;) ~ scaleCostLow,
+#     TRUE ~ scaleLow   )) |&gt; 
+#   mutate(scaleHigh = case_when(
+#       str_detect(variable, &quot;(?i)NEXU&quot;) ~ scaleNexusHigh,
+#       str_detect(variable, &quot;(?i)dur&quot;) ~ scaleTimeHigh,
+#       str_detect(variable, &quot;(?i)cost|price&quot;) ~ scaleCostHigh,
+#     TRUE ~ scaleHigh   ))</code></pre>
+<pre class="r"><code># theme_set(theme_light(base_size = 11)) # make ALL font based on this
+# theme_update(
+#   plot.title =
+#             element_text(
+#               face = &quot;bold&quot;,
+#               margin = margin(0, 0, -100, 0),
+#               # size = 26,
+#               # family = &quot;KyivType Sans&quot;,
+#               vjust = 0,
+#               color = &quot;grey25&quot;
+#         ))
+# theme_update(
+#   legend.justification = &quot;center&quot;,
+#              legend.position = &quot;bottom&quot;,
+#              legend.title = element_blank(),
+#              # legend.text  = element_text(face = &quot;green&quot;),
+#              # +
+#              #   scale_color_vibrant() +
+#              #   scale_fill_vibrant()
+#              # Top-right position)
+#              legend.direction = &quot;vertical&quot;, # Elements within a guide are placed one on top of other in the same column
+#              legend.box = &quot;horizontal&quot; # Different guides-legends are stacked horizontally
+#              )
+# theme_update(# Light background color
+#     # plot.background = element_rect(fill = &quot;#F5F4EF&quot;, color = NA),
+#     # plot.margin = margin(20, 30, 20, 30),
+#     # Customize the title. Note the new font family and its larger size.
+#     plot.caption = element_text(size = 11),
+#     # Remove titles for x and y axes.
+#     # axis.title = element_blank(),
+#     # Specify color for the tick labels along both axes 
+#     axis.text = element_text(color = &quot;grey40&quot;),
+#     # Specify face and color for the text on top of each panel/facet
+#     strip.text = element_text(face = &quot;bold&quot;, color = &quot;grey20&quot;)
+# )</code></pre>
 </div>
 </div>
 

@@ -8,17 +8,23 @@ library(fst) # open and close files
 # Data wrangling
 library(tidyverse)
 library(glue)
-library(purrr)
 library(stringr) # for strings
-library(codebookr) # codebook?
+# library(codebookr) # codebook?
 
 # Display graphs and tables
 library(ggplot2)
 # library(gt)  # tables but doesn't really work
-library(khroma)
-library(ggridges)
+# library(khroma)
+# library(ggridges)
 library(patchwork) # lay out plots next to each other
-
+library(Hmisc)
+library(purrr)
+library(dplyr)
+library(glue)
+library(readr)
+library(forcats)
+library(aws.s3) # to open aws
+library(dbplyr) # to open aws
 # library(tikzDevice) # to get really really good looking things use dev tikz
 # library(kableExtra)
 # library(Cairo)

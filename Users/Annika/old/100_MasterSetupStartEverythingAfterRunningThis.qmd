@@ -81,19 +81,13 @@ params100 <- TEMP_PARAMS
 Define file pathways for data and output
 
 ```{r }
-t <- "/00__global_file_directories.R"
-print(paste("opening source file ", t))
-source( paste0(getwd(),t) ) # returns: 
-figures_folder <- paste0(output_dir_on_this_machine,"figures")
-print(paste("defining file location ",figures_folder))
+source(paste0(getwd(),"/00__global_file_directories.R"))
 ```
 
 Open libraries and define setup functions
 
 ```{r }
-t <- "/02__SetupLibrary.R"
-print(paste("opening source file ", t))
-source(paste0(getwd(),t)) # returns: 
+source(paste0(getwd(),"/02__SetupLibrary.R")) # returns: 
 ```
 
 Open description file, with the Titles and colors that are common across all projects
@@ -170,7 +164,7 @@ descr |> select("type", "title") |>
 
 **Outcomes (Y variables)**
 
-```{r , define_yvars}
+```{r }
 knitr::kable(
   descr |> select("type", "title", "variable") |> 
   filter(type == "yvar") 
@@ -248,6 +242,10 @@ print(params100$RERUNopenCleanAWSdataYN)
 
 First, decide if we want AWS or local. Then make a List of all files -- either from AWS or locally, then (put into a dataset):
 
+```{r}
+useAWStoReadWrite <-TRUE
+```
+
 ```{r List_Files}
 if(params100$useAWStoReadWrite==TRUE) {
     library(aws.s3)
@@ -275,7 +273,7 @@ data_file_list_paths <- data_file_list_paths |>
           filter(!grepl(pattern = "*.revious*.",x = Key, ignore.case = TRUE))
 # print(data_file_list_paths)
 data_file_list_paths <- data_file_list_paths |> 
-          filter(grepl(pattern = paste0("*",placeFilename,"_","*."),
+          filter(grepl(pattern = paste0("*",placeTitleShort,"_","*."),
                        x = Key, ignore.case = TRUE))
 # print(data_file_list_paths)
 ```
@@ -283,6 +281,7 @@ data_file_list_paths <- data_file_list_paths |>
 Of those, the smaller List of files for this specific scenario (defined in YAML) (either locally or on AWS) . Hopefully there will be one cleaned, one cleaned subset, and one raw: , and cleaned stacked if there is one: wantSUBSETofTheVARSinsteadofAll
 
 ```{r __ofScenario}
+
         data_file_list_paths <- data_file_list_paths |> 
           filter(grepl(pattern = paste0("*.",categoryTitleShort,
                                         "_",leverTitleShort),
@@ -290,36 +289,22 @@ Of those, the smaller List of files for this specific scenario (defined in YAML)
         # print(data_file_list_paths)
 ```
 
-The cleaned, cleaned subset, and raw files
+The list of cleaned, ready for analysis files
 
 ```{r __cleaned}
-# print("raw files")
-        data_file_list_paths_RAW <- data_file_list_paths |> 
-          filter(!grepl(pattern = "*.raphclean*",x = Key, ignore.case = TRUE))
-        data_file_list_paths_RAW <- data_file_list_paths_RAW$Key
-# print("cleaned files")    
-        data_file_list_paths_CLEANED <- data_file_list_paths |> 
-          filter( grepl(pattern = "*.raphclean*",x = Key, ignore.case = TRUE)) |> 
-          filter(!grepl(pattern = "*.ubset*",x = Key, ignore.case = TRUE))
-        data_file_list_paths_CLEANED <- data_file_list_paths_CLEANED$Key
-        print(data_file_list_paths_CLEANED)
-# print("cleaned files Subset")    
-        data_file_list_paths_CLEANED_SUBSET <- data_file_list_paths |> 
-          filter( grepl(pattern = "*.raphclean*",x = Key, ignore.case = TRUE)) |> 
-          filter( grepl(pattern = "*.ubset*",x = Key, ignore.case = TRUE)) |> 
-          filter( grepl(pattern = "*.hort*",x = Key, ignore.case = TRUE))
-# print("cleaned files and MANDATORY Subset") 
 # not including the words old or previous
-        data_file_list_paths_CLEANED_SUBSET_MAND <- data_file_list_paths |> 
+        data_file_list_analysis <- data_file_list_paths |> 
           filter( grepl(pattern = "*.raphclean*",x = Key, ignore.case = TRUE)) |> 
           filter( grepl(pattern = "*.ubset*",x = Key, ignore.case = TRUE)) |> 
           filter( grepl(pattern = "*.hort*",x = Key, ignore.case = TRUE)) |> 
           filter( grepl(pattern = "*.mand*",x = Key, ignore.case = TRUE)) |> 
           filter(!grepl(pattern = "*.old*",x = Key, ignore.case = TRUE)) |> 
-          filter(!grepl(pattern = "*.previous*",x = Key, ignore.case = TRUE))
+          filter(!grepl(pattern = "*.previous*",x = Key, ignore.case = TRUE))  |> 
+          filter( grepl(pattern = "*readyForAnalysis*",x = Key, ignore.case = TRUE))
          
-        data_file_list_paths_CLEANED_SUBSET_MAND <- data_file_list_paths_CLEANED_SUBSET_MAND$Key
-        print(data_file_list_paths_CLEANED_SUBSET)
+        data_file_list_analysis <- data_file_list_analysis$Key
+        print(data_file_list_analysis)
+        
 # print("cleaned,man)
 ```
 
@@ -344,16 +329,16 @@ if(params100$RERUNopenCleanAWSdataYN==TRUE) {
 
 ```{r open_cleaned_subsetted}
 #| collapse: true
-data_file_list_paths_CLEANED_SUBSET_MAND
+data_file_list_analysis
 print("opening")
 if(params100$useAWStoReadWrite==TRUE) {
   df_temp <- aws.s3::s3read_using(read_rds,
-                             object = data_file_list_paths_CLEANED_SUBSET_MAND,
+                             object = data_file_list_analysis,
                              bucket = "beam-core-act")
                           print("Using data from AWS!")
 } else {
   df_temp <- read_rds(file = paste0(data_dir_on_this_machine,
-                             data_file_list_paths_CLEANED_SUBSET_MAND) )
+                             data_file_list_analysis) )
                           print("Using local data")
 }
 print("opened")
@@ -437,29 +422,29 @@ print(glue(" Scenario: {categoryTitleLong} ({categoryTitleShort}),
 ## Summary Tables
 
 ```{r area}
-df_summary <- df_temp |> 
-  group_by(lever_position) |> 
-  rename(`Lever Position` = lever_position) |> 
+df_summary <- df_temp |>
+  group_by(lever_position) |>
+  rename(`Lever Position` = lever_position) |>
   count(mode_5catPooled)
-df_summary <- df_graph_temp |> 
-  mutate(`Total Trips` = sum(n)) |> 
+df_summary <- df_summary |>
+  mutate(`Total Trips` = sum(n)) |>
   mutate(`Percent of Total Trips` = n /`Total Trips` ,
          n = NULL)
-df_summary1 <- df_graph_tempTotal |> 
-  pivot_wider(names_from = mode_5catPooled, values_from = `Percent of Total Trips`) 
-print(df_graph_tempTotal)
+df_summary1 <- df_summary |>
+  pivot_wider(names_from = mode_5catPooled, values_from = `Percent of Total Trips`)
+print(df_summary1)
 ```
 
 ```{r}
-df_summary2 <- df_temp |> 
-  group_by(lever_position) |> 
-  rename(`Lever Position` = lever_position) |> 
-  count(mode_planned_5, mode_planned_at_baseline)
-df_summary2 <- df_summary2 |> 
-  mutate(`Total Trips` = sum(n)) |> 
-  mutate(`Percent of Total Trips` = n /`Total Trips` ,
-         n = NULL)
-print(df_summary2)
+# df_summary2 <- df_temp |> 
+#   group_by(lever_position) |> 
+#   rename(`Lever Position` = lever_position) |> 
+#   count(mode_planned_5, mode_planned_at_baseline)
+# df_summary2 <- df_summary2 |> 
+#   mutate(`Total Trips` = sum(n)) |> 
+#   mutate(`Percent of Total Trips` = n /`Total Trips` ,
+#          n = NULL)
+# print(df_summary2)
 ```
 
 ## Setup Graphs
@@ -472,73 +457,73 @@ print(df_summary2)
 
 ```{r scale_limits}
 
-scaleNexusLow <- min(median_hilow(df_temp$Potential_INEXUS_in_dollar,
-                      conf.int = .75)[["ymin"]],
-                     median_hilow(df_temp$Realized_INEXUS_in_dollar,
-                      conf.int = .75)[["ymin"]],
-                     median_hilow(df_temp$Social_INEXUS,
-                      conf.int = .75)[["ymin"]])
-
-scaleNexusHigh <- max(median_hilow(df_temp$Potential_INEXUS_in_dollar,
-                      conf.int = .9)[["ymax"]],
-                     median_hilow(df_temp$Realized_INEXUS_in_dollar,
-                      conf.int = .9)[["ymax"]],
-                     median_hilow(df_temp$Social_INEXUS,
-                      conf.int = .9)[["ymax"]])
-scaleTimeLow <- 0.01
-scaleCostLow <- 0
-scaleTimeHigh <- median_hilow(df_temp$duration_door_to_door,
-                      conf.int = .8)[["ymax"]]
-                     
-scaleCostHigh <- -.5*scaleNexusLow 
-
-descr <- descr |>
-  mutate(scaleLow = case_when(
-      str_detect(variable, "(?i)NEXU") ~ scaleNexusLow,
-      str_detect(variable, "(?i)dur") ~ scaleTimeLow,
-      str_detect(variable, "(?i)cost|price") ~ scaleCostLow,
-    TRUE ~ scaleLow   )) |> 
-  mutate(scaleHigh = case_when(
-      str_detect(variable, "(?i)NEXU") ~ scaleNexusHigh,
-      str_detect(variable, "(?i)dur") ~ scaleTimeHigh,
-      str_detect(variable, "(?i)cost|price") ~ scaleCostHigh,
-    TRUE ~ scaleHigh   ))
+# scaleNexusLow <- min(median_hilow(df_temp$Potential_INEXUS_in_dollar,
+#                       conf.int = .75)[["ymin"]],
+#                      median_hilow(df_temp$Realized_INEXUS_in_dollar,
+#                       conf.int = .75)[["ymin"]],
+#                      median_hilow(df_temp$Social_INEXUS,
+#                       conf.int = .75)[["ymin"]])
+# 
+# scaleNexusHigh <- max(median_hilow(df_temp$Potential_INEXUS_in_dollar,
+#                       conf.int = .9)[["ymax"]],
+#                      median_hilow(df_temp$Realized_INEXUS_in_dollar,
+#                       conf.int = .9)[["ymax"]],
+#                      median_hilow(df_temp$Social_INEXUS,
+#                       conf.int = .9)[["ymax"]])
+# scaleTimeLow <- 0.01
+# scaleCostLow <- 0
+# scaleTimeHigh <- median_hilow(df_temp$duration_door_to_door,
+#                       conf.int = .8)[["ymax"]]
+#                      
+# scaleCostHigh <- -.5*scaleNexusLow 
+# 
+# descr <- descr |>
+#   mutate(scaleLow = case_when(
+#       str_detect(variable, "(?i)NEXU") ~ scaleNexusLow,
+#       str_detect(variable, "(?i)dur") ~ scaleTimeLow,
+#       str_detect(variable, "(?i)cost|price") ~ scaleCostLow,
+#     TRUE ~ scaleLow   )) |> 
+#   mutate(scaleHigh = case_when(
+#       str_detect(variable, "(?i)NEXU") ~ scaleNexusHigh,
+#       str_detect(variable, "(?i)dur") ~ scaleTimeHigh,
+#       str_detect(variable, "(?i)cost|price") ~ scaleCostHigh,
+#     TRUE ~ scaleHigh   ))
 ```
 
 ```{r Theme}
-theme_set(theme_light(base_size = 11)) # make ALL font based on this
-theme_update(
-  plot.title =
-            element_text(
-              face = "bold",
-              margin = margin(0, 0, -100, 0),
-              # size = 26,
-              # family = "KyivType Sans",
-              vjust = 0,
-              color = "grey25"
-        ))
-theme_update(
-  legend.justification = "center",
-             legend.position = "bottom",
-             legend.title = element_blank(),
-             # legend.text  = element_text(face = "green"),
-             # +
-             #   scale_color_vibrant() +
-             #   scale_fill_vibrant()
-             # Top-right position)
-             legend.direction = "vertical", # Elements within a guide are placed one on top of other in the same column
-             legend.box = "horizontal" # Different guides-legends are stacked horizontally
-             )
-theme_update(# Light background color
-    # plot.background = element_rect(fill = "#F5F4EF", color = NA),
-    # plot.margin = margin(20, 30, 20, 30),
-    # Customize the title. Note the new font family and its larger size.
-    plot.caption = element_text(size = 11),
-    # Remove titles for x and y axes.
-    # axis.title = element_blank(),
-    # Specify color for the tick labels along both axes 
-    axis.text = element_text(color = "grey40"),
-    # Specify face and color for the text on top of each panel/facet
-    strip.text = element_text(face = "bold", color = "grey20")
-)
+# theme_set(theme_light(base_size = 11)) # make ALL font based on this
+# theme_update(
+#   plot.title =
+#             element_text(
+#               face = "bold",
+#               margin = margin(0, 0, -100, 0),
+#               # size = 26,
+#               # family = "KyivType Sans",
+#               vjust = 0,
+#               color = "grey25"
+#         ))
+# theme_update(
+#   legend.justification = "center",
+#              legend.position = "bottom",
+#              legend.title = element_blank(),
+#              # legend.text  = element_text(face = "green"),
+#              # +
+#              #   scale_color_vibrant() +
+#              #   scale_fill_vibrant()
+#              # Top-right position)
+#              legend.direction = "vertical", # Elements within a guide are placed one on top of other in the same column
+#              legend.box = "horizontal" # Different guides-legends are stacked horizontally
+#              )
+# theme_update(# Light background color
+#     # plot.background = element_rect(fill = "#F5F4EF", color = NA),
+#     # plot.margin = margin(20, 30, 20, 30),
+#     # Customize the title. Note the new font family and its larger size.
+#     plot.caption = element_text(size = 11),
+#     # Remove titles for x and y axes.
+#     # axis.title = element_blank(),
+#     # Specify color for the tick labels along both axes 
+#     axis.text = element_text(color = "grey40"),
+#     # Specify face and color for the text on top of each panel/facet
+#     strip.text = element_text(face = "bold", color = "grey20")
+# )
 ```

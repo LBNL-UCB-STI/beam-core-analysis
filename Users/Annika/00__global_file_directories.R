@@ -12,4 +12,7 @@ output_dir_on_this_machine <-  "output/"
 print("output_dir_on_this_machine")
 print(output_dir_on_this_machine)
 
+figures_folder <- paste0(output_dir_on_this_machine,"figures")
+
+
 
