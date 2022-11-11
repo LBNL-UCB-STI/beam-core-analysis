@@ -15,7 +15,9 @@ theme_update(
 theme_update(
       legend.justification = "center",
       legend.position = "right",
-      legend.title = element_blank(),
+      # legend.title = element_blank(),
+      legend.title = element_text(size = 7,
+                                 color = "grey30"),
       # legend.text  = element_text(face = "green"),
       # +
       #   scale_color_vibrant() +
@@ -24,6 +26,7 @@ theme_update(
       legend.direction = "vertical", # Elements within a guide are placed one on top of other in the same column
       legend.box = "horizontal" # Different guides-legends are stacked horizontally
 )
+## AXIS ##
 theme_update(# Light background color
       # plot.background = element_rect(fill = "#F5F4EF", color = NA),
       # plot.margin = margin(20, 30, 20, 30),
@@ -40,6 +43,7 @@ theme_update(# Light background color
       # Specify face and color for the text on top of each panel/facet
       strip.text = element_text(face = "bold", color = "grey20")
 )
+## SUZE AND ASPECT RATIO
 theme_update(
       aspect.ratio=.9
 )

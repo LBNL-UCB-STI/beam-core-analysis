@@ -9,13 +9,13 @@ library(fst) # open and close files
 library(tidyverse)
 library(glue)
 library(stringr) # for strings
-library(codebookr) # codebook?
+# library(codebookr) # codebook?
 
 # Display graphs and tables
 library(ggplot2)
 # library(gt)  # tables but doesn't really work
-library(khroma)
-library(ggridges)
+# library(khroma)
+# library(ggridges)
 library(patchwork) # lay out plots next to each other
 library(Hmisc)
 library(purrr)

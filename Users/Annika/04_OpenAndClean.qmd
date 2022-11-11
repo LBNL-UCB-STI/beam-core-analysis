@@ -136,8 +136,8 @@ contains("lever"),
 Social_INEXUS,
 Potential_INEXUS_in_dollar,
 Realized_INEXUS_in_dollar,
-logsum_relative_to_baseline,
-door_to_door_time_relative_to_baseline,
+# logsum_relative_to_baseline,
+# door_to_door_time_relative_to_baseline,
 # income,
 # actPurpose,
 # logsum_trip_Potential_INEXUS,
@@ -189,8 +189,8 @@ ride_hail_pooled,
 # year,
 duration_door_to_door,
 waitTime,
-mode_choice_actual_5,
-mode_choice_actual_6,
+# mode_choice_actual_5,
+# mode_choice_actual_6,
 # trip_id,
 # person_id,
 # household_id,
@@ -318,10 +318,15 @@ Need to do this on a case by case basis
 
 ```{r  }
 levels(as.factor(df_temp$lever_position))
+levels(as.factor(df_temp$lever_position_price))
+levels(as.factor(df_temp$lever_position_fleetsize))
 # df_temp <- df_temp |>
 #   mutate(lever_position_fleetsize = 1)
 # df_temp <- df_temp |>
 #   mutate(lever_position_price = lever_position)
+# df_temp <- ungroup(df_temp) |>
+#   select(!lever_position)
+leverTitleShort <- "priceOnly"
 ```
 
 ```{r inter_save_6a}
@@ -366,8 +371,7 @@ df_temp <- df_temp  %>%
 ```
 
 ```{r mode_actual}
-ungroup(df_temp)
-df_temp <- df_temp  %>%
+df_temp <- ungroup(df_temp)  %>%
   mutate(
     mode_5actual = 
       case_when(
@@ -407,19 +411,17 @@ df_temp <- df_temp |>
   select(!c(
     # mode_rh,
     # mode_4categories,mode_5catPooled,
-            # mode_choice_actual_5,mode_choice_actual_6,
+    # mode_choice_actual_5,mode_choice_actual_6,
     # income10levels,l_inc_HiLo10,ownCarYN,
-    # mode_5planned,
+    # lever_position,
     # income100levels,
-    # ride_hail_pooled
+    # ride_hail_pooled,
     # socialCarbonCost,
     # mode_planned_at_baseline,
+    mode_planned_5,
     # not_full_set,
-    # mode_5plannedAtBaseline,
-    # scenario, lever
-    dropthese
     
-    # contains("relative")
+    contains("relative")
    # lever_position_priceFactor, lever_position_fleetsizeFactor
         ## lever_position,
             ))
@@ -482,8 +484,8 @@ readr::write_rds(df_temp, file = paste0(data_dir_on_this_machine,
 
 ```{r}
 df_temp <- df_temp |>
-  mutate(not_full_set = is.na(mode_planned_at_baseline))
-sum(is.na(df_temp$mode_planned_at_baseline))
+  mutate(not_full_set = is.na(mode_5planned))
+sum(is.na(df_temp$mode_5planned))
 sum(df_temp$not_full_set)
 ```
 
@@ -534,7 +536,7 @@ See if it's there
 
 # .
 
-# Only for merge
+# Only for merging files together
 
 Append together the price-fleetsize Reopen and Rowbind (append, stacked) and save
 
@@ -543,6 +545,7 @@ library(purrr)
 library(dplyr)
 library(glue)
 library(readr)
+library(forcats)
 source(paste0            (getwd(),    "/00__global_file_directories.R"))
 placeTitleShort <- "sf"
 year <- "2018"
@@ -553,57 +556,22 @@ tl <- tibble::lst(
   "price_fleetsz_0p25",
   "price_fleetsz_0p5",
   "price_fleetsz_2p25",
-           "flsz"
+           "flsz",
+  "priceOnly"
   )
 df_temp <- tl %>%
   map_dfr(~read_rds(file = paste0(data_dir_on_this_machine,
-                                      "ReadyForAnalysis/",
+                                      # "ReadyForAnalysis/",
 
                    glue("{placeTitleShort}_{year}_",
                         "stacked_",
                         "{categoryTitleShort}_",
                         .x,
                         "_Subset_",
-                        "_77",
+                        "_8",
                         ".rds"  ))),.id="originalDataset")
 df_temp <- df_temp |> 
   mutate(originalDataset = as_factor(originalDataset))
-```
-
-```{r duplicates remove}
-ungroup(df_temp)
-df_temp <- df_temp |> 
-  distinct(across(!contains("originalDataset")),  .keep_all = TRUE)
-df_temp <- df_temp |> 
-  relocate(contains("originalDataset"))
-```
-
-```{r remove not full sets}
-usual <- df_temp |> 
-  group_by(IDMerged,tripIndex) |> 
-  summarise(nobs = n(),
-            sumleverprice = sum(lever_position_price),
-            sumleversize  = sum(lever_position_fleetsize),
-            .groups = "drop")
-usual |> 
-  group_by(nobs, sumleverprice, sumleversize) |> 
-  summarise(mostly = n(),
-            .groups = "drop")
-
-df_temp <- df_temp |> 
-  group_by(IDMerged,tripIndex) |> 
-  mutate(nobsPerPerson = n())
-
-df_temp <- df_temp |> 
-  filter(nobsPerPerson==18)
-df_temp <- df_temp |> 
-  group_by(IDMerged,tripIndex) |> 
-  filter(sum(lever_position_fleetsize)==20.125)
-df_temp <- df_temp |> 
-  select(!c(nobsPerPerson))
-
-
-# ntile(income_in_thousands,100)
 ```
 
 ```{r SAVE merged}
@@ -615,13 +583,64 @@ readr::write_rds(df_temp,
                              glue("{placeTitleShort}_{year}_",                        "stacked_",
                                   "{categoryTitleShort}_{leverTitleShort}_",
                                   "Subset_",
-                                  "_84",
+                                  "_101",
+                                  ".rds"  )))
+ungroup(df_temp)
+```
+
+# Remove duplicates
+
+```{r}
+df_temp <-   df_temp |>
+  filter(!(lever_position_fleetsize==1 & lever_position_price==1
+           & originalDataset=='"price_fleetsz_0p25"')) 
+df_temp <-   df_temp |>
+  filter(!(lever_position_fleetsize==1 & lever_position_price==1 
+           & originalDataset=='"price_fleetsz_0p5"') )
+df_temp <-   df_temp |>
+  filter(!(lever_position_fleetsize==1 & lever_position_price==1 
+           & originalDataset=='"price_fleetsz_2p25"'))
+df_temp <-   df_temp |>
+  filter(!(lever_position_fleetsize==1 & lever_position_price==1 
+           & originalDataset=='"flsz"'))
+# attributes(df_temp$originalDataset)[["levels"]]
+```
+
+```{r duplicates remove}
+df_temp <- df_temp |> 
+  select(!(mode_5plannedAtBaseline))
+df_temp <- df_temp |> 
+  select(!(socialCarbonCost))
+df_temp <- df_temp |> 
+  select(!c(mode_5actual,mode_5planned))
+df_temp <- df_temp |> 
+  distinct(across(!contains("originalDataset")),  .keep_all = TRUE)
+df_temp <- df_temp |> 
+  relocate(contains("originalDataset"))
+
+
+# d %>% mutate(c = factor(c, ordered = TRUE, 
+#                         levels = c("red", "green", "orange", "excluded"))) %>% # Order the factor variable
+#   arrange(c) %>% # Sort the data frame so that excluded comes first
+#   group_by(a, b) %>% # Group by the two columns that determine duplicates
+#   mutate(id = 1:n()) %>% # Assign IDs in each group
+#   filter(id == 1) # Only keep one row in each group
+```
+
+```{r SAVE merged}
+leverTitleShort <- "priceXfleetsz"
+ungroup(df_temp)
+readr::write_rds(df_temp,
+                 file = paste0(data_dir_on_this_machine,
+                             "ReadyForAnalysis/", 
+                             glue("{placeTitleShort}_{year}_",                        "stacked_",
+                                  "{categoryTitleShort}_{leverTitleShort}_",
+                                  "Subset_",
+                                  "_102",
                                   ".rds"  )))
 ```
 
-# .
-
-# Balance
+# ...,..
 
 ```{r open merged}
 source(paste0 (getwd(),    "/00__global_file_directories.R"))
@@ -640,8 +659,28 @@ df_temp <- readr::read_rds( file = paste0(data_dir_on_this_machine,
                              glue("{placeTitleShort}_{year}_",                        "stacked_",
                                   "{categoryTitleShort}_{leverTitleShort}_",
                                   "Subset_",
-                                  "_84",
+                                  "_102",
                                   ".rds"  )))
+```
+
+## Examine pairs
+
+```{r examine_full_sets}
+usual <- df_temp |>
+  group_by(IDMerged,tripIndex) |>
+  summarise(nscenarios = n(),
+            sumleverprice = sum(lever_position_price),
+            sumleversize  = sum(lever_position_fleetsize),
+            mandatoryCat = first(mandatoryCat),
+            .groups = "drop")
+mostusual <- usual |>
+  group_by(nscenarios, sumleverprice, sumleversize, mandatoryCat) |>
+  summarise(nPersonTrips = n(),
+            .groups = "drop") |> 
+  filter(nscenarios>20) |> 
+  # filter(nPersonTrips >15000) |> 
+  arrange(desc(nscenarios))
+mostusual
 ```
 
 ```{r mode_at_baseline}
@@ -663,7 +702,59 @@ df_temp <- df_temp |>
                                 lever_position_fleetsize==1]))
 ```
 
-```{r drop non-balanced}
+## Drop people who don't have baseline info
+
+```{r}
+# sum(is.na(df_temp$door_to_door_time_relative_to_baseline))
+# sum(is.na(df_temp$logsum_relative_to_baseline))
+sum(is.na(df_temp$mode_5plannedAtBaseline))
+df_temp <- df_temp |> 
+  filter(!(is.na(mode_5plannedAtBaseline)))
+sum(is.na(df_temp$PotInex_atBaseline))
+df_temp <- df_temp |> 
+  filter(!(is.na(PotInex_atBaseline)))
+sum(is.na(df_temp$reaInex_atBaseline))
+df_temp <- df_temp |> 
+  filter(!(is.na(reaInex_atBaseline)))
+# # count(df_temp, mode_planned_5)
+# df_temp |> 
+#   group_by(lever_position_fleetsize, lever_position_price) |> 
+#   summarise(
+#     # across(where(is.numeric),~mean(.x)),
+#     across(contains("nexus"),~mean(.x),.names = "{.col}_avg"),
+#     # across(where(is.factor ),~n_distinct(.x),.names = "{.col}_Ndistinct")),
+#     # na1 = sum(is.na(lever_position_fleetsize)),
+#     # na2 = sum(is.na(lever_position_price)),
+#     across(contains("relative") ,~sum(is.na(.x)),.names = "{.col}_Nnas"),
+#     across(contains("lever")    ,~sum(is.na(.x)),.names = "{.col}_Nnas"),
+#     across(contains("mode")     ,~sum(is.na(.x)),.names = "{.col}_Nnas"),
+#     count = n())
+# ungroup(df_temp)
+```
+
+```{r remove not full sets}
+df_temp <- df_temp |>
+  group_by(IDMerged,tripIndex) |>
+  mutate(nobsPerPerson = n())
+df_temp |> group_by(nobsPerPerson) |> 
+  summarize(nobs = n(),
+            .groups="drop")
+df_temp <- ungroup(df_temp)
+# 
+# df_temp <- df_temp |>
+#   filter(nobsPerPerson==18)
+# df_temp <- df_temp |>
+#   group_by(IDMerged,tripIndex) |>
+#   filter(sum(lever_position_fleetsize)==20.125)
+# df_temp <- df_temp |>
+#   select(!c(nobsPerPerson))
+
+
+# ntile(income_in_thousands,100)
+```
+
+```{r SAVE}
+leverTitleShort <- "priceXfleetsz"
 ungroup(df_temp)
 readr::write_rds(df_temp,
                  file = paste0(data_dir_on_this_machine,
@@ -671,29 +762,18 @@ readr::write_rds(df_temp,
                              glue("{placeTitleShort}_{year}_",                        "stacked_",
                                   "{categoryTitleShort}_{leverTitleShort}_",
                                   "Subset_",
-                                  "_85",
+                                  "Paired_",
+                                  "_103",
                                   ".rds"  )))
-
 ```
 
-```{r summary}
-problems  <-   df_temp |> 
-  group_by(lever_position_fleetsize,lever_position_price,originalDataset) |>
-    # income100levels, ownCarYN) |> 
-  summarise(
-          across(where(is.numeric),~mean(.x),.names = "{.col}_avg"),
-            across(where(is.factor ),~n_distinct(.x),.names = "{.col}_Ndis"),
-            naPlannedBase = sum(is.na(mode_5plannedAtBaseline)),
-            count = n()
-            , .groups = "drop")
-problems
-```
+# ...,..,
 
-# ...
+# REOPEN 103
 
-# Make Small Dataset
+# EXAMINE
 
-```{r open balanced}
+```{r open merged}
 source(paste0 (getwd(),    "/00__global_file_directories.R"))
 library(purrr)
 library(dplyr)
@@ -710,9 +790,48 @@ df_temp <- readr::read_rds( file = paste0(data_dir_on_this_machine,
                              glue("{placeTitleShort}_{year}_",                        "stacked_",
                                   "{categoryTitleShort}_{leverTitleShort}_",
                                   "Subset_",
-                                  "_85",
+                                  "Paired_",
+                                  "_103",
                                   ".rds"  )))
 ```
+
+## Troubleshoot problems
+
+```{r summary}
+problems  <-   df_temp |> 
+  group_by(lever_position_fleetsize,
+           originalDataset,
+           lever_position_price) |> 
+  summarise(
+          across(where(is.numeric),~mean(.x),.names = "{.col}_avg"),
+          countN = n(),
+          across(.cols=everything(), ~mean(is.na(.x)),.names = "{.col}_Missing"),
+          
+            PCTwaittimeIs0 = mean(waitTime<0.000001),
+            across(where(is.factor ),~n_distinct(.x),.names = "{.col}_Ndis"),
+            
+            , .groups = "drop") |> 
+  arrange(countN) 
+problems <- problems |> 
+  arrange(lever_position_price, lever_position_fleetsize)
+problems <- problems |> 
+  relocate(lever_position_price, lever_position_fleetsize,
+            contains("wait"),
+           contains("duration")
+  )
+# |> 
+  # filter(lever_position_fleetsize==1 & lever_position_price==1)
+readr::write_csv(problems,file = paste0(data_dir_on_this_machine,
+                             "ReadyForAnalysis/",
+                             glue("{placeTitleShort}_{year}_",                        "stacked_",
+                                  "{categoryTitleShort}_{leverTitleShort}_",
+                                  "Paired_",
+                                  "SUMMARY",
+                                  "_103",
+                                  ".csv"  )))
+```
+
+## Make Small Dataset
 
 ```{r}
 df_temp <- df_temp |> 
@@ -736,7 +855,7 @@ readr::write_rds(df_small, file = paste0(data_dir_on_this_machine,
                              glue("{placeTitleShort}_{year}_",                        "stacked_",
                                   "{categoryTitleShort}_{leverTitleShort}_",
                                   "Small",
-                                  "_86",
+                                  "_103",
                                   ".rds"  )))
 
 ```
@@ -756,7 +875,7 @@ df_small <- df_temp |>
              .groups = "drop")
 ```
 
-```{r examine}
+```{r }
 df_temp <- ungroup(df_temp)
 df_tiny <- df_temp |>
   group_by(lever_position_fleetsize,
@@ -776,6 +895,8 @@ df_tiny <- df_temp |>
     NpersonTripObs = n(),
              .groups = "drop")
 ```
+
+## Tiny dataset
 
 ```{r}
 ungroup(df_temp)
@@ -822,3 +943,4 @@ VROOM_SHOW_PROGRESS
 OH USE THIS REALLY
 
 https://usethis.r-lib.org/articles/git-credentials.html
+

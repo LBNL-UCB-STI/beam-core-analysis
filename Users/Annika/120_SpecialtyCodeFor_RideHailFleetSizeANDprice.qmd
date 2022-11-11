@@ -9,8 +9,9 @@ format:
     self-contained: true
     fontsize: 10px
     linestretch: 1
-echo: false
-output-file: "2022_10_19"
+include: false
+results: markup
+output-file: "2022_10_28"
 params:
   place: "SanFrancisco"
   placeTitleShort: "sf"
@@ -45,6 +46,8 @@ editor_options:
 
 # Setup - Start ---Boilerplate
 
+## prelim setup
+
 ```{r}
 usingOwnFile <- TRUE
 ignoreAWS <- TRUE
@@ -59,6 +62,7 @@ source(paste0            (getwd(),    "/02__SetupLibrary.R"))
 source(paste0            (getwd(),    "/04__SetupFunctions.R"))
 source(paste0            (getwd(),    "/40__TableFunctions.R"))
 source(paste0            (getwd(),    "/50__GraphFunctions.R"))
+source(paste0            (getwd(),    "/51__GraphTheme.R"))
 ```
 
 Get the proper titles and names that we want to use for graphs etc
@@ -66,10 +70,12 @@ Get the proper titles and names that we want to use for graphs etc
 ```{r }
 # open the csv file
 Sys.setenv("AWS_DEFAULT_REGION"="us-east-2", TZ='GMT')
-if (ignoreAWS==FALSE) {description_CSV <- aws.s3::s3read_using(read_csv,
+if (ignoreAWS==FALSE)   { library(aws.s3) # to open aws
+                          library(dbplyr) # to open aws
+                          description_CSV <- aws.s3::s3read_using(read_csv,
                                         object = "03__MasterTitlesNamesColorsEtc.csv",
                                         bucket = "beam-core-act")}
-if (usingOwnFile==TRUE) {description_CSV <- read_csv(file =     "03__MasterTitlesNamesColorsEtc.csv")}
+if (usingOwnFile==TRUE) { description_CSV <- read_csv(file =     "03__MasterTitlesNamesColorsEtc.csv")}
 # extract the variable names from the excel sheet
 descr <- fx_proper_Names()
 descr
@@ -85,21 +91,30 @@ leverTitleShort <- "priceXfleetsz"
 categoryTitleShort <- "rh"
 ```
 
+## data
+
 Find the dataset
 
 ```{r}
 # Find the name of the dataset in AWS, or on your own computer
 # First make a dataframe with the list of relevant files
-if (ignoreAWS==FALSE) {awsDF <- get_bucket_df("beam-core-act", 
-                       prefix = "deepDive/CleanData/SanFrancisco")} # dataframe with all of the AWS files
+if (ignoreAWS==FALSE) {
+  awsDF <- get_bucket_df("beam-core-act", 
+                       prefix = "deepDive/CleanData/SanFrancisco")
+} # dataframe with all of the AWS files
 # If using your own computer's files
 if (usingOwnFile==TRUE) {awsDF <- as_tibble(list.files(path = data_dir_on_this_machine,full.names = TRUE, include.dirs = TRUE,recursive = TRUE)) |> rename(Key = value) }
 # filter possible files
 data_file <- awsDF |> 
           filter(!grepl(pattern = "*.old*",x = Key, ignore.case = TRUE)) |>
           filter(!grepl(pattern = "*.previous*",x = Key, ignore.case = TRUE))  |>
-          filter( grepl(pattern = "*.eadyForAnalysis*",x = Key, ignore.case = TRUE)) |> 
+          filter( grepl(pattern = "*.eadyForAnalysis*",x = Key, ignore.case = TRUE)) 
+data_file
+data_file <- data_file |> 
           filter( grepl(pattern = "*.Subset_*",x = Key, ignore.case = TRUE))
+data_file
+data_file <- data_file |> 
+          filter( grepl(pattern = "*.paired*",x = Key, ignore.case = TRUE))
 # Once there's only one file, change it to a string
 data_file <- data_file$Key
 data_file
@@ -108,9 +123,12 @@ data_file
 Open the dataset
 
 ```{r open}
-if (ignoreAWS==FALSE)   {df_temp <- aws.s3::s3read_using(read_rds, object = data_file,bucket = "beam-core-act")}
+if (ignoreAWS==FALSE)   {df_temp <- aws.s3::s3read_using(read_rds, object = data_file,bucket = "beam-core-act")
+                          detach("package:aws.s3", unload = TRUE) }
 if (usingOwnFile==TRUE) {df_temp <- read_rds(file = paste0(data_file) )}
 remove(awsDF)
+
+detach("package:dbplyr", unload = TRUE) # to open aws
 ```
 
 ```{r describeDataset}
@@ -133,21 +151,68 @@ print(glue("
 ```
 
 ```{r}
-source(paste0            (getwd(),    "/51__GraphTheme.R"))
+df_temp <- ungroup(df_temp)
 ```
 
 ------------------------------------------------------------------------
 
-# .................... End
+# .................... End Setup
 
 ------------------------------------------------------------------------
 
-# .
+# .,,....,.,,.,..,.,.,,,
 
-# ~~ANALYSIS~~
+# ANALYSIS
+
+# ..,,,,.,.,.,.,.,.,.,.,
+
+# Summary Stats
+
+```{r summary}
+summary  <-   df_temp |> 
+  group_by(lever_position_fleetsize,
+           originalDataset,
+           lever_position_price) |> 
+  summarise(
+          across(where(is.numeric),~mean(.x),.names = "{.col}_avg"),
+          countN = n(),
+          across(.cols=everything(), ~mean(is.na(.x)),.names = "{.col}_Missing"),
+          
+            PCTwaittimeIs0 = mean(waitTime<0.000001),
+            across(where(is.factor ),~n_distinct(.x),.names = "{.col}_Ndis"),
+            
+            , .groups = "drop") |> 
+  arrange(countN) 
+problems <- problems |> 
+  arrange(lever_position_price, lever_position_fleetsize)
+problems <- problems |> 
+  relocate(lever_position_price, lever_position_fleetsize,
+            contains("wait"),
+           contains("duration")
+  )
+# |> 
+  # filter(lever_position_fleetsize==1 & lever_position_price==1)
+readr::write_csv(problems,file = paste0(data_dir_on_this_machine,
+                             "ReadyForAnalysis/",
+                             glue("{placeTitleShort}_{year}_",                        "stacked_",
+                                  "{categoryTitleShort}_{leverTitleShort}_",
+                                  "Paired_",
+                                  "SUMMARY",
+                                  "_103",
+                                  ".csv"  )))
+```
 
 ```{r}
-df_temp <- ungroup(df_temp)
+df_tiny <- df_temp |> 
+  filter(lever_position_fleetsize<=100) |> 
+  group_by(lever_position_fleetsize,lever_position_price,originalDataset
+           ) |>
+  summarise(   
+    NpersonTripObs = n(),
+    Nthere = sum(!is.na(lever_position_fleetsize)),
+    Nmissing = sum(is.na(lever_position_fleetsize)),
+             .groups = "drop")
+df_tiny
 ```
 
 ```{r}
@@ -168,6 +233,7 @@ df_tiny <- df_temp |>
             across(where(is.factor ),~n_distinct(.x),.names = "{.col}_Ndis"),
     NpersonTripObs = n(),
              .groups = "drop")
+df_tiny
 ```
 
 ## Default min max values
@@ -185,23 +251,28 @@ fltsz_max <- filter(description_CSV, variable == "flsz")[["scaleHigh"]]
 # Make graph dataset
 
 ```{r}
+df_temp <- ungroup(df_temp)
 df_graph_temp <- df_temp |> 
+  filter(lever_position_fleetsize==1) |> 
   group_by(lever_position_price) |> 
-  rename(`Lever Position Price` = lever_position_price) |> 
   count( mode_5planned) |> 
+  rename(`Lever Position Price` = lever_position_price) |> 
+  rename(`Planned Mode` = mode_5planned) |> 
   mutate(`Total Trips` = sum(n)) |> 
   mutate(`Percent of Total Trips` = n /`Total Trips` ,
-         n = NULL)
+         n = NULL) |> 
+  ungroup()
 df_graph_temp
 df_graph_tempWide <- df_graph_temp |> 
-  pivot_wider(names_from = mode_5planned, values_from = `Percent of Total Trips`) |> 
-  mutate(`Ride Hail Total` = `Ride Hail Pooled`+`Ride Hail Solo`)
+  pivot_wider(names_from = `Planned Mode`, values_from = `Percent of Total Trips`) |> 
+  mutate(`Ride Hail Total` = `Ride Hail Pooled`+`Ride Hail Solo`) |> 
+  ungroup()
 print(df_graph_tempWide)
 ```
 
-## graph Price vs.  % trips
+## graph Price vs. % trips
 
-```{r define x y axis scales}
+```{r blank_plot}
 # p0 <- fx_get_TitlesLevels_createBaseGraph_g0(y_var = `Lever Position Price`)
 p1 <- ggplot(df_graph_tempWide, aes(x = `Lever Position Price`)) +
       theme(legend.position = "right") +
@@ -210,34 +281,80 @@ p1 <- ggplot(df_graph_tempWide, aes(x = `Lever Position Price`)) +
       coord_cartesian(xlim = c(price_min,price_max)) +
       coord_cartesian(ylim = c(0,  max(max(df_graph_tempWide$`Ride Hail Total`),
                                        max(df_graph_tempWide$Transit),
-                                       max(df_graph_tempWide$`Walk or Bike`))))
+                                       max(df_graph_tempWide$`Walk or Bike`)))) +
+      labs(color = "Mode (planned)", shape = "Mode (planned)") 
+p1
+```
 
+```{r ride_hail}
 p2 <- p1 +  geom_line(aes(y = `Ride Hail Solo`  , color = "Ride Hail Solo")) +
+            geom_point(aes(y = `Ride Hail Solo`  , color = "Ride Hail Solo")) +
             geom_line(aes(y = `Ride Hail Pooled`, color = "Ride Hail Pooled"  )) +
-            geom_line(aes(y = `Ride Hail Total` , color = "Ride Hail Total" )) 
+            geom_point(aes(y = `Ride Hail Pooled`, color = "Ride Hail Pooled"  )) +
+            geom_line(aes(y = `Ride Hail Total` , color = "Ride Hail Total" )) +
+            geom_point(aes(y = `Ride Hail Total` , color = "Ride Hail Total" ))
 p2
 ```
 
-```{r}
-p5 <- p1 + geom_line(aes(y = `Walk or Bike` , color = "Walk or Bike")) +
+```{r RHcomplements}
+p5 <- p2 + geom_line(aes(y = `Walk or Bike` , color = "Walk or Bike")) +
            geom_line(aes(y = `Transit`      , color = "Transit"))
 p6 <- p5 + geom_line(aes(y = `Car`          , color = "Car"))
-p7 <- p5 + geom_line(aes(y = `Car`- 
-                           df_graph_tempWide$Car[`Lever Position Price`==0.05] , 
-                         color = "Car rel to P=0"))
-p8 <- p1 + geom_line(aes(y = `Walk or Bike`- 
-                           df_graph_tempWide$`Walk or Bike`[`Lever Position Price`==0.05] , 
-                         color = "Walk or Bike")) +
-           geom_line(aes(y = `Transit`- 
-                           df_graph_tempWide$`Transit`[`Lever Position Price`==0.05] , 
-                         color = "Transit")) +
-           geom_line(aes(y = `Car`- 
-                           df_graph_tempWide$Car[`Lever Position Price`==0.05] , 
-                         color = "Car")) +
-  ylab("Percentage CHANGE in trips
-       Relative to RH Price = 0.05")
+p7 <- p5 + geom_line(aes(y = `Car`-         `Car`[`Lever Position Price`==0] , color = "Car rel to P=0"))
+p8 <- p2 + geom_line(aes(y = `Walk or Bike`-`Walk or Bike`[`Lever Position Price`==0] , color = "Walk or Bike")) +
+           geom_line(aes(y = `Transit`-     `Transit`[`Lever Position Price`==0] , color = "Transit")) +
+           geom_line(aes(y = `Car`-         `Car`[`Lever Position Price`==0] , color = "Car")) 
 p8 
+p9 <- p6 + 
+      coord_cartesian(ylim = c(0,  max(max(df_graph_tempWide$`Ride Hail Total`),
+                                       max(df_graph_tempWide$Transit),
+                                       max(df_graph_tempWide$Car),
+                                       max(df_graph_tempWide$`Walk or Bike`))))
+```
 
+```{r RHcomplements}
+p2 <- p1 +  
+            geom_line(aes(y = `Ride Hail Solo`  , color = "Ride Hail Solo")) +
+            # geom_point(aes(y = `Ride Hail Solo`  , color = "Ride Hail Solo")) +
+            geom_line(aes(y = `Ride Hail Pooled`,  color = "Ride Hail Pooled" )) +
+            # geom_point(aes(y = `Ride Hail Pooled`, color = "Ride Hail Pooled"  )) +
+            geom_line( aes(y = `Ride Hail Total` , color = "Ride Hail Total" )) +
+            geom_point(aes(y = `Ride Hail Total` , color = "Ride Hail Total"  )) 
+p2 <- p2 + geom_line(aes(y = `Walk or Bike` , color = "Walk or Bike")) +
+           geom_line(aes(y = `Transit`      , color = "Transit"))
+p2 <- p2 + geom_line(aes(y = `Car`          , color = "Car")) +
+           geom_point(aes(y = `Car`          , color = "Car"))
+
+p2 <- p2 + 
+      coord_cartesian(ylim = c(0,  max(max(df_graph_tempWide$`Ride Hail Total`),
+                                       max(df_graph_tempWide$Transit),
+                                       max(df_graph_tempWide$Car),
+                                       max(df_graph_tempWide$`Walk or Bike`))))
+# https://www.cssfontstack.com/oldsites/hexcolortool/
+# https://gist.github.com/creativecreatorormaybenot/8710f6f752f6a0f2cae13abb538f0e8e
+p2 <- p2 + scale_colour_manual("Mode (planned)",
+    values = c("Ride Hail Solo" = "#EE77334D",
+               "Ride Hail Pooled" = "#EE773380" ,
+               "Ride Hail Total" = "#EE7733",
+               "Walk or Bike" = "#33BBEE80",
+               "Car" = "#CC3311",
+               "Transit" = "#00998880"))
+# Height and Width
+my_aspRatio <- 2.9
+pFinal <- (p2 + xlab("RH price")) + 
+                theme(aspect.ratio = my_aspRatio) +
+                plot_layout(design = "
+                            1
+                            ",
+                            widths =unit(c(3.25),c('in','in'))
+                            # ,
+                            # heights = unit(c(4*2),c('in','in'))
+                            )
+pFinal  
+ggsave(plot = pFinal,width = 6.25,height = 3.25*my_aspRatio, units = "in",
+       filename = paste0(data_dir_on_this_machine,"output/PriceXqpercentage.png"))
+
+  
 ```
 
 ## Stack graphs
@@ -255,7 +372,7 @@ my_layout <- "
 2
 "
 # plot(my_layout) # Show the layout to make sure it looks as it should
-pFinal <- (p2 + xlab("") ) + (p8 + xlab("RH price")) + plot_layout(design = my_layout,
+pFinal <- (p2 + xlab("") ) + (p7 + xlab("RH price")) + plot_layout(design = my_layout,
                                  widths =unit(c(3.25,3.25),c('in','in')),
                                  heights = unit(c(2,2),c('in','in'))
                                  )
@@ -263,7 +380,116 @@ pFinal
 ggsave(filename = paste0(data_dir_on_this_machine,"output/PriceXqpercentage.png"), plot = pFinal)
 ```
 
-Now start doing analysis and graphs
+## START HERE
+
+## 4 by 4
+
+```{r}
+f1 <- ggplot(data = df_temp) +
+  geom_point(aes(x = mode_5planned, y=mode_5plannedAtBaseline))
+f1
+```
+
+# ,,,..,.,.,,,,,.,..,...,,,.,.,.,,.,.
+
+# Lorenz curve ;:;;:;::;;
+
+## Make Small Dataset
+
+```{r}
+# df_temp_small <- df_temp |> 
+#   select(
+#     contains("lever_position"),
+#     contains("mandatory"),
+#     # Y vars
+#     contains("choice"),
+#     contains("mode"),
+#     contains("Potential"),
+#     contains("PotInex"),
+#     contains("duration"),
+#     contains("time"),
+#     # Demographics
+#     contains("income")
+#   )
+
+# make 100 levels of income 
+# 
+# df_temp_small <- df_temp_small |> 
+#     mutate(income100levels = ntile(income_in_thousands,100)) |> 
+#   select(!income_in_thousands)
+# df_temp_small <- ungroup(df_temp_small)
+
+# readr::write_rds(df_small, file = paste0(data_dir_on_this_machine,
+#                              "ReadyForAnalysis/",
+#                              glue("{placeTitleShort}_{year}_",                        "stacked_",
+#                                   "{categoryTitleShort}_{leverTitleShort}_",
+#                                   "Small",
+#                                   "_104",
+#                                   ".rds"  )))
+
+# Collapse into 100 levels of income
+
+# df_lorenz100inc <- df_temp_small |>
+#   group_by(lever_position_fleetsize,lever_position_price,
+#            # mandatoryCat,
+#            # mode_5actual,mode_5planned,mode_5plannedAtBaseline,
+#            # auto_ownership,
+#            income100levels
+#            ) |>
+#   summarise(
+#           across(where(is.numeric),~mean(.x),.names = "{.col}_avg"),
+#             across(where(is.factor ),~n_distinct(.x),.names = "{.col}_Ndis"),    
+#     NpersonTripObs = n(),
+#              .groups = "drop") 
+# 
+# # Make cumulative
+# 
+# df_lorenz100incCum <- df_lorenz100inc |> 
+#   group_by(lever_position_fleetsize,lever_position_price)|> 
+#   arrange(income100levels, .by_group = TRUE) |> 
+#   mutate(incomeCumulative = cumsum(income100levels)) |> 
+#   mutate(durationAvgCumulative = cumsum(duration_avg)) |> 
+#   mutate(durationDoorDoorAvgCumulative = cumsum(duration_door_to_door_avg)) |> 
+#   mutate(durationWaitTimeAvgCumulative = cumsum(waitTime_avg)) |> 
+#   relocate(contains("income")) 
+# 
+# readr::write_rds(df_lorenz100incCum, file = paste0(data_dir_on_this_machine,
+#                                           
+#                    glue("{placeTitleShort}_{year}_",
+#                         
+#                         "{categoryTitleShort}_{leverTitleShort}_",
+#                         "100cumForLorenz",
+#                         "_31",   
+#                         ".rds"  )))
+
+
+
+```
+
+```{r open100lorens}
+# df_lorenz100incCum <- readRDS("C:/Users/annik/tmpOnATBcomputer/data/sf_2018_rh_priceXfleetsz_100cumForLorenz_31.rds")
+```
+
+```{r blank_plot}
+# p0 <- fx_get_TitlesLevels_createBaseGraph_g0(y_var = `Lever Position Price`)
+# p1 <- ggplot(df_lorenz100incCum, aes(x = incomeCumulative)) +
+#       theme(legend.position = "right") +
+#       # ylab("Percentage of trips") +
+#       theme(aspect.ratio = .9) 
+# # + 
+#       # coord_cartesian(xlim = c(0,max(cum_income)))  +
+#       # labs(color = "Mode (planned)", shape = "Mode (planned)") 
+# p1
+```
+
+```{r ride_hail}
+# p2 <- p1 +  geom_line(aes(y = durationDoorDoorAvgCumulative  , color = lever_position_fleetsize))
+# p2
+```
+
+# `'`'''`'`'\`,,,...,.,.,..,,,.,.
+
+# ..,.,.,.,.,.,.,.,,,,,,..,.,.,.,.,.
 
 # Distribution graphs
 
@@ -286,4 +512,12 @@ g1meta <-
                                      hetGr = FALSE,
                                      saveGraph = TRUE     )))
 print(g1meta)
+```
+
+# ,..,,.,.,.,,.,.,...,,.,\_\_\_
+
+# \^\^\^\^\^^end^\^\^\^\^\^\^\^\^
+
+```{r}
+
 ```
