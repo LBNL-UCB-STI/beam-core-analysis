@@ -10,132 +10,151 @@ format: html
 source(paste0            (getwd(),    "/51__GraphTheme.R"))
 ```
 
-## Make Small Dataset
+# Start with whatever big dataset you are using
+
+name it df_temp
+
+# Make Small Dataset
 
 ```{r}
-df_temp_small <- df_temp |> 
-  select(
-    contains("lever_position"),
-    contains("mandatory"),
-    # Y vars
-    contains("choice"),
-    contains("mode"),
-    contains("Potential"),
-    contains("PotInex"),
-    contains("duration"),
-    contains("time"),
-    # Demographics
-    contains("income")
-  )
-
-# make 100 levels of income 
-
-df_temp_small <- df_temp_small |> 
-    mutate(income100levels = ntile(income_in_thousands,100)) |> 
-  select(!income_in_thousands)
-df_temp_small <- ungroup(df_temp_small)
-
-# readr::write_rds(df_small, file = paste0(data_dir_on_this_machine,
-#                              "ReadyForAnalysis/",
-#                              glue("{placeTitleShort}_{year}_",                        "stacked_",
-#                                   "{categoryTitleShort}_{leverTitleShort}_",
-#                                   "Small",
-#                                   "_104",
-#                                   ".rds"  )))
-
-# Collapse into 100 levels of income
-
-df_lorenz100inc <- df_temp_small |>
-  group_by(lever_position_fleetsize,lever_position_price,
-           # mandatoryCat,
-           # mode_5actual,mode_5planned,mode_5plannedAtBaseline,
-           # auto_ownership,
-           income100levels
-           ) |>
-  summarise(
-          across(where(is.numeric),~mean(.x),.names = "{.col}_avg"),
-            across(where(is.factor ),~n_distinct(.x),.names = "{.col}_Ndis"),    
-    NpersonTripObs = n(),
-             .groups = "drop") 
-df_lorenz100incCum <- df_lorenz100inc
+if (1==0) {
+        df_temp_small <- df_temp |> 
+          select(
+            contains("lever_position"),
+            contains("mandatory"),
+            # Y vars
+            contains("choice"),
+            contains("mode"),
+            contains("Potential"),
+            contains("PotInex"),
+            contains("duration"),
+            contains("time"),
+            # Demographics
+            contains("income")
+          )
+}
 ```
 
-```{r save}
+## Filter (only those who switched? only those who rode transit?)
+
+```{r}
+############################################################3
+        ############################
+        # make sure data is filtered previous to this
+        # like if you want only people who take transit
+# make 100 levels of income 
+if (1==0) {}
+  df_temp_small <- df_temp_small |> 
+      mutate(income100levels = ntile(income_in_thousands,100)) |> 
+    select(!income_in_thousands)
+  df_temp_small <- ungroup(df_temp_small)
+# Collapse into averages
+  df_lorenz100inc <- df_temp_small |>
+     group_by(lever_position_fleetsize,lever_position_price,
+               # mandatoryCat,
+               # mode_5actual,mode_5planned,mode_5plannedAtBaseline,
+               # auto_ownership,
+               income100levels
+               ) |>
+      summarise(
+              across(where(is.numeric),~mean(.x),.names = "{.col}_avg"),
+                across(where(is.factor ),~n_distinct(.x),.names = "{.col}_Ndis"),    
+      NpersonTripObs = n(),
+                 .groups = "drop") 
+  df_lorenz100incCum <- df_lorenz100inc
+}
+```
+
+## Save Lorenz dataset
+
+```{r}
+if (1==0) {
 readr::write_rds(df_lorenz100incCum, file = paste0(data_dir_on_this_machine,
-                                          
                    glue("{placeTitleShort}_{year}_",
-                        
                         "{categoryTitleShort}_{leverTitleShort}_",
                         "100cumForLorenz",
                         "_31",   
                         ".rds"  )))
+}
 ```
+
+# Open Lorenz dataset
 
 ```{r open100lorens}
 df_lorenz100incCum <- readRDS("C:/Users/annik/tmpOnATBcomputer/data/sf_2018_rh_priceXfleetsz_100cumForLorenz_31.rds")
-df_lorenz100incCum <- ungroup(df_lorenz100incCum)
+df_lorenz <- ungroup(df_lorenz100incCum)
+```
+
+```{r levels}
+(leverLevelsLst_fltsz <- levels(as.factor(df_lorenz$lever_position_fleetsize)))
+(leverlevelsStr_fltsz <- paste(leverLevelsLst_fltsz, collapse="  "))
+(leverLevelsLst_price <- levels(as.factor(df_lorenz$lever_position_price)))
+(leverlevelsStr_price <- paste(leverLevelsLst_price, collapse="  "))
 ```
 
 ```{r}
-df_lorenz100incCum <- ungroup(df_lorenz100incCum)
-# Make cumulative
-df_lorenz100incCum <- df_lorenz100incCum |> 
+# Make cumulative and cumulative percent
+df_lorenz <- df_lorenz |> 
       group_by(lever_position_fleetsize,lever_position_price)|> 
-        arrange(   income100levels, .by_group = TRUE) |> 
-            mutate(incomeCumulative = cumsum(income100levels)) |> 
-      group_by(lever_position_fleetsize,lever_position_price)|> 
-        arrange(   duration_avg, .by_group = TRUE) |> 
-            mutate(durationAvgCumulative = cumsum(duration_avg)) |> 
-      group_by(lever_position_fleetsize,lever_position_price)|> 
-        arrange(   duration_door_to_door_avg, .by_group = TRUE) |> 
-            mutate(durationDoorDoorAvgCumulative = cumsum(duration_door_to_door_avg)) |> 
-      group_by(lever_position_fleetsize,lever_position_price)|> 
-        arrange(   waitTime_avg, .by_group = TRUE) |> 
-            mutate(durationWaitTimeAvgCumulative = cumsum(waitTime_avg)) |> 
-      group_by(lever_position_fleetsize,lever_position_price)|> 
-        arrange(   Potential_INEXUS_in_dollar_avg, .by_group = TRUE) |> 
-            mutate(potNEXCum = cumsum(Potential_INEXUS_in_dollar_avg)) |> 
-      group_by(lever_position_fleetsize,lever_position_price)|> 
-  relocate(contains("income")) 
-
-# make cumulative percent
-df_lorenz100incCum <- df_lorenz100incCum |> 
-  group_by(lever_position_fleetsize,lever_position_price)|> 
-  arrange(income100levels, .by_group = TRUE) |> 
-  mutate(incomeCumulativePct = incomeCumulative/max(incomeCumulative)) |> 
-  arrange(durationAvgCumulative, .by_group = TRUE) |> 
-  mutate(durationAvgCumulativePct = durationAvgCumulative/max(durationAvgCumulative)) |> 
-  mutate(durationDoorDoorAvgCumulativePct = durationDoorDoorAvgCumulative/max(durationDoorDoorAvgCumulative)) |> 
-  mutate(durationWaitTimeAvgCumulativePct = durationWaitTimeAvgCumulative/max(durationWaitTimeAvgCumulative)) |>
-      mutate(potNEXCumPct = potNEXCum/max(potNEXCum)) |> 
-  relocate(contains("income")) 
-df_lorenz100incCum <- ungroup(df_lorenz100incCum)
+        arrange(income100levels, .by_group = TRUE) |> 
+        mutate(incCum = cumsum(income100levels)) |> 
+        mutate(incCumPct = incCum/max(incCum)) |> 
+        mutate(durationAvgCum = cumsum(duration_avg)) |> 
+        mutate(durationAvgCumPct = durationAvgCum/max(durationAvgCum)) |> 
+        mutate(durationDoorDoorAvgCum = cumsum(duration_door_to_door_avg)) |> 
+        mutate(durationDoorDoorAvgCumPct = durationDoorDoorAvgCum/max(durationDoorDoorAvgCum)) |> 
+        mutate(durationWaitAvgCum = cumsum(waitTime_avg)) |> 
+        mutate(durationWaitAvgCumPct = durationWaitAvgCum/max(durationWaitAvgCum)) |>
+        mutate(potNEXNeg = -Potential_INEXUS_in_dollar_avg) |> 
+        mutate(potNEXNegCum = cumsum(potNEXNeg)) |> 
+        mutate(potNEXNegCumPct = potNEXNegCum/max(potNEXNegCum)) |> 
+        ungroup()
 ```
 
-```{r plot}
-# p0 <- fx_get_TitlesLevels_createBaseGraph_g0(y_var = `Lever Position Price`)
-df_lorenz100incCum <- df_lorenz100incCum |> 
-  group_by(lever_position_fleetsize,lever_position_price)|> 
-  arrange(income100levels, .by_group = TRUE) 
+# Graph
 
-p1 <- ggplot(data = df_lorenz100incCum)+
+```{r graph dataset}
+df_graph <- df_lorenz |>  filter(lever_position_fleetsize ==1)
+levels(as.factor(df_graph$lever_position_fleetsize))
+levels(as.factor(df_graph$lever_position_price))
+```
+
+```{r theme}
+# p0 <- fx_get_TitlesLevels_createBaseGraph_g0(y_var = `Lever Position Price`)
+p1 <- ggplot(data = df_graph) +
+     # scale_color_gradient(breaks = as_vector(leverLevelsLst_price)) +
       theme(legend.position = "right") +
-      # ylab("Percentage of trips") +
       theme(aspect.ratio = 1) # So that it's a square 
       # coord_cartesian(xlim = c(0,max(cum_income)))  +
-      # labs(color = "Mode (planned)", shape = "Mode (planned)") 
-p1
+      
+```
+
+# Showing total or pct
+
+```{r yvar}
+# yvar <- "durationWaitAvgCumPct"
+# yvar <- "durationWaitAvgCum"
+# yvar <- "potNEXNegCumPct"
+# yvar <- "potNEXNegCum"
+# yvar <- "durationAvgCum"
+yvar <- "income100levels"
 ```
 
 ```{r plot}
-p2 <- p1 +  geom_line(data = df_lorenz100incCum |> 
-                            filter(lever_position_fleetsize ==1),
-                      mapping =  aes(x = incomeCumulativePct,
-                                     y = durationAvgCumulativePct,
-                                     # y = potNEXCumPct,
+p2 <- p1 +  geom_line(mapping =  aes(x = incCumPct, y = .data[[yvar]],
                                      color = lever_position_price,
-                                     group = lever_position_price))
+                                     group = lever_position_price)) 
 p2
-p3 <- p2 + geom_line(data = data.frame(x = c(0,1), y = c(0,1)), aes(x, y))
+priceLevelVector <- as.numeric(levels(as_factor(df_graph$lever_position_price)))
+p3 <- p2 +   map( .x = priceLevelVector, 
+                  ~ geom_segment(x=0, y=0,
+                                 xend=1,yend= max(df_graph |> 
+                                                  filter(lever_position_price==.x) |> 
+                                                  select(.data[[yvar]])),
+                        color = "grey", alpha = .5, linetype = 2))
 p3
+```
+
+```{r}
+
 ```
