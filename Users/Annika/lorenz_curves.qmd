@@ -10,7 +10,7 @@ format: html
 source(paste0            (getwd(),    "/51__GraphTheme.R"))
 ```
 
-# Start with whatever big dataset you are using
+# Start with whatever Stacked big dataset you are using
 
 name it df_temp
 
@@ -85,13 +85,6 @@ df_lorenz100incCum <- readRDS("C:/Users/annik/tmpOnATBcomputer/data/sf_2018_rh_p
 df_lorenz <- ungroup(df_lorenz100incCum)
 ```
 
-```{r levels}
-(leverLevelsLst_fltsz <- levels(as.factor(df_lorenz$lever_position_fleetsize)))
-(leverlevelsStr_fltsz <- paste(leverLevelsLst_fltsz, collapse="  "))
-(leverLevelsLst_price <- levels(as.factor(df_lorenz$lever_position_price)))
-(leverlevelsStr_price <- paste(leverLevelsLst_price, collapse="  "))
-```
-
 ```{r}
 # Make cumulative and cumulative percent
 df_lorenz <- df_lorenz |> 
@@ -114,7 +107,7 @@ df_lorenz <- df_lorenz |>
 # Graph
 
 ```{r graph dataset}
-df_graph <- df_lorenz |>  filter(lever_position_fleetsize ==1)
+df_graph <- df_lorenz |>  filter(lever_position_price ==1)
 levels(as.factor(df_graph$lever_position_fleetsize))
 levels(as.factor(df_graph$lever_position_price))
 ```
@@ -137,19 +130,20 @@ p1 <- ggplot(data = df_graph) +
 # yvar <- "potNEXNegCumPct"
 # yvar <- "potNEXNegCum"
 # yvar <- "durationAvgCum"
-yvar <- "income100levels"
+yvar <- "durationAvgCumPct"
+# yvar <- "income100levels"
 ```
 
 ```{r plot}
 p2 <- p1 +  geom_line(mapping =  aes(x = incCumPct, y = .data[[yvar]],
-                                     color = lever_position_price,
-                                     group = lever_position_price)) 
+                                     color = lever_position_fleetsize,
+                                     group = lever_position_fleetsize)) 
 p2
-priceLevelVector <- as.numeric(levels(as_factor(df_graph$lever_position_price)))
+priceLevelVector <- as.numeric(levels(as_factor(df_graph$lever_position_fleetsize)))
 p3 <- p2 +   map( .x = priceLevelVector, 
                   ~ geom_segment(x=0, y=0,
                                  xend=1,yend= max(df_graph |> 
-                                                  filter(lever_position_price==.x) |> 
+                                                  filter(lever_position_fleetsize==.x) |> 
                                                   select(.data[[yvar]])),
                         color = "grey", alpha = .5, linetype = 2))
 p3
