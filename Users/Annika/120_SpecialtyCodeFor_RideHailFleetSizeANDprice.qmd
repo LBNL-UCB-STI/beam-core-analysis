@@ -91,49 +91,30 @@ leverTitleShort <- "priceXfleetsz"
 categoryTitleShort <- "rh"
 ```
 
-## data
+# data
 
-Find the dataset
-
-```{r}
-# Find the name of the dataset in AWS, or on your own computer
-# First make a dataframe with the list of relevant files
-if (ignoreAWS==FALSE) {
-  awsDF <- get_bucket_df("beam-core-act", 
-                       prefix = "deepDive/CleanData/SanFrancisco")
-} # dataframe with all of the AWS files
-# If using your own computer's files
+```{r list the available datasets in a dataset}
+if (ignoreAWS==FALSE) {awsDF <- get_bucket_df("beam-core-act", 
+                       prefix = "deepDive/CleanData/SanFrancisco") } # dataframe with all of the AWS files
 if (usingOwnFile==TRUE) {awsDF <- as_tibble(list.files(path = data_dir_on_this_machine,full.names = TRUE, include.dirs = TRUE,recursive = TRUE)) |> rename(Key = value) }
-# filter possible files
 data_file <- awsDF |> 
           filter(!grepl(pattern = "*.old*",x = Key, ignore.case = TRUE)) |>
           filter(!grepl(pattern = "*.previous*",x = Key, ignore.case = TRUE))  |>
           filter( grepl(pattern = "*.eadyForAnalysis*",x = Key, ignore.case = TRUE)) 
-data_file
 data_file <- data_file |> 
-          filter( grepl(pattern = "*.Subset_*",x = Key, ignore.case = TRUE))
-data_file
-data_file <- data_file |> 
+          filter( grepl(pattern = "*.Subset_*",x = Key, ignore.case = TRUE)) |> 
           filter( grepl(pattern = "*.paired*",x = Key, ignore.case = TRUE))
-# Once there's only one file, change it to a string
-data_file <- data_file$Key
-data_file
+(data_file <- data_file$Key)  # Once there's only one file, change it to a string
 ```
 
-Open the dataset
-
-```{r open}
-if (ignoreAWS==FALSE)   {df_temp <- aws.s3::s3read_using(read_rds, object = data_file,bucket = "beam-core-act")
-                          detach("package:aws.s3", unload = TRUE) }
+```{r open the dataset you chose}
+if (ignoreAWS==FALSE)   {df_temp <- aws.s3::s3read_using(read_rds, object = data_file,bucket = "beam-core-act")}
 if (usingOwnFile==TRUE) {df_temp <- read_rds(file = paste0(data_file) )}
 remove(awsDF)
-
-detach("package:dbplyr", unload = TRUE) # to open aws
 ```
 
-```{r describeDataset}
+```{r list the levers, and describe dataset}
 ## Find the levers
-df_temp <- ungroup(df_temp)
 lever_vars  <- names(df_temp |> select(contains("lever")))
 leverLevelsLst_fltsz <- levels(as.factor(df_temp$lever_position_fleetsize))
 leverlevelsStr_fltsz <- paste(leverLevelsLst_fltsz, collapse="  ")
@@ -512,6 +493,42 @@ g1meta <-
                                      hetGr = FALSE,
                                      saveGraph = TRUE     )))
 print(g1meta)
+```
+
+## Troubleshoot problems
+
+```{r summary}
+problems  <-   df_temp |> 
+  group_by(lever_position_fleetsize,
+           originalDataset,
+           lever_position_price) |> 
+  summarise(
+          across(where(is.numeric),~mean(.x),.names = "{.col}_avg"),
+          countN = n(),
+          across(.cols=everything(), ~mean(is.na(.x)),.names = "{.col}_Missing"),
+          
+            PCTwaittimeIs0 = mean(waitTime<0.000001),
+            across(where(is.factor ),~n_distinct(.x),.names = "{.col}_Ndis"),
+            
+            , .groups = "drop") |> 
+  arrange(countN) 
+problems <- problems |> 
+  arrange(lever_position_price, lever_position_fleetsize)
+problems <- problems |> 
+  relocate(lever_position_price, lever_position_fleetsize,
+            contains("wait"),
+           contains("duration")
+  )
+# |> 
+  # filter(lever_position_fleetsize==1 & lever_position_price==1)
+readr::write_csv(problems,file = paste0(data_dir_on_this_machine,
+                             "ReadyForAnalysis/",
+                             glue("{placeTitleShort}_{year}_",                        "stacked_",
+                                  "{categoryTitleShort}_{leverTitleShort}_",
+                                  "Paired_",
+                                  "SUMMARY",
+                                  "_110",
+                                  ".csv"  )))
 ```
 
 # ,..,,.,.,.,,.,.,...,,.,\_\_\_

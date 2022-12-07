@@ -3,21 +3,54 @@ title: "Untitled"
 format: html
 ---
 
-# Lorenz curve ;:;;:;::;;
+# Setup
 
-```{r}
-# Sets backgrout white, etc
+Libraries and functions, and define a directory if one exists on this machine. Open the csv file that lists all of the titles and colors etc
+
+```{r }
+source(paste0            (getwd(),    "/00__global_file_directories.R"))
+source(paste0            (getwd(),    "/02__SetupLibrary.R"))
 source(paste0            (getwd(),    "/51__GraphTheme.R"))
 ```
 
-# Start with whatever Stacked big dataset you are using
+```{r }
+placeTitleShort <- "sf"
+year <- "2018"
+leverTitleShort <- "priceXfleetsz"
+categoryTitleShort <- "rh"
+```
 
-name it df_temp
+# ,.,....,.,.,.,
 
-# Make Small Dataset
+# Make New Small Dataset?
+
+```{r rewrite small dataset}
+rewrite <- 1
+ignoreAWS <- TRUE
+usingOwnFile <- TRUE
+```
+
+```{r list the available datasets in a dataset}
+if (rewrite==1) {
+    if (ignoreAWS==FALSE) {awsDF <- get_bucket_df("beam-core-act", 
+                           prefix = "deepDive/CleanData/SanFrancisco") } # dataframe with all of the AWS files
+    if (usingOwnFile==TRUE) {awsDF <- as_tibble(list.files(path = data_dir_on_this_machine,full.names = TRUE, include.dirs = TRUE,recursive = TRUE)) |> rename(Key = value) }
+    data_file <- awsDF |> 
+              filter(!grepl(pattern = "*.old*",x = Key, ignore.case = TRUE)) |>
+              filter(!grepl(pattern = "*.previous*",x = Key, ignore.case = TRUE))  |>
+              filter( grepl(pattern = "*.eadyForAnalysis*",x = Key, ignore.case = TRUE)) 
+    data_file <- data_file |> 
+              filter( grepl(pattern = "*.Subset_*",x = Key, ignore.case = TRUE)) |> 
+              filter( grepl(pattern = "*.paired*",x = Key, ignore.case = TRUE))
+    (data_file <- data_file$Key)  # Once there's only one file, change it to a string
+    
+    if (ignoreAWS==FALSE)   {df_temp <- aws.s3::s3read_using(read_rds, object = data_file,bucket = "beam-core-act")}
+    if (usingOwnFile==TRUE) {df_temp <- read_rds(file = paste0(data_file) )}
+    remove(awsDF) }
+```
 
 ```{r}
-if (1==0) {
+if (rewrite==1) {
         df_temp_small <- df_temp |> 
           select(
             contains("lever_position"),
@@ -30,125 +63,200 @@ if (1==0) {
             contains("duration"),
             contains("time"),
             # Demographics
+            contains("IDMerged"),
+            contains("tripIndex"),
             contains("income")
           )
 }
 ```
 
+```{r Filter - only transit?}
 ## Filter (only those who switched? only those who rode transit?)
-
-```{r}
 ############################################################3
         ############################
         # make sure data is filtered previous to this
         # like if you want only people who take transit
-# make 100 levels of income 
-if (1==0) {}
+levels(as.factor(df_temp$mode_5planned))
+if (rewrite==1) {
   df_temp_small <- df_temp_small |> 
-      mutate(income100levels = ntile(income_in_thousands,100)) |> 
-    select(!income_in_thousands)
+    filter(mode_5plannedAtBaseline == "Ride Hail Pooled" | 
+             mode_5plannedAtBaseline == "Ride Hail Solo")
+}
+
+```
+
+```{r rank by income}
+if (rewrite==1) {
+  df_temp_small <- df_temp_small |> 
+          group_by(lever_position_fleetsize,lever_position_price) |> 
+          mutate(incomeRank1to21 = ntile(income_in_thousands,21)) |>
+          mutate(incomeRank0to20 = incomeRank1to21-1) |>
+          mutate(incomePercentRank0to20 = incomeRank0to20/20 ) |>
+          mutate(incomePercentRank0to20b= percent_rank(incomeRank1to21)) |> 
+          mutate(incomeRankEveryPerson1toN = min_rank(income_in_thousands)) |>
+          mutate(incomePercentRankEveryPerson0to1 = percent_rank(income_in_thousands)) 
   df_temp_small <- ungroup(df_temp_small)
+}
+if (rewrite==1) {
 # Collapse into averages
-  df_lorenz100inc <- df_temp_small |>
+  df_lorenz <- df_temp_small |>
      group_by(lever_position_fleetsize,lever_position_price,
                # mandatoryCat,
                # mode_5actual,mode_5planned,mode_5plannedAtBaseline,
                # auto_ownership,
-               income100levels
+               # income100levels
+              # incomeRank0to20
+              incomeRankEveryPerson1toN
                ) |>
       summarise(
               across(where(is.numeric),~mean(.x),.names = "{.col}_avg"),
                 across(where(is.factor ),~n_distinct(.x),.names = "{.col}_Ndis"),    
       NpersonTripObs = n(),
                  .groups = "drop") 
-  df_lorenz100incCum <- df_lorenz100inc
+  df_lorenz <- ungroup(df_lorenz)
 }
 ```
 
-## Save Lorenz dataset
+```{r rank example}
+min_rank(1:10)
+percent_rank(1:10)
+(min_rank(1:10)-1)/9
+min_rank(0:10)
+percent_rank(0:10)
+ntile(1:11,11)
+percent_rank(1:11)
+(ntile(1:11,11)-1)/10
+```
+
+## Save Small Lorenz dataset
 
 ```{r}
-if (1==0) {
-readr::write_rds(df_lorenz100incCum, file = paste0(data_dir_on_this_machine,
+if (rewrite==1) {
+readr::write_rds(df_lorenz, file = paste0(data_dir_on_this_machine,
                    glue("{placeTitleShort}_{year}_",
                         "{categoryTitleShort}_{leverTitleShort}_",
-                        "100cumForLorenz",
-                        "_31",   
+                        "lorenzPlannedRidehail",
+                        "_21",   
                         ".rds"  )))
 }
 ```
 
+# ...,.,.,.
+
 # Open Lorenz dataset
 
 ```{r open100lorens}
-df_lorenz100incCum <- readRDS("C:/Users/annik/tmpOnATBcomputer/data/sf_2018_rh_priceXfleetsz_100cumForLorenz_31.rds")
-df_lorenz <- ungroup(df_lorenz100incCum)
+# df_lorenz <- readRDS("C:/Users/annik/tmpOnATBcomputer/data/sf_2018_rh_priceXfleetsz_100cumForLorenz_31.rds")
+df_lorenz <- readr::read_rds(file = paste0(data_dir_on_this_machine,
+                   glue("{placeTitleShort}_{year}_",
+                        "{categoryTitleShort}_{leverTitleShort}_",
+                        "lorenzPlannedRidehail",
+                        "_21",   
+                        ".rds"  )))
+df_lorenz <- ungroup(df_lorenz)
 ```
+
+# Make Cumulatives
 
 ```{r}
 # Make cumulative and cumulative percent
 df_lorenz <- df_lorenz |> 
-      group_by(lever_position_fleetsize,lever_position_price)|> 
-        arrange(income100levels, .by_group = TRUE) |> 
-        mutate(incCum = cumsum(income100levels)) |> 
-        mutate(incCumPct = incCum/max(incCum)) |> 
-        mutate(durationAvgCum = cumsum(duration_avg)) |> 
-        mutate(durationAvgCumPct = durationAvgCum/max(durationAvgCum)) |> 
-        mutate(durationDoorDoorAvgCum = cumsum(duration_door_to_door_avg)) |> 
-        mutate(durationDoorDoorAvgCumPct = durationDoorDoorAvgCum/max(durationDoorDoorAvgCum)) |> 
-        mutate(durationWaitAvgCum = cumsum(waitTime_avg)) |> 
-        mutate(durationWaitAvgCumPct = durationWaitAvgCum/max(durationWaitAvgCum)) |>
-        mutate(potNEXNeg = -Potential_INEXUS_in_dollar_avg) |> 
-        mutate(potNEXNegCum = cumsum(potNEXNeg)) |> 
-        mutate(potNEXNegCumPct = potNEXNegCum/max(potNEXNegCum)) |> 
+    group_by(lever_position_fleetsize,lever_position_price)|> 
+      arrange(incomeRank0to20_avg, .by_group = TRUE) |> 
+        rename(income = income_in_thousands_avg) |> 
+        mutate(incomeCum = cumsum(income)) |> 
+        mutate(incomePctOfTotalInc = income / max(incomeCum)) |> 
+        mutate(incomePctOfTotalIncCum =  incomeCum / max(incomeCum)) |> 
+        rename(incRank = incomeRank0to20_avg) |> 
+        mutate(incPercentRank = incomePercentRank0to20_avg) |> 
+  
+        mutate(incomeAverage = mean(income)) |> 
+        mutate(incomeAveragePct = incomeAverage / max(incomeCum)) |> 
+        mutate(incomeAveragePctCum = cumsum(incomeAveragePct)) |> 
+  
+  
+        rename(DoorToDoorTime =  duration_door_to_door_avg) |> 
+        mutate(DoorToDoorTimeCum = cumsum(DoorToDoorTime)) |> 
+        mutate(DoorToDoorTimePctOfTotalTime = DoorToDoorTime/max(DoorToDoorTimeCum)) |> 
+        mutate(DoorToDoorTimePctOfTotalTimeCum = DoorToDoorTimeCum/max(DoorToDoorTimeCum)) |> 
+        
+        mutate(DoorToDoorTimeAverage = mean(DoorToDoorTime)) |> 
+        mutate(DoorToDoorTimeAverageCum = cumsum(DoorToDoorTimeAverage)) |> 
+        mutate(DoorToDoorTimeAveragePctOfTotalTime = DoorToDoorTimeAverage/max(DoorToDoorTimeAverageCum)) |> 
+        mutate(DoorToDoorTimeAveragePctOfTotalTimeCum = DoorToDoorTimeAverageCum/max(DoorToDoorTimeAverageCum)) |> 
         ungroup()
 ```
 
+# Scenarios
+
+```{r}
+levels(as.factor(df_lorenz$lever_position_fleetsize))
+levels(as.factor(df_lorenz$lever_position_price))
+df_lorenz <- df_lorenz |> mutate(lever_position_fleetsizeXprice = 
+                                   paste0(lever_position_fleetsize,"; "
+                                          ,lever_position_price))
+df_lorenz |> group_by(lever_position_fleetsize, lever_position_price) |> 
+  summarise(n = n())
+```
+
+# ,,..,,,.,.,..,,.
+
 # Graph
 
-```{r graph dataset}
-df_graph <- df_lorenz |>  filter(lever_position_price ==1)
-levels(as.factor(df_graph$lever_position_fleetsize))
-levels(as.factor(df_graph$lever_position_price))
-```
-
-```{r theme}
+```{r theme_change_from_pre-themed}
 # p0 <- fx_get_TitlesLevels_createBaseGraph_g0(y_var = `Lever Position Price`)
-p1 <- ggplot(data = df_graph) +
-     # scale_color_gradient(breaks = as_vector(leverLevelsLst_price)) +
-      theme(legend.position = "right") +
-      theme(aspect.ratio = 1) # So that it's a square 
-      # coord_cartesian(xlim = c(0,max(cum_income)))  +
-      
+theme_update(legend.position = "right",
+             aspect.ratio=1 # so that it's square 
+             # coord_cartesian(xlim = c(0,NA)) # coord_cartesian(xlim = c(0,max(cum_income))) 
+             )
+# scale_color_gradient(breaks = as_vector(leverLevelsLst_price)) 
 ```
 
-# Showing total or pct
-
-```{r yvar}
-# yvar <- "durationWaitAvgCumPct"
-# yvar <- "durationWaitAvgCum"
-# yvar <- "potNEXNegCumPct"
-# yvar <- "potNEXNegCum"
-# yvar <- "durationAvgCum"
-yvar <- "durationAvgCumPct"
-# yvar <- "income100levels"
-```
+# Average
 
 ```{r plot}
-p2 <- p1 +  geom_line(mapping =  aes(x = incCumPct, y = .data[[yvar]],
-                                     color = lever_position_fleetsize,
-                                     group = lever_position_fleetsize)) 
-p2
-priceLevelVector <- as.numeric(levels(as_factor(df_graph$lever_position_fleetsize)))
+p1 <- ggplot(data = df_lorenz |> 
+               filter(lever_position_price > -1) |> 
+               filter(lever_position_fleetsize == 0.25)  )
+p1 <- p1 + aes(alpha = lever_position_price,
+               color = lever_position_fleetsize,
+               group = lever_position_fleetsizeXprice)
+p3 <- p1 + aes(x =  income)                         # incPercentRank income20levels income_in_thousands_avg incPct    incCumPct        incCumPct
+p3 <- p3 + geom_line(aes(y = DoorToDoorTime)) # duration_door_to_door_avg durationDoorDoorAvgPctCum
+p3 <- p3 + geom_line(aes(y = DoorToDoorTimeAverage), alpha = .5, linetype = 2)                     # durationDoorDoorAvgAvg    durationDoorDoorAvgAvgCumPct
+p3
+p6 <- p1 + aes(x =  incPercentRank)                         # incPercentRank income20levels income_in_thousands_avg incPct    incCumPct        incCumPct
+p6 <- p6 + geom_line(aes(y = DoorToDoorTimePctOfTotalTime)) # duration_door_to_door_avg durationDoorDoorAvgPctCum
+p6 <- p6 + geom_line(aes(y = DoorToDoorTimeAveragePctOfTotalTime), alpha = .5, linetype = 2)                     # durationDoorDoorAvgAvg    durationDoorDoorAvgAvgCumPct
+p6
+p4 <- p1 + aes(x =   incPercentRank)                         # incPercentRank income20levels income_in_thousands_avg incPct    incCumPct        incCumPct
+p4 <- p4 + geom_line(aes(y = DoorToDoorTimePctOfTotalTimeCum)) # duration_door_to_door_avg durationDoorDoorAvgPctCum
+p4 <- p4 + geom_line(aes(y = DoorToDoorTimeAveragePctOfTotalTimeCum), alpha = .5, linetype = 2)                     # durationDoorDoorAvgAvg    durationDoorDoorAvgAvgCumPct
+p4
+```
+
+```{r Actual Gini}
+pGini <- p1 + 
+          aes(x =  incPercentRank)  +
+          geom_line(aes(y=incomePctOfTotalIncCum)) +
+          geom_line(aes(y = incomeAveragePctCum), alpha = .5, linetype = 2) 
+
+pGini
+```
+
+# ..,.,.,
+
+# extra notes
+
+## Many lines
+
+```{r many 45 degree lines}
+priceLevelVector <- as.numeric(levels(as_factor(df_lorenz$lever_position_fleetsize)))
 p3 <- p2 +   map( .x = priceLevelVector, 
                   ~ geom_segment(x=0, y=0,
-                                 xend=1,yend= max(df_graph |> 
+                                 xend=1,yend= max(df_lorenz |> 
                                                   filter(lever_position_fleetsize==.x) |> 
                                                   select(.data[[yvar]])),
                         color = "grey", alpha = .5, linetype = 2))
 p3
-```
-
-```{r}
-
 ```
