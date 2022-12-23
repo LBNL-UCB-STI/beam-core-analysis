@@ -22,10 +22,14 @@ categoryTitleShort <- "rh"
 
 # ,.,....,.,.,.,
 
+# Create Dataset
+
+# If needed
+
 # Make New Small Dataset?
 
 ```{r rewrite small dataset}
-rewrite <- 1
+rewrite <- 0  # 0 if do not want to make a new one
 ignoreAWS <- TRUE
 usingOwnFile <- TRUE
 ```
@@ -70,50 +74,123 @@ if (rewrite==1) {
 }
 ```
 
-```{r Filter - only transit?}
-## Filter (only those who switched? only those who rode transit?)
-############################################################3
-        ############################
-        # make sure data is filtered previous to this
-        # like if you want only people who take transit
-levels(as.factor(df_temp$mode_5planned))
-if (rewrite==1) {
-  df_temp_small <- df_temp_small |> 
-    filter(mode_5plannedAtBaseline == "Ride Hail Pooled" | 
-             mode_5plannedAtBaseline == "Ride Hail Solo")
-}
-
-```
-
 ```{r rank by income}
 if (rewrite==1) {
   df_temp_small <- df_temp_small |> 
-          group_by(lever_position_fleetsize,lever_position_price) |> 
+          group_by(lever_position_fleetsize,lever_position_price) |>
           mutate(incomeRank1to21 = ntile(income_in_thousands,21)) |>
           mutate(incomeRank0to20 = incomeRank1to21-1) |>
           mutate(incomePercentRank0to20 = incomeRank0to20/20 ) |>
-          mutate(incomePercentRank0to20b= percent_rank(incomeRank1to21)) |> 
-          mutate(incomeRankEveryPerson1toN = min_rank(income_in_thousands)) |>
-          mutate(incomePercentRankEveryPerson0to1 = percent_rank(income_in_thousands)) 
-  df_temp_small <- ungroup(df_temp_small)
+          mutate(incomePercentRank0to20b= percent_rank(incomeRank1to21))  
+          # mutate(incomeRankEveryPerson1toN = min_rank(income_in_thousands)) |>
+          # mutate(incomePercentRankEveryPerson0to1 = percent_rank(income_in_thousands)) 
+  # df_temp_small <- df_temp_small |> 
+  #         arrange(incomeRank0to20) |>       
+  #         mutate(incomeCumByRankEveryPerson1toN = cumsum(income_in_thousands))
+    df_temp_small <- ungroup(df_temp_small)
+    
+    df_temp_small <- df_temp_small |> mutate(lever_position_fleetsizeXprice = 
+                                   paste0(lever_position_fleetsize,"; "
+                                          ,lever_position_price))
 }
+```
+
+```{r}
 if (rewrite==1) {
-# Collapse into averages
-  df_lorenz <- df_temp_small |>
-     group_by(lever_position_fleetsize,lever_position_price,
-               # mandatoryCat,
-               # mode_5actual,mode_5planned,mode_5plannedAtBaseline,
-               # auto_ownership,
-               # income100levels
-              # incomeRank0to20
-              incomeRankEveryPerson1toN
-               ) |>
-      summarise(
-              across(where(is.numeric),~mean(.x),.names = "{.col}_avg"),
-                across(where(is.factor ),~n_distinct(.x),.names = "{.col}_Ndis"),    
-      NpersonTripObs = n(),
-                 .groups = "drop") 
-  df_lorenz <- ungroup(df_lorenz)
+  df_temp_small <- df_temp_small |> 
+    mutate(mode_RHplanned = 
+      case_when(
+        mode_5planned == "Ride Hail Pooled" ~ 1,
+        mode_5planned == "Ride Hail Solo" ~ 1,
+        TRUE ~ 0
+      ))
+df_temp_small <- df_temp_small |> 
+    mutate(mode_RHplannedAtBaseline = 
+      case_when(
+        mode_5plannedAtBaseline == "Ride Hail Pooled" ~ 1,
+        mode_5plannedAtBaseline == "Ride Hail Solo" ~ 1,
+        TRUE ~ 0
+      ))
+df_temp_small <- df_temp_small |> 
+    mutate(mode_switchedFromBaseline = 
+      case_when(
+        mode_RHplannedAtBaseline != mode_RHplanned ~ 1,
+        TRUE ~ 0
+      ))
+
+df_temp_small <- df_temp_small |> 
+    mutate(PotInex_RelativeToBaseline =
+             Potential_INEXUS_in_dollar - PotInex_atBaseline)
+}
+```
+
+```{r Save Ranked}
+if (rewrite==1) {
+readr::write_rds(df_temp_small, file = paste0(data_dir_on_this_machine,
+                   glue("{placeTitleShort}_{year}_",
+                        "{categoryTitleShort}_{leverTitleShort}_",
+                        "ranked",
+                        "_21",   
+                        ".rds"  )))
+}
+```
+
+```{r open ranked}
+if (rewrite==1) {
+  # df_lorenz <- readRDS("C:/Users/annik/tmpOnATBcomputer/data/sf_2018_rh_priceXfleetsz_100cumForLorenz_31.rds")
+df_temp_small <- readr::read_rds(file = paste0(data_dir_on_this_machine,
+                   glue("{placeTitleShort}_{year}_",
+                        "{categoryTitleShort}_{leverTitleShort}_",
+                        "ranked",
+                        "_21",   
+                        ".rds"  )))
+df_temp_small <- ungroup(df_temp_small)
+}
+```
+
+# Collapse to Lorenz
+
+```{r}
+if (rewrite==1) {
+df_lorenz  <-   df_temp_small |> 
+  group_by(lever_position_fleetsize, 
+           lever_position_price,
+           incomeRank0to20) |> 
+  summarise(across(where(is.numeric),~mean(.x),.names = "{.col}_avg"),
+            nRH_planned = sum(mode_RHplanned),
+            nRH_plannedAtBaseline = sum(mode_RHplannedAtBaseline),
+            nSwitched_RH = sum(mode_switchedFromBaseline),
+            Pot_BetterWorse = mean(PotInex_RelativeToBaseline),
+            NpersonTripObs = n(),
+            .groups = "drop") 
+}
+```
+
+```{r collapse}
+if (rewrite==1) {
+## Filter (only those who switched? only those who rode transit?)
+# levels(as.factor(df_temp$mode_5planned))
+# df_temp_small <- df_temp_small 
+# # |> 
+# #     filter(mode_5plannedAtBaseline == "Ride Hail Pooled" | 
+#              # mode_5plannedAtBaseline == "Ride Hail Solo")
+# # Collapse into averages
+#   df_lorenz <- df_temp_small |>
+#      group_by(lever_position_fleetsize,lever_position_price
+#               ,
+#                # mandatoryCat,
+#                # mode_5actual,mode_5planned,mode_5plannedAtBaseline,
+#                # auto_ownership,
+#                # income100levels
+#               incomeRank0to20
+#               # incomeRankEveryPerson1toN
+#               # incomePercentRankEveryPerson0to1
+#                ) |>
+#       summarise(
+#               across(where(is.numeric),~mean(.x),.names = "{.col}_avg"),
+#                 across(where(is.factor ),~n_distinct(.x),.names = "{.col}_Ndis"),    
+#       NpersonTripObs = n()) 
+#   df_lorenz <- ungroup(df_lorenz)
 }
 ```
 
@@ -128,49 +205,58 @@ percent_rank(1:11)
 (ntile(1:11,11)-1)/10
 ```
 
-## Save Small Lorenz dataset
+## Save Small dataset
 
 ```{r}
 if (rewrite==1) {
 readr::write_rds(df_lorenz, file = paste0(data_dir_on_this_machine,
                    glue("{placeTitleShort}_{year}_",
                         "{categoryTitleShort}_{leverTitleShort}_",
-                        "lorenzPlannedRidehail",
+                        "lorenz",
                         "_21",   
                         ".rds"  )))
 }
 ```
 
-# ...,.,.,.
+# Open small dataset
 
-# Open Lorenz dataset
+## Remake Cumulatives?
+
+```{r}
+remakeCum <- 0
+```
 
 ```{r open100lorens}
+if (remakeCum == 1) {
 # df_lorenz <- readRDS("C:/Users/annik/tmpOnATBcomputer/data/sf_2018_rh_priceXfleetsz_100cumForLorenz_31.rds")
 df_lorenz <- readr::read_rds(file = paste0(data_dir_on_this_machine,
                    glue("{placeTitleShort}_{year}_",
                         "{categoryTitleShort}_{leverTitleShort}_",
-                        "lorenzPlannedRidehail",
+                        "lorenz",
                         "_21",   
                         ".rds"  )))
 df_lorenz <- ungroup(df_lorenz)
+}
 ```
 
-# Make Cumulatives
+## Make Cumulatives
 
 ```{r}
 # Make cumulative and cumulative percent
-df_lorenz <- df_lorenz |> 
-    group_by(lever_position_fleetsize,lever_position_price)|> 
-      arrange(incomeRank0to20_avg, .by_group = TRUE) |> 
+if (remakeCum == 1) {
+  df_lorenz <- df_lorenz |> 
+    group_by(lever_position_fleetsize,lever_position_price)|>
+      arrange(incomeRank0to20, .by_group = TRUE) |>
+      # arrange(incomeRank0to20_avg) |> 
         rename(income = income_in_thousands_avg) |> 
         mutate(incomeCum = cumsum(income)) |> 
-        mutate(incomePctOfTotalInc = income / max(incomeCum)) |> 
-        mutate(incomePctOfTotalIncCum =  incomeCum / max(incomeCum)) |> 
-        rename(incRank = incomeRank0to20_avg) |> 
+        mutate(incomePctOfTotal = income / max(incomeCum)) |> 
+        mutate(incomeCumPctOfTotal =  incomeCum / max(incomeCum)) |> 
+        rename(incRank = incomeRank0to20) |> 
         mutate(incPercentRank = incomePercentRank0to20_avg) |> 
   
         mutate(incomeAverage = mean(income)) |> 
+        mutate(incomeAverageCum = cumsum(incomeAverage)) |> 
         mutate(incomeAveragePct = incomeAverage / max(incomeCum)) |> 
         mutate(incomeAveragePctCum = cumsum(incomeAveragePct)) |> 
   
@@ -178,32 +264,101 @@ df_lorenz <- df_lorenz |>
         rename(DoorToDoorTime =  duration_door_to_door_avg) |> 
         mutate(DoorToDoorTimeCum = cumsum(DoorToDoorTime)) |> 
         mutate(DoorToDoorTimePctOfTotalTime = DoorToDoorTime/max(DoorToDoorTimeCum)) |> 
-        mutate(DoorToDoorTimePctOfTotalTimeCum = DoorToDoorTimeCum/max(DoorToDoorTimeCum)) |> 
+        mutate(DoorToDoorTimeCumPctOfTotal = DoorToDoorTimeCum/max(DoorToDoorTimeCum)) |> 
         
         mutate(DoorToDoorTimeAverage = mean(DoorToDoorTime)) |> 
         mutate(DoorToDoorTimeAverageCum = cumsum(DoorToDoorTimeAverage)) |> 
         mutate(DoorToDoorTimeAveragePctOfTotalTime = DoorToDoorTimeAverage/max(DoorToDoorTimeAverageCum)) |> 
         mutate(DoorToDoorTimeAveragePctOfTotalTimeCum = DoorToDoorTimeAverageCum/max(DoorToDoorTimeAverageCum)) |> 
-        ungroup()
+
+          ungroup()
+df_lorenz <- df_lorenz |> 
+    group_by(lever_position_fleetsize,lever_position_price)|>
+      arrange(incRank, .by_group = TRUE) |>
+ 
+        rename(PotInex =  Potential_INEXUS_in_dollar_avg) |> 
+        mutate(PotInexCum = cumsum(PotInex)) |> 
+        mutate(PotInexPctOfTotal = PotInex/max(PotInexCum)) |> 
+        mutate(PotInexCumPctOfTotal = PotInexCum/max(PotInexCum)) |> 
+                    ungroup()
+
+}
 ```
 
-# Scenarios
+## Scenarios
 
 ```{r}
-levels(as.factor(df_lorenz$lever_position_fleetsize))
+if (remakeCum == 1) {
+  levels(as.factor(df_lorenz$lever_position_fleetsize))
 levels(as.factor(df_lorenz$lever_position_price))
 df_lorenz <- df_lorenz |> mutate(lever_position_fleetsizeXprice = 
                                    paste0(lever_position_fleetsize,"; "
                                           ,lever_position_price))
-df_lorenz |> group_by(lever_position_fleetsize, lever_position_price) |> 
+
+df_lorenz |> group_by(lever_position_fleetsize, lever_position_price, lever_position_fleetsizeXprice) |> 
   summarise(n = n())
+
+df_lorenz <- df_lorenz |> 
+  mutate(lever_position_price_Char = as.character(lever_position_price))
+}
 ```
 
-# ,,..,,,.,.,..,,.
+## Save Lorenz dataset
 
-# Graph
+```{r}
+if (remakeCum == 1) {
+  readr::write_rds(df_lorenz, file = paste0(data_dir_on_this_machine,
+                   glue("{placeTitleShort}_{year}_",
+                        "{categoryTitleShort}_{leverTitleShort}_",
+                        "lorenzWithCums",
+                        "_21",   
+                        ".rds"  )))
+}
+```
 
-```{r theme_change_from_pre-themed}
+# ,
+
+# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+# : GRAPHS :
+
+# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+```{r Open Lorenz dataset}
+# df_lorenz <- readRDS("C:/Users/annik/tmpOnATBcomputer/data/sf_2018_rh_priceXfleetsz_100cumForLorenz_31.rds")
+df_lorenz <- readr::read_rds(file = paste0(data_dir_on_this_machine,
+                   glue("{placeTitleShort}_{year}_",
+                        "{categoryTitleShort}_{leverTitleShort}_",
+                        "lorenzWithCums",
+                        "_21",   
+                        ".rds"  )))
+df_lorenz <- ungroup(df_lorenz)
+```
+
+```{r Get list of levers}
+lever_vars  <- names(df_lorenz |> select(contains("lever")))
+leverLevelsLst_fltsz <- levels(as.factor(df_lorenz$lever_position_fleetsize))
+leverlevelsStr_fltsz <- paste(leverLevelsLst_fltsz, collapse="  ")
+leverlevelsNum_fltsz <- as.numeric(leverLevelsLst_fltsz)
+leverLevelsLst_price <- levels(as.factor(df_lorenz$lever_position_price))
+leverlevelsStr_price <- paste(leverLevelsLst_price, collapse="  ")
+leverlevelsNum_price <- as.numeric(leverLevelsLst_price)
+
+placeTitleShort <- "sf"
+year <- "2018"
+leverTitleShort <- "priceXfleetsz"
+categoryTitleShort <- "rh"
+
+#Description
+html(contents(df_lorenz),  levelType='table')
+print(glue("
+               Scenario: ({categoryTitleShort}),
+                  lever:  ({leverTitleShort}),
+           levels Price: {leverlevelsStr_fltsz}
+           levels Size : {leverlevelsStr_price}"))
+```
+
+```{r Graph Theme}
 # p0 <- fx_get_TitlesLevels_createBaseGraph_g0(y_var = `Lever Position Price`)
 theme_update(legend.position = "right",
              aspect.ratio=1 # so that it's square 
@@ -212,36 +367,141 @@ theme_update(legend.position = "right",
 # scale_color_gradient(breaks = as_vector(leverLevelsLst_price)) 
 ```
 
-# Average
+# , , , , , , , , , , , , , , , , , , , , ,
+
+# ; Poster Graph -- Potential Better worse than baseline
+
+```{r plot}
+
+p1 <- ggplot(data = df_lorenz |> filter(lever_position_price > -1) |> 
+                                 filter(lever_position_fleetsize == 1))
+p1 <- p1 + aes(color = lever_position_price,
+               group = lever_position_price_Char)
+p8 <- p1 + aes(x =  incRank)                         # incPercentRank income20levels income_in_thousands_avg incPct    incCumPct        incCumPct
+p8 <- p8 + geom_line(aes(y = Pot_BetterWorse)) # duration_door_to_door_avg durationDoorDoorAvgPctCum
+# Formatting
+p8 <- p8 +
+      ylab("Potential INEXUS relative to Baseline") +
+      xlab("Income Rank (Percentiles of Income)") +
+      labs(color = "RH Price") 
+p9 <- p8 +
+      # scale_color_continuous(guide = guide_colorsteps(
+    # label.vjust = 0.8))
+  scale_color_binned(breaks = c(leverlevelsNum_price),
+                     guide = guide_colorsteps(show.limits = TRUE,
+                     # guide = guide_colorbar(
+                     label.vjust = 1.8 
+                     # barheight = 12,
+                     # ticks = TRUE, 
+                     # ticks.linewidth = 2
+     ))
+
+p9
+ggsave(plot = p9,filename = paste0(data_dir_on_this_machine,
+                                   glue("graphs_all/RelativeINEX",
+                                        Sys.Date(),
+                                        ".png")))
+```
+
+```{r aspect ratio}
+# Height and Width
+my_aspRatio <- 1
+pFinal <- p9 +
+                theme(aspect.ratio = my_aspRatio) +
+                plot_layout(design = "
+                            1
+                            ",
+                            widths =unit(c(3.25),c('in','in'))
+                            # ,
+                            # heights = unit(c(4*2),c('in','in'))
+                            )
+pFinal  
+ggsave(plot = pFinal,width = 6.25,height = 3.25*my_aspRatio, units = "in",
+       filename = 
+         paste0(data_dir_on_this_machine,
+                 glue("graphs_all/RelativeINEXasp",
+                                        Sys.Date(),
+                                        ".png")))
+
+```
+
+# , , , , , , , , , , , , , , , , , , , , ,
+
+# ; Actual Gini
+
+```{r Actual Gini}
+p1 <- ggplot(data = df_lorenz |> 
+               filter(lever_position_price > -1) |> 
+               filter(lever_position_fleetsize == 2.25)  )
+p1 <- p1 + aes(color = lever_position_price,
+               alpha = lever_position_fleetsize,
+               group = lever_position_fleetsizeXprice)
+pGini <- p1 + 
+          aes(x =  incRank)  +
+          geom_line(aes(y=incomeCumPctOfTotal)) +
+          geom_line(aes(y = incomeAveragePctCum), alpha = .5, linetype = 2)
+pGini
+```
+
+# , , , , , , , , , , , , , , , , , , , , ,
+
+# ; Pot INEX not relative
 
 ```{r plot}
 p1 <- ggplot(data = df_lorenz |> 
                filter(lever_position_price > -1) |> 
-               filter(lever_position_fleetsize == 0.25)  )
-p1 <- p1 + aes(alpha = lever_position_price,
-               color = lever_position_fleetsize,
+               filter(lever_position_fleetsize == 1 | lever_position_fleetsize == 2.25)  )
+p1 <- p1 + aes(color = lever_position_fleetsizeXprice,
+               # alpha = lever_position_fleetsizeXprice,
+               group = lever_position_fleetsizeXprice)
+p3 <- p1 + aes(x =  income)                         # incPercentRank income20levels income_in_thousands_avg incPct    incCumPct        incCumPct
+p3 <- p3 + geom_line(aes(y = PotInex)) # duration_door_to_door_avg durationDoorDoorAvgPctCum
+# p3 <- p3 + geom_line(aes(y = PotInexAverage), alpha = .5, linetype = 2)                     # durationDoorDoorAvgAvg    durationDoorDoorAvgAvgCumPct
+p3
+p6 <- p1 + aes(x =  incRank)                         # incPercentRank income20levels income_in_thousands_avg incPct    incCumPct        incCumPct
+p6 <- p6 + geom_line(aes(y = PotInex)) # duration_door_to_door_avg durationDoorDoorAvgPctCum
+# p6 <- p6 + geom_line(aes(y = PotInexAverage), alpha = .5, linetype = 2)                     # durationDoorDoorAvgAvg    durationDoorDoorAvgAvgCumPct
+p6
+p7 <- p1 + aes(x =  income)                         # incPercentRank income20levels income_in_thousands_avg incPct    incCumPct        incCumPct
+p7 <- p7 + geom_line(aes(y = Pot_BetterWorse)) # duration_door_to_door_avg durationDoorDoorAvgPctCum
+p7
+p8 <- p1 + aes(x =  incPercentRank)                         # incPercentRank income20levels income_in_thousands_avg incPct    incCumPct        incCumPct
+p8 <- p8 + geom_line(aes(y = Pot_BetterWorse)) # duration_door_to_door_avg durationDoorDoorAvgPctCum
+p8
+
+```
+
+# , , , , , , , , , , , , , , , , , , , , ,
+
+# ; Door Door Time
+
+```{r plot}
+p1 <- ggplot(data = df_lorenz |> 
+               filter(lever_position_price > -1) |> 
+               filter(lever_position_fleetsize == 1 | lever_position_fleetsize == 2.25)  )
+p1 <- p1 + aes(color = lever_position_fleetsizeXprice,
+               # alpha = lever_position_fleetsizeXprice,
                group = lever_position_fleetsizeXprice)
 p3 <- p1 + aes(x =  income)                         # incPercentRank income20levels income_in_thousands_avg incPct    incCumPct        incCumPct
 p3 <- p3 + geom_line(aes(y = DoorToDoorTime)) # duration_door_to_door_avg durationDoorDoorAvgPctCum
 p3 <- p3 + geom_line(aes(y = DoorToDoorTimeAverage), alpha = .5, linetype = 2)                     # durationDoorDoorAvgAvg    durationDoorDoorAvgAvgCumPct
 p3
-p6 <- p1 + aes(x =  incPercentRank)                         # incPercentRank income20levels income_in_thousands_avg incPct    incCumPct        incCumPct
-p6 <- p6 + geom_line(aes(y = DoorToDoorTimePctOfTotalTime)) # duration_door_to_door_avg durationDoorDoorAvgPctCum
-p6 <- p6 + geom_line(aes(y = DoorToDoorTimeAveragePctOfTotalTime), alpha = .5, linetype = 2)                     # durationDoorDoorAvgAvg    durationDoorDoorAvgAvgCumPct
+p6 <- p1 + aes(x =  incRank)                         # incPercentRank income20levels income_in_thousands_avg incPct    incCumPct        incCumPct
+p6 <- p6 + geom_line(aes(y = DoorToDoorTime)) # duration_door_to_door_avg durationDoorDoorAvgPctCum
+p6 <- p6 + geom_line(aes(y = DoorToDoorTimeAverage), alpha = .5, linetype = 2)                     # durationDoorDoorAvgAvg    durationDoorDoorAvgAvgCumPct
 p6
+p8 <- p1 + aes(x =  incRank)                         # incPercentRank income20levels income_in_thousands_avg incPct    incCumPct        incCumPct
+p8 <- p8 + geom_line(aes(y = DoorToDoorTimePctOfTotalTime)) # duration_door_to_door_avg durationDoorDoorAvgPctCum
+p8 <- p8 + geom_line(aes(y = DoorToDoorTimeAveragePctOfTotalTime), alpha = .5, linetype = 2)                     # durationDoorDoorAvgAvg    durationDoorDoorAvgAvgCumPct
+p8
 p4 <- p1 + aes(x =   incPercentRank)                         # incPercentRank income20levels income_in_thousands_avg incPct    incCumPct        incCumPct
-p4 <- p4 + geom_line(aes(y = DoorToDoorTimePctOfTotalTimeCum)) # duration_door_to_door_avg durationDoorDoorAvgPctCum
+p4 <- p4 + geom_line(aes(y = DoorToDoorTimeCumPctOfTotal)) # duration_door_to_door_avg durationDoorDoorAvgPctCum
 p4 <- p4 + geom_line(aes(y = DoorToDoorTimeAveragePctOfTotalTimeCum), alpha = .5, linetype = 2)                     # durationDoorDoorAvgAvg    durationDoorDoorAvgAvgCumPct
 p4
-```
-
-```{r Actual Gini}
-pGini <- p1 + 
-          aes(x =  incPercentRank)  +
-          geom_line(aes(y=incomePctOfTotalIncCum)) +
-          geom_line(aes(y = incomeAveragePctCum), alpha = .5, linetype = 2) 
-
-pGini
+p7 <- p1 + aes(x =   incRank)                         # incPercentRank income20levels income_in_thousands_avg incPct    incCumPct        incCumPct
+p7 <- p7 + geom_line(aes(y = DoorToDoorTimeCum)) # duration_door_to_door_avg durationDoorDoorAvgPctCum
+p7 <- p7 + geom_line(aes(y = DoorToDoorTimeAverageCum), alpha = .5, linetype = 2)                     # durationDoorDoorAvgAvg    durationDoorDoorAvgAvgCumPct
+p7
 ```
 
 # ..,.,.,
