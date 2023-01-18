@@ -3,9 +3,9 @@ library(dplyr)
 library(data.table)
 
 # SELECT AUSTIN STATIONS
-file_link = '/Volumes/GoogleDrive/My Drive/BEAM-CORE/BEAM Validation/data for validation/Austin/NPMRDS/Texas.shp'
+file_link = '/Users/xiaodanxu/Library/CloudStorage/GoogleDrive-arielinseu@gmail.com/My Drive/BEAM-CORE/BEAM Validation/data for validation/Austin/NPMRDS/Texas.shp'
 texas_npmrds_station <- st_read(file_link)
-austin_boundary <- st_read('/Volumes/GoogleDrive/My Drive/BEAM-CORE/BEAM Validation/data for validation/Austin/austin_counties.shp')
+austin_boundary <- st_read('/Users/xiaodanxu/Library/CloudStorage/GoogleDrive-arielinseu@gmail.com/My Drive/BEAM-CORE/BEAM Validation/data for validation/Austin/austin_counties.shp')
 austin_boundary <- st_transform(austin_boundary, 4326)
 
 austin_npmrds_station <- st_intersection(texas_npmrds_station, austin_boundary)
@@ -17,7 +17,7 @@ st_write(austin_npmrds_station,
 
 
 # load BEAM network
-setwd("/Volumes/GoogleDrive/My Drive/BEAM-CORE/BEAM Validation/sample output/AUS2018/")
+setwd("/Users/xiaodanxu/Library/CloudStorage/GoogleDrive-arielinseu@gmail.com/My Drive/BEAM-CORE/BEAM Validation/sample output/AUS_freight/")
 beam_network <- st_read('beam_network_by_county.geojson')
 roadway_type <- c('motorway_link', 'trunk', 'trunk_link', 
                   'primary_link', 'motorway', 'primary', 'secondary', 'secondary_link')

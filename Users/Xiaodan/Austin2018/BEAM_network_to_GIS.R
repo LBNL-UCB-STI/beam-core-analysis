@@ -1,7 +1,8 @@
 library(sf)
 library(dplyr)
 library(data.table)
-file_link <- '/Volumes/GoogleDrive/My Drive/BEAM-CORE/BEAM Validation/sample output/AUS2010/'
+
+file_link <- '/Users/xiaodanxu/Library/CloudStorage/GoogleDrive-arielinseu@gmail.com/My Drive/BEAM-CORE/BEAM Validation/sample output/AUS_freight/'
 beam_network <-read.csv(paste0(file_link, 'network.csv.gz'))
 beam_network_onode_sf = st_as_sf(beam_network, coords = c('fromLocationX', 'fromLocationY'), 
                                 crs = 26910, agr = "constant")
@@ -31,7 +32,7 @@ st_write(beam_network_out, paste0(file_link, "beam_network_out.geojson"), append
 #### clean up beam network and assign county ####
 
 beam_network_out <- st_read(paste0(file_link, "beam_network_out.geojson"))
-austin_boundary <- st_read('/Volumes/GoogleDrive/My Drive/BEAM-CORE/BEAM Validation/data for validation/Austin/austin_counties.shp')
+austin_boundary <- st_read('/Users/xiaodanxu/Library/CloudStorage/GoogleDrive-arielinseu@gmail.com/My Drive/BEAM-CORE/BEAM Validation/data for validation/Austin/austin_counties.shp')
 austin_boundary <- st_transform(austin_boundary, 4326)
 
 beam_network_splits <- st_intersection(beam_network_out, austin_boundary)
@@ -42,6 +43,7 @@ plot(st_geometry(beam_network_splits), add = TRUE)
 beam_network_splits <- beam_network_splits %>%
   select(linkId, linkLength, length, linkFreeSpeed, linkCapacity, numberOfLanes, linkModes, attributeOrigId, attributeOrigType,
          fromNodeId, toNodeId, name, txdot_abbr, fips_code)
+
 beam_network_splits <- beam_network_splits %>% filter(linkLength > 0.001)
 plot(beam_network_splits[, 'name'], axes = TRUE, key.pos = 4, key.width = lcm(4.5))
 
