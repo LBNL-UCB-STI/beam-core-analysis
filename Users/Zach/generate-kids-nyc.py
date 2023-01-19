@@ -1,7 +1,6 @@
 import cvxpy as cp
 import numpy as np
 import pandas as pd
-from joblib import delayed, Parallel
 
 
 def solve(popChunkInt, scenario, per):
@@ -11,7 +10,7 @@ def solve(popChunkInt, scenario, per):
     reindexed = pd.read_parquet('data/nyc-reindexed-{0}-{1}.parquet'.format(scenario, popChunk))
     meanRidership = pd.read_csv('data/nyc-meanRidership-{0}.csv'.format(scenario), index_col=["TPERIOD", "STATION"])
 
-    urbansimPath = "https://github.com/LBNL-UCB-STI/beam-data-newyork/raw/update-calibration/urbansim_v2/13122k-NYC-no-kids-sample-{0}-of-10/{1}.csv.gz"
+    urbansimPath = "https://github.com/LBNL-UCB-STI/beam-data-newyork/blob/update-calibration/urbansim_v2/13122k-NYC-no-kids-sample-{0}-of-10/{1}.csv.gz"
 
     hh_sample = pd.read_csv(urbansimPath.format(popChunk, "households"))
     per_sample = pd.read_csv(urbansimPath.format(popChunk, "persons"))
@@ -72,10 +71,10 @@ def solve(popChunkInt, scenario, per):
 scenario = "base"
 print("Loading urbansim data")
 hh = pd.read_csv(
-    'https://github.com/LBNL-UCB-STI/beam-data-newyork/raw/update-calibration/urbansim_v2/13122k-NYC-all-ages/households.csv.gz')
+    'https://github.com/LBNL-UCB-STI/beam-data-newyork/blob/update-calibration/urbansim_v2/13122k-NYC-all-ages/households.csv.gz?raw=true')
 per = pd.read_csv(
-    'https://github.com/LBNL-UCB-STI/beam-data-newyork/raw/update-calibration/urbansim_v2/13122k-NYC-all-ages/persons.csv.gz')
+    'https://github.com/LBNL-UCB-STI/beam-data-newyork/blob/update-calibration/urbansim_v2/13122k-NYC-all-ages/persons.csv.gz?raw=true')
 per = per.merge(hh[['household_id', 'block_id']], on='household_id')
 
 print("Starting workers")
-Parallel(n_jobs=5)(delayed(solve)(ii, scenario, per) for ii in range(10))
+[solve(ii, scenario, per) for ii in range(10)]
