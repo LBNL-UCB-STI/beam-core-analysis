@@ -1,20 +1,15 @@
 import cvxpy as cp
 import numpy as np
 import pandas as pd
+from joblib import delayed, Parallel
 
-scenario = "base"
 
-hh = pd.read_csv(
-    'https://github.com/LBNL-UCB-STI/beam-data-newyork/raw/update-calibration/urbansim_v2/13122k-NYC-all-ages/households.csv.gz')
-per = pd.read_csv(
-    'https://github.com/LBNL-UCB-STI/beam-data-newyork/raw/update-calibration/urbansim_v2/13122k-NYC-all-ages/persons.csv.gz')
-per = per.merge(hh[['household_id', 'block_id']], on='household_id')
+def solve(popChunkInt, scenario, per):
+    popChunk = str(popChunkInt)
 
-for ii in range(10):
-    popChunk = str(ii)
-
-    reindexed = pd.read_parquet("data/nyc-reindexed-{0}.parquet".format(popChunk))
-    meanRidership = pd.read_csv("data/nyc-meanRidership.{0}.csv".format(popChunk), index_col=["TPERIOD", "STATION"])
+    print("Loading data for chunk {0}".format(popChunk))
+    reindexed = pd.read_parquet('data/nyc-reindexed-{0}-{1}.parquet'.format(scenario, popChunk))
+    meanRidership = pd.read_csv('data/nyc-meanRidership-{0}.csv'.format(scenario), index_col=["TPERIOD", "STATION"])
 
     urbansimPath = "https://github.com/LBNL-UCB-STI/beam-data-newyork/raw/update-calibration/urbansim_v2/13122k-NYC-no-kids-sample-{0}-of-10/{1}.csv.gz"
 
@@ -45,12 +40,15 @@ for ii in range(10):
         x @ personidToBlockGroup.values <= np.squeeze(kids_by_block_group.values) / 10.0
     ]
     prob = cp.Problem(objective, constraints)
-    prob.solve(verbose=True)
+    prob.solve(verbose=False)
+    print(prob.solver_stats)
 
     approx = np.random.poisson(np.clip(x.value, 0, None))
 
     agentsToDuplicate = pd.DataFrame(approx, index=reindexed.index, columns=["toDuplicate"])
     agentsToDuplicate = agentsToDuplicate.loc[agentsToDuplicate.toDuplicate > 0]
+
+    print("Sampling agents for {0} kids in chunk {1}".format(agentsToDuplicate.shape, popChunk))
 
     per.set_index(['block_id', 'person_id'], inplace=True)
     kids = per.loc[(per.age <= 18) & (per.age >= 8), :]
@@ -68,4 +66,16 @@ for ii in range(10):
     copiedKids = pd.concat(copiedKids)
     copiedKids['adultPersonIdToCopy'] = pd.concat(copiedAdults).values
     copiedKids.to_csv('data/nyc-kids-{0}-{1}.csv'.format(scenario, popChunk))
-    print('done')
+    print("Saving data for chunk {0}".format(popChunk))
+
+
+scenario = "base"
+print("Loading urbansim data")
+hh = pd.read_csv(
+    'https://github.com/LBNL-UCB-STI/beam-data-newyork/raw/update-calibration/urbansim_v2/13122k-NYC-all-ages/households.csv.gz')
+per = pd.read_csv(
+    'https://github.com/LBNL-UCB-STI/beam-data-newyork/raw/update-calibration/urbansim_v2/13122k-NYC-all-ages/persons.csv.gz')
+per = per.merge(hh[['household_id', 'block_id']], on='household_id')
+
+print("Starting workers")
+Parallel(n_jobs=5)(delayed(solve)(ii, scenario, per) for ii in range(10))

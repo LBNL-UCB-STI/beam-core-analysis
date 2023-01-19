@@ -112,7 +112,7 @@ def definePersonProfiles(popChunkInt, s3string):
 
     PEVs = []
     PTs = []
-    for chunk in pd.read_csv(filename, chunksize=4000000):
+    for chunk in pd.read_csv(filename, chunksize=2000000):
         chunk['vehicle'] = chunk['vehicle'].astype(str)
         PEV = chunk.loc[(chunk.type == "PersonEntersVehicle") &
                         ~(chunk['person'].apply(str).str.contains('Agent').fillna(False)) &
