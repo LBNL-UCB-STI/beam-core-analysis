@@ -27,7 +27,7 @@ def fixPathTraversals(PTs):
 
 
 def addGeometryIdToDataFrame(df, gdf, xcol, ycol, idColumn="geometry", df_geom='epsg:4326'):
-    gdf_data = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df[xcol], df[ycol]))
+    gdf_data = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df[xcol], df[ycol]), crs=df_geom)
     gdf_data.set_crs(df_geom)
     joined = gpd.sjoin(gdf_data.to_crs('epsg:26910'), gdf.to_crs('epsg:26910'))
     gdf_data = gdf_data.merge(joined['blkgrpid'], left_index=True, right_index=True, how="left")

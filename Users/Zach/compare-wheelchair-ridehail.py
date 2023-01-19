@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
+import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
 
 outdir = '~/Desktop/git/beam/output/sf-light/'
 filename = '/ITERS/it.0/0.skimsRidehail.csv.gz'
@@ -16,11 +16,13 @@ sk40 = pd.read_csv(outdir + 'urbansim-10k-40pctAccessible' + filename)
 sk45 = pd.read_csv(outdir + 'urbansim-10k-45pctAccessible' + filename)
 sk50 = pd.read_csv(outdir + 'urbansim-10k-50pctAccessible' + filename)
 
-#%%
+
+# %%
 def fill(df):
-    df['completedRequests'] = (100.0 - df['unmatchedRequestsPercent']) * df['observations'] /100.
+    df['completedRequests'] = (100.0 - df['unmatchedRequestsPercent']) * df['observations'] / 100.
     df['totalWaitTime'] = (df['waitTime'] * df['completedRequests']).fillna(0)
     return df
+
 
 sk5 = fill(sk5)
 sk10 = fill(sk10)
@@ -31,24 +33,29 @@ sk40 = fill(sk40)
 sk45 = fill(sk45)
 sk50 = fill(sk50)
 
+# %%
 
-#%%
-
-#sns.distplot(..., hist_kws={'weights': your weights array}, ...)
+# sns.distplot(..., hist_kws={'weights': your weights array}, ...)
 
 f, (ax1, ax2, ax3) = plt.subplots(1, 3)
-sns.histplot(sk5, x='waitTime', hue='wheelchairRequired', stat='probability', weights='observations', common_norm=False, bins=20, ax=ax1)
-sns.histplot(sk20, x='waitTime', hue='wheelchairRequired', stat='probability', weights='observations', common_norm=False, bins=20, ax=ax2)
-sns.histplot(sk40, x='waitTime', hue='wheelchairRequired', stat='probability', weights='observations', common_norm=False, bins=20, ax=ax3)
+sns.histplot(sk5, x='waitTime', hue='wheelchairRequired', stat='probability', weights='observations', common_norm=False,
+             bins=20, ax=ax1)
+sns.histplot(sk20, x='waitTime', hue='wheelchairRequired', stat='probability', weights='observations',
+             common_norm=False, bins=20, ax=ax2)
+sns.histplot(sk40, x='waitTime', hue='wheelchairRequired', stat='probability', weights='observations',
+             common_norm=False, bins=20, ax=ax3)
 
-#%%
+
+# %%
 
 def stats(df):
-    df['completedRequests'] = (100 - df['unmatchedRequestsPercent']) * df['observations'] /100.
+    df['completedRequests'] = (100 - df['unmatchedRequestsPercent']) * df['observations'] / 100.
     meanWaitTime = df['totalWaitTime'].sum() / df['completedRequests'].sum()
     completedFraction = df['completedRequests'].sum() / df['observations'].sum()
-    portionOfRidesByAccessibleVehicles = (df['completedRequests'] * df['accessibleVehiclesPercent']).sum() / df['completedRequests'].sum()
+    portionOfRidesByAccessibleVehicles = (df['completedRequests'] * df['accessibleVehiclesPercent']).sum() / df[
+        'completedRequests'].sum()
     return (meanWaitTime, completedFraction, portionOfRidesByAccessibleVehicles)
+
 
 wt5all, cf5all, acc5all = stats(sk5)
 wt10all, cf10all, acc10all = stats(sk10)
@@ -75,7 +82,7 @@ wt40no, cf40no, acc40no = stats(sk40.loc[~sk40.wheelchairRequired])
 wt45no, cf45no, acc45no = stats(sk45.loc[~sk45.wheelchairRequired])
 wt50no, cf50no, acc50no = stats(sk50.loc[~sk50.wheelchairRequired])
 
-#%%
+# %%
 x = [0.05, 0.1, 0.2, 0.3, 0.35, 0.4, 0.45, 0.5]
 plt.subplot(121)
 plt.scatter(x, [cf5wc, cf10wc, cf20wc, cf30wc, cf35wc, cf40wc, cf45wc, cf50wc], label='Wheelchair')

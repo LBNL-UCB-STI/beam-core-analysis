@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 binnames = {1: "0-1", 2: "1-2", 3: "2-5", 4: "5-15", 5: "15+"}
 distanceBinsMiles = np.array([0, 1, 2, 5, 15, 500])
-path = "data/nyc-baseline.events-20.csv.gz"
+path = "data/nyc-may.events-4.csv.gz"
 events = pd.read_csv(path)
 
 def fixPathTraversals(PTs):
@@ -54,10 +54,11 @@ PT['arrivalTime'] = PT['arrivalTime'].astype(int)
 PT = fixPathTraversals(PT)
 
 gb = MC[['mode','person', 'distBin']].groupby(['mode', 'distBin']).agg('size').unstack().fillna(0.0)
+gb.sum(axis=1).to_csv('out/total-trips-nyc-may-4.csv')
 tot = gb.sum(axis=0)
 gb = gb / gb.sum(axis=0)
 gb.loc['total',:] = tot/tot.sum()
-gb.to_csv('out/mode-shares-nyc-baseline-20.csv')
+gb.to_csv('out/mode-shares-nyc-may-4.csv')
 tripsPerPerson = AS[['person','actType']].groupby('actType').agg('size') / 300424
-tripsPerPerson.to_csv('out/trips-percapita-nyc-baseline-20.csv')
+tripsPerPerson.to_csv('out/trips-percapita-nyc-may-4.csv')
 print("done")
