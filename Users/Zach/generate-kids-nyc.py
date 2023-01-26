@@ -21,7 +21,7 @@ def solve(popChunkInt, scenario, per):
         ['person_id', 'block_id']).agg(
         lambda x: True).unstack(fill_value=False)
 
-    kids_by_block_group = per.loc[(per.age <= 18) & (per.age >= 8), :].groupby('block_id').agg(
+    kids_by_block_group = per.loc[(per.age <= 16) & (per.age >= 8), :].groupby('block_id').agg(
         {'person_id': len}).reindex(
         personidToBlockGroup.columns).fillna(0)
 
@@ -49,8 +49,7 @@ def solve(popChunkInt, scenario, per):
 
     print("Sampling agents for {0} kids in chunk {1}".format(agentsToDuplicate.shape, popChunk))
 
-    per.set_index(['block_id', 'person_id'], inplace=True)
-    kids = per.loc[(per.age <= 18) & (per.age >= 8), :]
+    kids = per.loc[(per.age <= 16) & (per.age >= 8), :]
 
     copiedKids = []
     copiedAdults = []
@@ -75,6 +74,7 @@ hh = pd.read_csv(
 per = pd.read_csv(
     'https://github.com/LBNL-UCB-STI/beam-data-newyork/blob/update-calibration/urbansim_v2/13122k-NYC-all-ages/persons.csv.gz?raw=true')
 per = per.merge(hh[['household_id', 'block_id']], on='household_id')
+per.set_index(['block_id', 'person_id'], inplace=True)
 
 print("Starting workers")
 [solve(ii, scenario, per) for ii in range(10)]
