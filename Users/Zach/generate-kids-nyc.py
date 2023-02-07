@@ -96,6 +96,7 @@ print("Loading urbansim data")
 hh = pd.read_csv('households.csv.gz')
 per = pd.read_csv('persons.csv.gz')
 per = per.merge(hh[['household_id', 'block_id']], on='household_id')
+per.set_index(['block_id', 'person_id'], inplace=True)
 
 per.set_index(['block_id', 'person_id'], inplace=True)
 
