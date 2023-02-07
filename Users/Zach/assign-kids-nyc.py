@@ -56,23 +56,29 @@ def calcRidership(scenario, trips, stops, stopTimes):
     return meanRidership
 
 
-scenario = "august2020"
+scenario = "may2020"
 
 s3eventsPath = {
     "base": "https://beam-outputs.s3.amazonaws.com/output/newyork/new-york-baseline-{0}-of-10__{1}/ITERS/it.5/5.events.csv.gz",
-    "august2020": "https://beam-outputs.s3.amazonaws.com/output/newyork/new-york-august2020-{0}-of-10__{1}/ITERS/it.5/5.events.csv.gz"}
-s3strings = {"base": [
-    "2023-01-03_19-59-12_nwn",
-    "2023-01-03_19-59-13_jgp",
-    "2023-01-03_19-59-06_brm",
-    "2023-01-03_19-59-07_kqr",
-    "2023-01-03_19-59-09_fbb",
-    "2023-01-03_19-59-11_tjh",
-    "2023-01-03_19-59-12_zwm",
-    "2023-01-03_19-59-19_bcr",
-    "2023-01-03_19-59-14_olx",
-    "2023-01-03_19-59-07_xcc"
-],
+    "august2020": "https://beam-outputs.s3.amazonaws.com/output/newyork/new-york-august2020-{0}-of-10__{1}/ITERS/it.5/5.events.csv.gz",
+    "may2020": "https://beam-outputs.s3.amazonaws.com/output/newyork/new-york-may2020-{0}-of-10__{1}/ITERS/it.5/5.events.csv.gz",
+    "august2021": "https://beam-outputs.s3.amazonaws.com/output/newyork/new-york-august2021-{0}-of-10__{1}/ITERS/it.5/5.events.csv.gz",
+    "jan2022": "https://beam-outputs.s3.amazonaws.com/output/newyork/new-york-jan2022-{0}-of-10__{1}/ITERS/it.5/5.events.csv.gz",
+    "june2022": "https://beam-outputs.s3.amazonaws.com/output/newyork/new-york-jan2022-{0}-of-10__{1}/ITERS/it.5/5.events.csv.gz"
+}
+s3strings = {
+    "base": [
+        "2023-01-03_19-59-12_nwn",
+        "2023-01-03_19-59-13_jgp",
+        "2023-01-03_19-59-06_brm",
+        "2023-01-03_19-59-07_kqr",
+        "2023-01-03_19-59-09_fbb",
+        "2023-01-03_19-59-11_tjh",
+        "2023-01-03_19-59-12_zwm",
+        "2023-01-03_19-59-19_bcr",
+        "2023-01-03_19-59-14_olx",
+        "2023-01-03_19-59-07_xcc"
+    ],
     "august2020": [
         "2023-01-10_16-52-48_lgr",  # 0
         "2023-01-10_16-52-46_gib",  # 1
@@ -84,7 +90,56 @@ s3strings = {"base": [
         "2023-01-10_16-53-01_drt",  # 7
         "2023-01-10_16-53-15_qgy",  # 8
         "2023-01-10_16-53-14_pdt"  # 9
-    ]}
+    ],
+    "may2020": [
+        "2023-01-12_18-51-34_sju",  # 0
+        "2023-01-12_18-51-33_nyd",  # 1
+        "2023-01-12_18-51-29_yow",  # 2
+        "2023-01-12_18-51-36_inx",  # 3
+        "2023-01-12_18-51-31_iwm",  # 4
+        "2023-01-12_18-51-34_jui",  # 5
+        "2023-01-12_18-51-34_gqr",  # 6
+        "2023-01-12_18-51-28_juu",  # 7
+        "2023-01-12_18-51-36_ehv",  # 8
+        "2023-01-12_18-51-54_bas"  # 9
+    ],
+    "august2021": [
+        "2023-01-12_18-51-43_rxk",  # 0
+        "2023-01-12_18-51-29_aza",  # 1
+        "2023-01-12_18-51-33_xqs",  # 2
+        "2023-01-12_18-51-29_abg",  # 3
+        "2023-01-12_18-51-34_lwg",  # 4
+        "2023-01-12_18-51-34_air",  # 5
+        "2023-01-12_18-51-28_vbj",  # 6
+        "2023-01-12_18-51-29_dnu",  # 7
+        "2023-01-12_18-51-29_uzv",  # 8
+        "2023-01-19_00-58-43_fwc"  # 9
+    ],
+    "jan2022": [
+        "2023-01-04_00-19-31_leg",  # 0
+        "2023-01-14_04-04-57_ztd",  # 1
+        "2023-01-04_00-19-30_bqw",  # 2
+        "2023-01-04_00-19-36_noe",  # 3
+        "2023-01-04_00-19-33_nop",  # 4
+        "2023-01-04_00-19-37_pnp",  # 5
+        "2023-01-04_00-19-29_kny",  # 6
+        "2023-01-04_00-19-39_qwt",  # 7
+        "2023-01-04_00-19-35_fzq",  # 8
+        "2023-01-04_00-19-31_dgg"  # 9
+    ],
+    "june2022": [
+        "2023-01-10_16-53-18_iir",  # 0
+        "2023-01-10_16-53-23_mrs",  # 1
+        "2023-01-10_16-53-36_log",  # 2
+        "2023-01-10_16-53-36_lvd",  # 3
+        "2023-01-10_16-53-44_afe",  # 4
+        "2023-01-10_16-53-58_gry",  # 5
+        "2023-01-10_16-53-59_qdi",  # 6
+        "2023-01-10_16-54-13_fwj",  # 7
+        "2023-01-10_16-54-18_okl",  # 8
+        "2023-01-10_16-54-38_jvb"  # 9
+    ]
+}
 
 gtfsTemplate = "https://github.com/LBNL-UCB-STI/beam-data-newyork/raw/update-calibration/r5-prod/{0}.zip"
 
