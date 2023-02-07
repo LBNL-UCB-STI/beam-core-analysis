@@ -5,7 +5,6 @@ from zipfile import ZipFile
 import numpy as np
 import pandas as pd
 import requests
-from joblib import Parallel, delayed
 
 
 def agencyFromVehicle(vehicle):
@@ -57,21 +56,35 @@ def calcRidership(scenario, trips, stops, stopTimes):
     return meanRidership
 
 
-scenario = "base"
+scenario = "august2020"
 
-s3eventsPath = "https://beam-outputs.s3.amazonaws.com/output/newyork/new-york-baseline-{0}-of-10__2023-01-03_19-59-{1}/ITERS/it.5/5.events.csv.gz"
-s3strings = [
-    "12_nwn",
-    "13_jgp",
-    "06_brm",
-    "07_kqr",
-    "09_fbb",
-    "11_tjh",
-    "12_zwm",
-    "19_bcr",
-    "14_olx",
-    "07_xcc"
-]
+s3eventsPath = {
+    "base": "https://beam-outputs.s3.amazonaws.com/output/newyork/new-york-baseline-{0}-of-10__{1}/ITERS/it.5/5.events.csv.gz",
+    "august2020": "https://beam-outputs.s3.amazonaws.com/output/newyork/new-york-august2020-{0}-of-10__{1}/ITERS/it.5/5.events.csv.gz"}
+s3strings = {"base": [
+    "2023-01-03_19-59-12_nwn",
+    "2023-01-03_19-59-13_jgp",
+    "2023-01-03_19-59-06_brm",
+    "2023-01-03_19-59-07_kqr",
+    "2023-01-03_19-59-09_fbb",
+    "2023-01-03_19-59-11_tjh",
+    "2023-01-03_19-59-12_zwm",
+    "2023-01-03_19-59-19_bcr",
+    "2023-01-03_19-59-14_olx",
+    "2023-01-03_19-59-07_xcc"
+],
+    "august2020": [
+        "2023-01-10_16-52-48_lgr",  # 0
+        "2023-01-10_16-52-46_gib",  # 1
+        "2023-01-14_21-19-56_ito",  # 2
+        "2023-01-15_01-54-50_lcs",  # 3
+        "2023-01-10_16-52-43_rio",  # 4
+        "2023-01-10_16-53-00_vjr",  # 5
+        "2023-01-10_16-52-53_bhh",  # 6
+        "2023-01-10_16-53-01_drt",  # 7
+        "2023-01-10_16-53-15_qgy",  # 8
+        "2023-01-10_16-53-14_pdt"  # 9
+    ]}
 
 gtfsTemplate = "https://github.com/LBNL-UCB-STI/beam-data-newyork/raw/update-calibration/r5-prod/{0}.zip"
 
@@ -108,7 +121,7 @@ meanRidership = calcRidership(scenario, trips, stops, stopTimes)
 def definePersonProfiles(popChunkInt, s3string):
     print("Starting on population chunk {0}".format(popChunkInt))
     popChunk = str(popChunkInt)
-    filename = s3eventsPath.format(popChunk, s3string)
+    filename = s3eventsPath[scenario].format(popChunk, s3string)
 
     PEVs = []
     PTs = []
@@ -171,4 +184,4 @@ def definePersonProfiles(popChunkInt, s3string):
     print("Done saving output file for population chunk {0}".format(popChunkInt))
 
 
-Parallel(n_jobs=5)(delayed(definePersonProfiles)(ii, s3string) for ii, s3string in enumerate(s3strings))
+[definePersonProfiles(ii, s3string) for ii, s3string in enumerate(s3strings[scenario])]
