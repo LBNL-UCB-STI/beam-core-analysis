@@ -11,11 +11,11 @@ def solve(popChunkInt, scenario, per):
     meanRidership = pd.read_csv('data/nyc-meanRidership-{0}.csv'.format(scenario), index_col=["TPERIOD", "STATION"])
 
     urbansimPath = "https://github.com/LBNL-UCB-STI/beam-data-newyork/raw/update-calibration/urbansim_v2/13122k-NYC-no-kids-sample-{0}-of-10/{1}.csv.gz"
-    
+
     hh_sample = pd.read_csv(urbansimPath.format(popChunk, "households"))
     per_sample = pd.read_csv(urbansimPath.format(popChunk, "persons"))
     per_sample = per_sample.merge(hh_sample[['household_id', 'block_id']], on='household_id').reset_index()
-    per_sample.set_index(['block_id','person_id'], inplace=True)
+    per_sample.set_index(['block_id', 'person_id'], inplace=True)
 
     personAndBlockGroup = per_sample.index.to_frame().set_index('person_id')
 
@@ -24,7 +24,7 @@ def solve(popChunkInt, scenario, per):
         lambda x: True).unstack(fill_value=False)
 
     kids_by_block_group = per.loc[(per.age <= 16) & (per.age >= 8), :].groupby('block_id').agg(
-            {'household_id': len}).reindex(
+        {'household_id': len}).reindex(
         personidToBlockGroup.columns).fillna(0)
 
     nPersons = reindexed['12AM-6AM'].shape[0]
@@ -46,7 +46,6 @@ def solve(popChunkInt, scenario, per):
 
     approx = np.floor(x.value) + np.random.binomial(1, x.value % 1.0)
 
-
     agentsToDuplicate = pd.DataFrame(approx, index=reindexed.index, columns=["toDuplicate"])
     agentsToDuplicate = agentsToDuplicate.loc[agentsToDuplicate.toDuplicate > 0]
 
@@ -60,15 +59,16 @@ def solve(popChunkInt, scenario, per):
     totalKids = 0
     droppedKids = 0
 
-    #for block_id, agentsToCopy in agentsToDuplicate.merge(per_sample, left_index=True, right_index=True).groupby(
+    # for block_id, agentsToCopy in agentsToDuplicate.merge(per_sample, left_index=True, right_index=True).groupby(
     #        'block_id'):
-    for block_id, agentsToCopy in agentsToDuplicate.merge(per_sample.reset_index(), left_index=True, right_on='person_id').groupby(
+    for block_id, agentsToCopy in agentsToDuplicate.merge(per_sample.reset_index(), left_index=True,
+                                                          right_on='person_id').groupby(
             'block_id'):
         totalKids += agentsToCopy.toDuplicate.sum()
         if block_id in kids.index.get_level_values(0):
             if agentsToCopy.toDuplicate.sum() > len(kids.loc[block_id]):
                 copiedKids.append(kids.loc[block_id])
-                #print("Kids in block: {0}, kids to sample {1}".format(len(kids.loc[block_id]), agentsToCopy.toDuplicate.sum()))
+                # print("Kids in block: {0}, kids to sample {1}".format(len(kids.loc[block_id]), agentsToCopy.toDuplicate.sum()))
                 copiedAdults.append(
                     agentsToCopy.loc[agentsToCopy.index.repeat(agentsToCopy.toDuplicate)]['person_id']._set_name(
                         "person_id").iloc[:len(kids.loc[block_id])])
@@ -98,10 +98,7 @@ per = pd.read_csv('persons.csv.gz')
 per = per.merge(hh[['household_id', 'block_id']], on='household_id')
 per.set_index(['block_id', 'person_id'], inplace=True)
 
-per.set_index(['block_id', 'person_id'], inplace=True)
-
 print("Starting workers")
 allKids = [solve(ii, scenario, per) for ii in range(10)]
 
 pd.concat(allKids).to_csv('data/nyc-kids-{0}.csv'.format(scenario))
-
