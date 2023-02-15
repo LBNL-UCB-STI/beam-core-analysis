@@ -313,6 +313,13 @@ if (remakeCum == 1) {
                         "lorenzWithCums",
                         "_21",   
                         ".rds"  )))
+  
+  readr::write_csv(df_lorenz,file = paste0(data_dir_on_this_machine,
+                             glue("{placeTitleShort}_{year}_",
+                        "{categoryTitleShort}_{leverTitleShort}_",
+                        "lorenzWithCums",
+                        "_21",   
+                        ".csv"  )))
 }
 ```
 
