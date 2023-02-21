@@ -1,7 +1,7 @@
 library(sf)
 library(dplyr)
 library(data.table)
-file_link <- '/Users/xiaodanxu/Library/CloudStorage/GoogleDrive-arielinseu@gmail.com/My Drive/BEAM-CORE/BEAM Validation/sample output/SFB_freight/'
+file_link <- '/Users/xiaodanxu/Library/CloudStorage/GoogleDrive-arielinseu@gmail.com/My Drive/BEAM-CORE/BEAM Validation/sample output/SFB2018/'
 beam_network <-read.csv(paste0(file_link, 'network.csv.gz'))
 beam_network_onode_sf = st_as_sf(beam_network, coords = c('fromLocationX', 'fromLocationY'), 
                                 crs = 26910, agr = "constant")

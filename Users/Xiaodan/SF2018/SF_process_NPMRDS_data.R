@@ -40,7 +40,7 @@ st_write(sf_npmrds_station,
 
 
 # load BEAM network
-setwd("/Users/xiaodanxu/Library/CloudStorage/GoogleDrive-arielinseu@gmail.com/My Drive/BEAM-CORE/BEAM Validation/sample output/SFB_freight/")
+setwd("/Users/xiaodanxu/Library/CloudStorage/GoogleDrive-arielinseu@gmail.com/My Drive/BEAM-CORE/BEAM Validation/sample output/SFB2018/")
 beam_network <- st_read('beam_network_by_county.geojson')
 roadway_type <- c('motorway_link', 'trunk', 'trunk_link', 
                   'primary_link', 'motorway', 'primary', 'secondary', 'secondary_link')
