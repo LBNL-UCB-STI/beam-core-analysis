@@ -26,8 +26,9 @@ def agencyFromVehicle(vehicle):
 
 def calcRidership(scenario, trips, stops, stopTimes):
     print("Mapping MTA stations to GTFS stops")
-    ridership = pd.read_excel('data/STD_Ridership_by_stn_timeperiod.xlsx')
+    ridership = pd.read_csv('data/nyc-meanRidership-{0}.csv'.format(scenario))
     ridership['STATION'] = ridership['STATION'].str.split('(', expand=True)[0]
+    ridership = ridership.loc[pd.to_datetime(ridership.R_DATE).dt.weekday < 5, :]
     mta_stations = ridership['STATION'].unique()
 
     combined = stopTimes.merge(trips, on="trip_id").merge(stops, on="stop_id")
@@ -52,7 +53,7 @@ def calcRidership(scenario, trips, stops, stopTimes):
     meanRidership = ridership.groupby(['R_DATE', 'TPERIOD', 'STATION', 'CTGRY']).agg(sum).unstack('R_DATE',
                                                                                                   fill_value=0).mean(
         axis=1).unstack(-1, fill_value=0)
-    meanRidership.to_csv('data/nyc-meanRidership-{0}.csv'.format(scenario))
+    meanRidership.to_csv('data/nyc-meanRidership-out-{0}.csv'.format(scenario))
     return meanRidership
 
 
