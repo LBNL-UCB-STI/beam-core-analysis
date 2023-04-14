@@ -65,7 +65,7 @@ s3eventsPath = {
     "may2020": "https://beam-outputs.s3.amazonaws.com/output/newyork/new-york-may2020-{0}-of-10__{1}/ITERS/it.5/5.events.csv.gz",
     "august2021": "https://beam-outputs.s3.amazonaws.com/output/newyork/new-york-august2021-{0}-of-10__{1}/ITERS/it.5/5.events.csv.gz",
     "jan2022": "https://beam-outputs.s3.amazonaws.com/output/newyork/new-york-jan2022-{0}-of-10__{1}/ITERS/it.5/5.events.csv.gz",
-    "june2022": "https://beam-outputs.s3.amazonaws.com/output/newyork/new-york-jan2022-{0}-of-10__{1}/ITERS/it.5/5.events.csv.gz"
+    "june2022": "https://beam-outputs.s3.amazonaws.com/output/newyork/new-york-june2022-{0}-of-10__{1}/ITERS/it.5/5.events.csv.gz"
 }
 s3strings = {
     "base": [
@@ -142,25 +142,73 @@ s3strings = {
     ]
 }
 
-gtfsTemplate = "https://github.com/LBNL-UCB-STI/beam-data-newyork/raw/update-calibration/r5-prod/{0}.zip"
+# https://github.com/LBNL-UCB-STI/beam-data-newyork/blob/update-calibration/r5-prod-5august2020/NJ_Transit_Bus_20200501.zip
 
-gtfsDirs = [
-    "MTA_Bronx_20200121",
-    "MTA_Brooklyn_20200118",
-    "MTA_Manhattan_20200123",
-    "MTA_Queens_20200118",
-    "MTA_Staten_Island_20200118",
-    "NYC_Bus_Company_20200104",
-    "NYC_Subway_20200109"
-]
+gtfsTemplate = {"base": "https://github.com/LBNL-UCB-STI/beam-data-newyork/raw/update-calibration/r5-prod/{0}.zip",
+                "august2020": "https://github.com/LBNL-UCB-STI/beam-data-newyork/raw/update-calibration/r5-prod-5august2020/{0}.zip",
+                "may2020": "https://github.com/LBNL-UCB-STI/beam-data-newyork/raw/update-calibration/r5-prod-1april2020/{0}.zip",
+                "august2021": "https://github.com/LBNL-UCB-STI/beam-data-newyork/raw/update-calibration/r5-prod-4august2021/{0}.zip",
+                "jan2022": "https://github.com/LBNL-UCB-STI/beam-data-newyork/raw/update-calibration/r5-prod-5january2022/{0}.zip",
+                "june2022": "https://github.com/LBNL-UCB-STI/beam-data-newyork/raw/update-calibration/r5-prod-11may2022/{0}.zip"}
+
+gtfsDirs = {
+    "base": [
+        "MTA_Bronx_20200121",
+        "MTA_Brooklyn_20200118",
+        "MTA_Manhattan_20200123",
+        "MTA_Queens_20200118",
+        "MTA_Staten_Island_20200118",
+        "NYC_Bus_Company_20200104",
+        "NYC_Subway_20200109"],
+    "august2020": [
+        "MTA_Bronx_20200803",
+        "MTA_Brooklyn_20200803",
+        "MTA_Manhattan_20200804",
+        "MTA_Queens_20200625",
+        "MTA_Staten_Island_20200625",
+        "NYC_Bus_Company_20200729",
+        "NYC_Subway_20200430"],
+    "may2020": [
+        "MTA_Bronx_20200317",
+        "MTA_Brooklyn_20200318",
+        "MTA_Manhattan_20200329",
+        "MTA_Queens_20200317",
+        "MTA_Staten_Island_20200318",
+        "NYC_Bus_Company_20200318",
+        "NYC_Subway_20200109"],
+    "august2021": [
+        "MTA_Bronx_20210625",
+        "MTA_Brooklyn_20210626",
+        "MTA_Manhattan_20210625",
+        "MTA_Queens_20210625",
+        "MTA_Staten_Island_20210625",
+        "NYC_Bus_Company_20210625",
+        "NYC_Subway_20210713"],
+    "jan2022": [
+        "MTA_Bronx_20211230",
+        "MTA_Brooklyn_20211230",
+        "MTA_Manhattan_20211230",
+        "MTA_Queens_20211230",
+        "MTA_Staten_Island_20211230",
+        "NYC_Bus_Company_20211230",
+        "NYC_Subway_20211210"],
+    "june2022": [
+        "MTA_Bronx_20220324",
+        "MTA_Brooklyn_20220324",
+        "MTA_Manhattan_20220325",
+        "MTA_Queens_20220325",
+        "MTA_Staten_Island_20220325",
+        "NYC_Bus_Company_20220328",
+        "NYC_Subway_20211210"]
+}
 
 stops = []
 stopTimes = []
 trips = []
 print("Loading GTFS")
-for dir in gtfsDirs:
+for dir in gtfsDirs[scenario]:
     print("Download GTFS: {0}".format(dir))
-    r = requests.get(gtfsTemplate.format(dir))
+    r = requests.get(gtfsTemplate[scenario].format(dir))
     files = ZipFile(BytesIO(r.content))
     stops.append(pd.read_csv(files.open("stops.txt")).dropna(how='all', axis=1))
     trips.append(pd.read_csv(files.open("trips.txt")).dropna(how='all', axis=1))
