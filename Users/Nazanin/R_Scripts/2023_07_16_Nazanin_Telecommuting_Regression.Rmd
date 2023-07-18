@@ -1,0 +1,106 @@
+---
+title: "Telecommuting Regression"
+author: "Nazanin"
+output:
+  html_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+---
+## Setup
+```{r setup, include=FALSE}
+#library(tidycensus)
+#library(sf)
+#library(purrr)
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+pacman::p_load(
+  tidyverse, # for the tidyverse framework
+  viridis,
+  scales, 
+  forcats,
+  furrr,
+  tictoc,
+  stringr,
+  caTools,
+  ggthemes,
+  SciViews,
+  purrr,
+  dplyr,
+  plm,
+  fastDummies
+  )
+```
+
+
+## Read Data
+```{r}
+sf_tel <- read.csv("C:/Users/nrezaei/Documents/Data/Telecommuting/sf_tel_reg.csv")
+```
+
+## Prepare for Regression
+```{r}
+# Create dummy variables for trip modes or scenarios  
+sf_tel_dummies <- fastDummies::dummy_cols(sf_tel, 
+                           select_columns = c("lever_position_tel", "mode_choice_actual_4", "income_deciles", "income_quartiles"))
+```
+
+
+```{r}
+# Group by person ID and fill NAs with the income value from other rows
+sf_tel_filled <- sf_tel_dummies %>%
+  group_by(IDMerged) %>%
+  mutate(income = ifelse(is.na(income), income[!is.na(income)][1], income))
+
+# Remove grouping
+sf_tel_filled <- ungroup(sf_tel_filled)
+```
+
+
+```{r}
+# Group by person ID and fill NAs with the income value from other rows
+sf_tel_filled <- sf_tel_filled %>%
+  group_by(IDMerged) %>%
+  mutate(income = ifelse(is.na(income_in_thousands), income[!is.na(income_in_thousands)][1], income))
+
+# Remove grouping
+sf_tel_filled <- ungroup(sf_tel_filled)
+```
+
+
+```{r}
+# Group by scenario and person ID, calculate the percentage of people with 'telework' = True
+sf_tel_per <- sf_tel_filled %>%
+  group_by(lever_position_tel, IDMerged) %>%
+  mutate(percentage_telework = mean(telework) * 100) %>%
+  group_by(lever_position_tel) %>%
+  summarize(percentage_telework = mean(percentage_telework))
+
+# Merge the percentage_telework column back to the original dataframe
+sf_tel_per <- left_join(sf_tel_filled, sf_tel_per, by = "lever_position_tel")
+
+```
+
+## Regression
+```{r}
+sf_tel_mod <- plm(Potential_INEXUS_in_dollar_2023 ~ income_in_thousands,
+                    data = sf_tel_filled,
+                    index = c("IDMerged"), 
+                    model = "within")
+```
+
+## Run Regression with fixed effects
+```{r - scatter plot}
+ggplot(data = austinlegPlot, aes(x = legDepartureTime, y = legTravelTime))+
+    geom_point(size=1, stat = 'identity')+ 
+    xlab("Departure Time (meters)") + 
+    ylab("Travel Time (minutes)")+
+    #scale_color_viridis(discrete = TRUE, option = "H", begin = 0.4)+
+    scale_colour_economist()+
+    theme_bw()
+```
+
