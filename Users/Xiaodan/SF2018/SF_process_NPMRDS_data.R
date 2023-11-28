@@ -38,7 +38,7 @@ plot(st_geometry(sf_npmrds_station_with_data), add = TRUE)
 st_write(sf_npmrds_station, 
          '/Users/xiaodanxu/Library/CloudStorage/GoogleDrive-arielinseu@gmail.com/My Drive/BEAM-CORE/BEAM Validation/data for validation/SF/NPMRDS/sf_NPMRDS_station.geojson')
 
-
+sf_npmrds_station <- st_read('/Users/xiaodanxu/Library/CloudStorage/GoogleDrive-arielinseu@gmail.com/My Drive/BEAM-CORE/BEAM Validation/data for validation/SF/NPMRDS/sf_NPMRDS_station.geojson')
 # load BEAM network
 setwd("/Users/xiaodanxu/Library/CloudStorage/GoogleDrive-arielinseu@gmail.com/My Drive/BEAM-CORE/BEAM Validation/sample output/SFB2018/")
 beam_network <- st_read('beam_network_by_county.geojson')

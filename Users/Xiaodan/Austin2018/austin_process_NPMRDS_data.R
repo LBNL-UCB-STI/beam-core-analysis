@@ -56,7 +56,7 @@ selected_beam_network_filtered_df <- selected_beam_network_filtered %>% st_drop_
 st_write(selected_beam_network_filtered, 'beam_network_npmrds_screenline.geojson')
 write.csv(selected_beam_network_filtered_df, 'beam_network_npmrds_screenline.csv')
 # SELECT AUSTIN SPEED DATA
-data_link = '/Volumes/GoogleDrive/My Drive/BEAM-CORE/BEAM Validation/data for validation/Austin/NPMRDS/MFD.VolDens.sc_ut_oct2018_1hr.RData'
+data_link = '/Users/xiaodanxu/Library/CloudStorage/GoogleDrive-arielinseu@gmail.com/My Drive/BEAM-CORE/BEAM Validation/data for validation/Austin/NPMRDS/MFD.VolDens.sc_ut_oct2018_1hr.RData'
 load(data_link)
 
 austin_npmrds_station <- austin_npmrds_station %>% 
