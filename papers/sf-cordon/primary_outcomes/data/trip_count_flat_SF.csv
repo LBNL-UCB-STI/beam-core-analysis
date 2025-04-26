@@ -1,0 +1,12 @@
+legMode,count
+bike,9916
+car,123135
+car_hov2,24542
+car_hov3,18408
+drive_transit,916
+hov2_teleportation,24372
+hov3_teleportation,21518
+ride_hail,5215
+ride_hail_pooled,1623
+walk,60311
+walk_transit,74173
